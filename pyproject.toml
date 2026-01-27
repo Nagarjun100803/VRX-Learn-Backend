@@ -1,0 +1,21 @@
+[project]
+name = "asyncpg-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "asyncpg>=0.31.0",
+    "ipykernel>=7.1.0",
+    "pydantic[email]>=2.12.5",
+    "pydantic-settings>=2.12.0",
+    "sqlparse>=0.5.4",
+    "passlib[argon2]>=1.7.4",
+    "pogo-migrate>=0.3.3",
+    "fastapi[all]>=0.128.0",
+    "pyjwt>=2.10.1",
+]
+
+[tool.pogo]
+migrations = './migrations'
+database_config = '{POGO_DATABASE}'
