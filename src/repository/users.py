@@ -49,7 +49,6 @@ class UserRespository(BaseRepository[User]):
         data = cmd.model_dump(exclude="id")
         data = self._add_audit_field(data, "delete")
         
-        print(f"Data is {data}")
         # Where clause associated with user id.
         where_clause = self.db.query_builder.build_where(
             column="user_id", value=cmd.id
@@ -101,27 +100,3 @@ class UserRespository(BaseRepository[User]):
 
         return self._to_domain(user)
     
-        
-
-
-async def main():
-    
-    repo = UserRespository()
-    await repo.db.init_pool()
-    
-    # user = await repo.get(UserGetByID(id=1, viewer_id=5))
-    # print(user)
-    # await repo.exists_by(email="nagarjun", id=1, status=True)
-    res = await repo.exists_by(where_clause=AsyncPgWhere(
-        condition="where email = ($email)",
-        values={"email": "nagarjun1@gmail.com", "status": True}
-    ))
-
-    print(res)
-    
-    await repo.db.close_pool()    
-    
-        
-if __name__ == "__main__":  
-    asyncio.run(main())    
-        

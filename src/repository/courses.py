@@ -97,21 +97,6 @@ class CourseRepository(BaseRepository[Course]):
     async def get(self, query: CourseGet):
         return await super().get(query)
     
-        
-
-async def main():
-    
-    repo = CourseRepository()
-    await repo.db.init_pool()
-    
-    ow = await repo.verify_ownership(4, 3)
-    print(ow)
-    
-    await repo.db.close_pool()
-    
-    
-if __name__ == "__main__":
-    asyncio.run(main())
 
 
     

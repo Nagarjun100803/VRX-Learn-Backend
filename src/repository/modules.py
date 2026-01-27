@@ -64,32 +64,3 @@ class ModuleRepository(BaseRepository[Module]):
 
 
 
-
-async def main():
-    
-    repo = ModuleRepository()
-    await repo.db.init_pool()
-    
-    # module = ModuleCreate(
-    #     title="Module 1",
-    #     description="This is sample " * 10,
-    #     course_id=4,
-    #     created_by=1
-    # ) 
-    # new_module = await repo.add(module)
-    # module = await repo.get(ModuleGetQuery(id="M-1", viewer_id=1))
-    # module = await repo.exists_by("title", "module 1".upper())
-    # module = await repo.exists_by("id", 1)
-    # module = await repo.delete(ModuleDelete(id=1, deleted_by="U-1"))
-    # module = await repo.update(ModuleUpdate(id=1, title="Updated title 2", description="Module Description " * 10  ,updated_by=1))
-    # print(module)
-    ow = await repo.verify_ownership(1, 3)
-    print(ow)
-    
-    await repo.db.close_pool()
-    
-
-if __name__ == "__main__":
-   asyncio.run(main())
-
-

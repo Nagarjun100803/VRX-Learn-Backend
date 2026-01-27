@@ -8,8 +8,6 @@ from src.commands.base import UserID, ID
 from src.query_builder.base import BaseWhere
 from src.query_builder.asyncpg import AsyncPgWhere
 from src.repository.ownership_specification import BaseOwnershipSpec
-import asyncio
-
 
 class BaseRepository[T](ABC):
     
@@ -102,50 +100,6 @@ class BaseRepository[T](ABC):
         
         entity = await self.db.execute(executable, fetch_returns="one")
         return self._to_domain(entity)
-    
-    
-    # async def _lookup(
-    #     self, 
-    #     criteria: str, 
-    #     value: Union[int, str], 
-    #     return_type: Literal["bool", "record"]
-    # ) -> Optional[Record]:
-    #     """
-    #         Helper function used to lookup for a specific
-    #         record and return raw database row.
-    #     """
-    #     if criteria not in self._lookup_criteria:
-    #         raise ValueError(f"Invalid criteria '{criteria}', Allowded criterias are {self._lookup_criteria}")
-        
-    #     columns = ["*"] if return_type == "record" else ["1"]
-    #     where_clause = self.db.query_builder.build_where(
-    #         column=criteria, value=value
-    #     )
-        
-    #     executable = self.db.query_builder.build_simple_select(self.tablename, columns, where_clause)
-        
-    #     entity = await self.db.execute(executable, fetch_returns="one")
-        
-    #     return entity
-    
-        
-    # @abstractmethod
-    # async def get(self, query: BaseModel) -> Optional[T]:
-    #     "Get a specific record by it's id."
-    #     entity = await self._lookup(criteria="id", value=query.id, return_type="record")
-    #     return self._to_domain(entity)
-    
-    
-    # @abstractmethod
-    # async def exists_by(
-    #     self, 
-    #     criteria: str, 
-    #     value: Union[str, int],
-    #     **scope_kwargs: dict[str, Any]
-    # ) -> bool:
-    #     "Check a record is exist with specific criteria."
-    #     entity: Optional[Record] = await self._lookup(criteria, value, return_type="bool")
-    #     return bool(entity)
     
     
     @abstractmethod
