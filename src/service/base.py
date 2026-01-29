@@ -2,9 +2,8 @@ import inspect
 from functools import wraps
 from typing import Any, Callable, Literal, Optional, Type, ClassVar, TypeVar, ParamSpec
 from abc import ABC, abstractmethod
-from asyncpg import Record
 from pydantic import BaseModel
-from src.exceptions import EntityNotFoundError, UnauthorizedError, InvalidRoleError, UserNotFoundError
+from src.exceptions import EntityNotFoundError, UnauthorizedError, InvalidRoleError, UserNotFoundError, ValidationError
 from src.repository.base import BaseRepository, ReorderParicipants
 from src.service.permission_policy import Action, Entity, PermissionPolicy, UserRole, UserRoleOrVirtual
 from src.repository.users import UserRespository
@@ -167,7 +166,7 @@ class BaseService[T](ABC):
         target_scope = participants_data.target.scope
         for participant in [participants_data.preceding, participants_data.succeeding]:
             if participant and participant.scope != target_scope:
-                raise ValueError(f"All participants should belongs to same {scope} = '{target_scope}'")
+                raise ValidationError(f"All participants should belongs to same {scope} = '{target_scope}'")
 
         # Generate the new position string.
         position_string = fractional_index.generate_key(*participants_data.position_string_pairs())
