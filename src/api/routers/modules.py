@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from src.commands.base import ModuleID
-from src.commands.modules import ModuleCreate, ModuleUpdate, ModuleDelete, ModuleGetQuery
-from src.api.schemas.modules import ModuleOutSchema, ModuleCreateSchema, ModuleUpdateSchema
+from src.commands.modules import ModuleCreate, ModuleUpdate, ModuleDelete, ModuleGetQuery, ReArrangeModule
+from src.api.schemas.modules import ModuleOutSchema, ModuleCreateSchema, ModuleUpdateSchema, ReArrangeModuleSchema
 from src.api.dependencies import CurrentUser, ModuleServiceDependency
 
 
@@ -66,6 +66,23 @@ async def delete_module(
         )
     )
 
+
+@router.patch("/{module_id}/update-position", status_code=status.HTTP_204_NO_CONTENT)
+async def update_module_position(
+    module_id: ModuleID,
+    rearrange_schema: ReArrangeModuleSchema,
+    module_service: ModuleServiceDependency,
+    current_user: CurrentUser
+):
+    
+    await module_service.rearrange_sequence(
+        ReArrangeModule(
+            **rearrange_schema.model_dump(),
+            target_id=module_id,
+            updated_by=current_user
+        )
+    )
+    
 
 
 

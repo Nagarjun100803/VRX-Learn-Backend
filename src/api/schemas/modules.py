@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from src.commands.base import CourseID, ModuleID
-from src.commands.modules import ModuleCreateCore, ModuleUpdateCore, ModuleTitile
+from src.commands.modules import ModuleCreateCore, ModuleUpdateCore, ModuleTitile, ReArrangeModuleCore
 
 
 class ModuleOutSchema(BaseModel):
@@ -10,5 +10,5 @@ class ModuleOutSchema(BaseModel):
 
 class ModuleCreateSchema(ModuleCreateCore): ...
 class ModuleUpdateSchema(ModuleUpdateCore): ...
-
+class ReArrangeModuleSchema(ReArrangeModuleCore): ...
 

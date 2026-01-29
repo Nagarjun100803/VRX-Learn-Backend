@@ -4,7 +4,7 @@ from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
 from src.repository.modules import ModuleRepository
 from src.repository.courses import CourseRepository
-from src.commands.modules import Module, ModuleCreate, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet
+from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet, ReArrangeModule
 from src.service.permission_policy import Entity, PermissionPolicy
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
 
@@ -48,7 +48,15 @@ class ModuleService(BaseService[Module]):
         if duplicate_module_title_flag:
             raise CourseModuleAlreadyExistsError(cmd.title, identifier="title")
                  
-        module = await self.repo.add(cmd)
+        
+        position_string = await self.generate_position_string(course_id=cmd.course_id)
+                 
+        module = await self.repo.add(
+            ModuleCreateWithPosition(
+                **cmd.model_dump(),
+                position_string=position_string
+            )
+        )
         return self._require_entity(module)
     
 
@@ -73,4 +81,10 @@ class ModuleService(BaseService[Module]):
         return self._require_entity(module, value=query.id)
     
 
-    
+    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="target_id")
+    async def rearrange_sequence(
+        self, cmd: ReArrangeModule, 
+        scope: str = "course_id"
+    ) -> str: 
+                
+        return await super().rearrange_sequence(cmd, scope)

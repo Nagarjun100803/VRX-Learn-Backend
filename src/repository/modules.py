@@ -1,11 +1,8 @@
 from asyncpg.protocol.record import Record
-from typing import Any, ClassVar, Literal, Optional, Type, Union, overload, override
-from src.query_builder.asyncpg import AsyncPgExecutableSQL
+from typing import ClassVar, Optional, Type, override
 from src.repository.base import BaseRepository
-from src.commands.base import EntityBase, ModuleBase, ModuleID, UserID
-from src.commands.modules import Module, ModuleCreate, ModuleDelete, ModuleGetQuery, ModuleUpdate
+from src.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate, ReArrangeModule
 from src.repository.ownership_specification import BaseOwnershipSpec, ModuleOwnershipSpec
-import asyncio
 
 
 class ModuleRepository(BaseRepository[Module]):
@@ -21,7 +18,7 @@ class ModuleRepository(BaseRepository[Module]):
         return Module(**row)
         
     
-    async def add(self, cmd: ModuleCreate) -> Module:
+    async def add(self, cmd: ModuleCreateWithPosition) -> Module:
         return await super().add(cmd)
     
     

@@ -160,3 +160,11 @@ class AuditFields(DeleteAuditField, UpdateAuditFields, CreateAuditFields):
 
 
 NullField = Field(default=None, examples=[None])
+
+
+class ReArrangeBase(BaseModel):
+    target_id: ID
+    preceding_id: Optional[ID]
+    succeeding_id: Optional[ID]
+
+    
