@@ -24,9 +24,9 @@ class AsyncPgDBManager:
         
         try:
             pool: Pool = await asyncpg.create_pool(
-                user=settings.user, password=settings.password, 
-                host=settings.host, database=settings.name,
-                port=settings.port,
+                user=settings.database.user.get_secret_value(), password=settings.database.password.get_secret_value(), 
+                host=settings.database.host.get_secret_value(), database=settings.database.name.get_secret_value(),
+                port=settings.database.port,
                 min_size=10,
                 max_size=20,
                 # Senior Tip: Retire connections before they "rot"

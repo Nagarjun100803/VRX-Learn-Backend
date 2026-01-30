@@ -11,3 +11,5 @@ wheels/
 migrations
 *.ipynb
 .env
+aws_demo
+.vscode
