@@ -12,20 +12,13 @@ from src.settings import settings
 import aioboto3
 from mypy_boto3_s3 import S3Client
 from mypy_boto3_s3.type_defs import DeleteObjectOutputTypeDef, DeleteTypeDef
-
-
-class AllowdeContentTypes(StrEnum):
-    PDF = "application/pdf"
-    PNG = "image/png"
-    JPG = "image/jpg"
-    JPEG = "image/jpeg"
-    DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+from src.commands.media import AllowedContentTypes
 
 
 @dataclass
 class FileMetadata:
     filename: Union[Path, str]
-    content_type: AllowdeContentTypes
+    content_type: AllowedContentTypes
     size: int
     
     
@@ -128,6 +121,8 @@ class S3(BaseObjectStorageService):
             )
         )
         
+    # NOTE: Need to create a function that takes an actual file object
+    # and stores it in object storage.    
     async def upload_file(
         self, 
         filename: Union[str, Path],

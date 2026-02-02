@@ -22,12 +22,12 @@ class ModuleRepository(BaseRepository[Module]):
         return await super().add(cmd)
     
     
-    async def update(self, cmd: ModuleUpdate):
+    async def update(self, cmd: ModuleUpdate) -> Optional[Module]:
         return await super().update(cmd)
     
     
     @override
-    async def delete(self, cmd: ModuleDelete):
+    async def delete(self, cmd: ModuleDelete) -> Optional[Module]:
         # Unlink the relationships.
         data = cmd.model_dump(exclude={"id"})
         data = self._add_audit_field(data, action="delete")

@@ -67,7 +67,8 @@ class CourseModuleNotFoundError(EntityNotFoundError):
 class ResourceNotFoundError(EntityNotFoundError):
     _entity = "Resource"
 
-
+class MediaNotFoundError(EntityNotFoundError):
+    _entity = "Media"
 
 """
 ======================================
@@ -142,6 +143,8 @@ class UserAlreadyExistsError(AlreadyExistsError):
 class EnrollmentAlreadyExistsError(AlreadyExistsError):
     _entity: ClassVar[str] = "Enrollment"
     
+class MediaAlreadyExistsError(AlreadyExistsError):
+    _entity: ClassVar[str] = "Media"
     
 
 """

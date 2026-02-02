@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import partial
-from pydantic import BaseModel, Field, model_validator, BeforeValidator, TypeAdapter, PlainSerializer
+from pydantic import BaseModel, Field, model_validator, BeforeValidator, TypeAdapter, PlainSerializer, field_serializer
 from typing import ClassVar, Self, Type, Union, Optional, Annotated
 
 
@@ -53,6 +53,11 @@ class EntityBase(BaseModel):
             
         return self
 
+    @field_serializer("id", return_type=str, when_used="json")
+    def seriaize_id(self, id: ID):
+        return self.add_prefix().id
+    
+    
     def get_number_part(self) -> str:
         return str(self.id).split("-")[-1]
 
@@ -96,7 +101,10 @@ class EnrollmentBase(EntityBase):
     PREFIX: ClassVar[str] = "E"
 
 
+class MediaBase(EntityBase):
+    PREFIX: ClassVar[str] = "ME"
     
+
 BaseID =  Annotated[
     ID,
     BeforeValidator(partial(to_internal_id, cls=EntityBase)),
@@ -134,6 +142,12 @@ EnrollmentID = Annotated[
     ID,
     BeforeValidator(partial(to_internal_id, cls=EnrollmentBase)),
     PlainSerializer(partial(to_external_id, cls=EnrollmentBase), when_used="json")
+]
+
+MediaID = Annotated[
+    ID,
+    BeforeValidator(partial(to_external_id, cls=MediaBase)),
+    PlainSerializer(partial(to_external_id, cls=MediaBase), when_used="json")
 ]
 
 
