@@ -105,6 +105,10 @@ class MediaBase(EntityBase):
     PREFIX: ClassVar[str] = "ME"
     
 
+class LessonBase(EntityBase):
+    PREFIX: ClassVar[str] = "L"    
+
+
 BaseID =  Annotated[
     ID,
     BeforeValidator(partial(to_internal_id, cls=EntityBase)),
@@ -146,9 +150,16 @@ EnrollmentID = Annotated[
 
 MediaID = Annotated[
     ID,
-    BeforeValidator(partial(to_external_id, cls=MediaBase)),
+    BeforeValidator(partial(to_internal_id, cls=MediaBase)),
     PlainSerializer(partial(to_external_id, cls=MediaBase), when_used="json")
 ]
+
+LessonID = Annotated[
+    ID,
+    BeforeValidator(partial(to_internal_id, cls=LessonBase)),
+    PlainSerializer(partial(to_external_id, cls=LessonBase), when_used="json")
+]
+
 
 
 AnyID = Union[UserID, CourseID, ModuleID, ResourceID, EnrollmentID]

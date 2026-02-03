@@ -69,6 +69,9 @@ class ResourceNotFoundError(EntityNotFoundError):
 
 class MediaNotFoundError(EntityNotFoundError):
     _entity = "Media"
+    
+class LessonNotFoundError(EntityNotFoundError):
+    _entity = "Lesson"
 
 """
 ======================================

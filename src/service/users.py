@@ -3,14 +3,14 @@ from typing import ClassVar, Optional, Type, override
 from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
 from src.service.permission_policy import Entity, UserRoleOrVirtual
-import src.exceptions as domain_exceptions
+from src.exceptions import EntityNotFoundError, UnAuthenticated, UserNotFoundError, UserAlreadyExistsError, PasswordMismatchError
 from src.commands.users import (
     User, UserCreate, UserDelete, PasswordUpdate,
     UserCreateWithConfirmPassword, UserGetByIDQuery, 
     UserGetByID, UserAuth, UserGetByEmail
 )
 from src.commands.base import UserID
-
+from dataclasses import dataclass
 
 _pwd_context = CryptContext(
         schemes=["argon2"],
@@ -28,22 +28,14 @@ class PasswordHandler:
         return _pwd_context.verify(raw_password, hashed_password)
     
     
-
+@dataclass
 class UserService(BaseService[User]):
     
-    _not_found_exc: ClassVar[Type[domain_exceptions.UserNotFoundError]] = domain_exceptions.UserNotFoundError
+    _not_found_exc: ClassVar[Type[UserNotFoundError]] = UserNotFoundError
     _entity: ClassVar[Entity] = Entity.USER 
     
-    def __init__(
-        self, 
-        user_repo = None, 
-        permission_policy = None,
-        password_handler: Optional[PasswordHandler] = None,
-        repo: Optional[UserRespository] = None
-    ):
-        super().__init__(user_repo, permission_policy)
-        self.repo = repo or UserRespository()
-        self.password_handler = password_handler or PasswordHandler()
+    repo: UserRespository
+    password_handler: PasswordHandler
 
 
     @require_access(action="create", user_id_alias="created_by", obj_name="cmd")
@@ -52,11 +44,11 @@ class UserService(BaseService[User]):
         
         # Check for the password match.
         if cmd.password != cmd.confirm_password:
-            raise domain_exceptions.PasswordMismatchError()
+            raise PasswordMismatchError()
         
         # Check for the duplicate email.
         if await self.repo.exists_by(email=cmd.email):
-            raise domain_exceptions.UserAlreadyExistsError(
+            raise UserAlreadyExistsError(
                 value=cmd.email, identifier="email"
             )
     
@@ -79,7 +71,7 @@ class UserService(BaseService[User]):
     async def update(self, cmd: PasswordUpdate) -> User:
         # Check user found with the email.
         if not await self.user_repo.exists_by(email=cmd.email):
-            raise domain_exceptions.UserNotFoundError(
+            raise UserNotFoundError(
                 value=cmd.email, 
                 identifier="email"
             )
@@ -113,7 +105,6 @@ class UserService(BaseService[User]):
             not self.password_handler.verify_password(
                 user.password, auth.password
             ):
-            raise domain_exceptions.UnAuthenticated()
+            raise UnAuthenticated()
         return user
-
     

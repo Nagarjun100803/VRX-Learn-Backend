@@ -1,5 +1,6 @@
 import asyncio
-from typing import Type, Optional
+from typing import Type, Optional, ClassVar
+from dataclasses import dataclass
 from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
 from src.repository.modules import ModuleRepository
@@ -10,27 +11,18 @@ from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, Cours
 
 
 course_repository = CourseRepository()
+# NOTE: Need to create all singleton in a file, and import.
 
-
+@dataclass
 class ModuleService(BaseService[Module]):
     
-    _entity: Entity = Entity.MODULE
-    _not_found_exc: Type[EntityNotFoundError] = CourseModuleNotFoundError
+    _entity: ClassVar[Entity] = Entity.MODULE
+    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = CourseModuleNotFoundError
     
+    course_repo: CourseRepository
+    repo: ModuleRepository
     
-    def __init__(
-        self, 
-        user_repo: Optional[UserRespository] = None, 
-        permission_policy: Optional[PermissionPolicy] = None,
-        course_repo: Optional[CourseRepository] = None,
-        repo: Optional[ModuleRepository] = None
-    ) -> None:
-        
-        super().__init__(user_repo, permission_policy)
-        self.repo = repo or ModuleRepository()
-        self.course_repo = course_repo or CourseRepository()
-        
-        
+            
      
     @require_access(action="create", user_id_alias="created_by", entity_id_alias="course_id", parent_repo=course_repository)    
     async def create(self, cmd: ModuleCreate):

@@ -1,30 +1,20 @@
 import asyncio
-from typing import Type, Union, Optional, override
+from typing import ClassVar, Type, Union, Optional, override
 from src.service.base import BaseService, require_access
 from src.commands.courses import Course, CourseCreate, CourseDelete, CourseGet, CourseInfoUpdate, RecordedCourseDetailsUpdate, CourseGetByIDQuery
 from src.repository.courses import CourseRepository
 from src.service.permission_policy import Entity, PermissionPolicy
 from src.exceptions import EntityNotFoundError, CourseNotFoundError, CourseAlreadyExistsError
 from src.repository.users import UserRespository
+from dataclasses import dataclass
 
 
-
+@dataclass
 class CourseService(BaseService[Course]):
     
-    _not_found_exc: Type[EntityNotFoundError] = CourseNotFoundError
-    _entity = Entity.COURSE
-    
-
-    def __init__(
-        self, 
-        user_repo: Optional[UserRespository] = None, # For user permissions.
-        permission_policy: PermissionPolicy = None,
-        repo: Optional[CourseRepository] = None
-    ) -> None:
-        
-        super().__init__(user_repo, permission_policy)
-        self.repo = repo or CourseRepository()
-        
+    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = CourseNotFoundError
+    _entity: ClassVar[Entity] = Entity.COURSE
+    repo: CourseRepository
         
         
     @require_access(action="create", user_id_alias="created_by")
@@ -81,4 +71,3 @@ class CourseService(BaseService[Course]):
         course = await self.repo.get(CourseGet(id=query.id))
         return self._require_entity(course, value=query.id)
     
-
