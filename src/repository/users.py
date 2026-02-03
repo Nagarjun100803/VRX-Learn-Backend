@@ -1,8 +1,7 @@
 import asyncio
-from typing import ClassVar, Optional, Union, Literal, override
+from typing import ClassVar, Optional, Union, override
 from asyncpg.protocol.record import Record
 from src.commands.users import UserCreate, UserDelete, UserGetByEmail, UserGetByID, PasswordUpdate, User
-from src.query_builder.asyncpg import AsyncPgWhere
 from src.repository.base import BaseRepository
 from src.repository.ownership_specification import BaseOwnershipSpec, UserOwnershipSpec
 

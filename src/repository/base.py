@@ -58,7 +58,7 @@ class BaseRepository[T](ABC):
         user_id: UserID,
     ) -> bool:
         
-        spec = self._ownership_spec(entity_id, user_id)
+        spec = self._ownership_spec(entity_id, user_id, self.db)
         return await spec.is_satisfied()
         
 

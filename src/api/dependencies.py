@@ -59,7 +59,8 @@ def get_module_service() -> ModuleService:
     return ModuleService(
         user_repo=user_repository,
         permission_policy=permission_policy,
-        repo=module_repository
+        repo=module_repository,
+        course_repo=course_reposiory
     )
 
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  

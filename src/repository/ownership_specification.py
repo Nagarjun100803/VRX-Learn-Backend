@@ -1,31 +1,21 @@
-from typing import Optional, Union
 from abc import ABC, abstractmethod
 from src.commands.base import ID, UserID
 from src.database import AsyncPgDBManager, async_db_manager
 from src.query_builder.base import BaseExecutableSQL
+from dataclasses import dataclass
 
 
-
+@dataclass
 class BaseOwnershipSpec(ABC):
-    
-    def __init__(
-        self,
-        entity_id: ID,
-        user_id: UserID,
-        db: Optional[AsyncPgDBManager] = None,
-    ):
         
-        self.db = db or async_db_manager
-        self.user_id = user_id
-        self.entity_id = entity_id
-        
-    
-    
+    entity_id: ID
+    user_id: UserID
+    db: AsyncPgDBManager
+
     @abstractmethod
     def get_executable(self) -> BaseExecutableSQL:
         """Returns the BaseExecutable sql to check ownership."""
         
-    
     async def is_satisfied(self) -> bool:
         # Not created as abstract method, since it hanldes in all 
         # subclasses and not necessary to repeat the same in subclass.
@@ -36,13 +26,14 @@ class BaseOwnershipSpec(ABC):
         
 
 
+# NOTE: Create a CTE that handles enrollments.
 class UserOwnershipSpec(BaseOwnershipSpec):
     
     def get_executable(self):
         sql = """
             select  
                 1
-            from 
+            from
                 users
             where 
                 id = $1 and (
@@ -104,5 +95,32 @@ class ModuleOwnershipSpec(BaseOwnershipSpec):
         )
     
     
+class LessonOwnershipSpec(BaseOwnershipSpec):
     
-
+    def get_executable(self):
+        sql = """
+            select
+                1
+            where exists(
+                select
+                    1
+                from
+                    lessons as l
+                join
+                    modules as m
+                on
+                    m.id = l.module_id
+                join
+                    courses as c
+                on
+                    c.id = m.course_id
+                where(
+                        (l.id = $(1) and 
+                        (c.trainer_id = ($2) or c.manager_id = ($3)) and
+                        (c.deleted_at is null and l.deleted_at is null and m.deleted_at is null)
+                    )
+            ;
+        """
+        return self.db.query_builder.build_executable(
+            sql, values=(self.entity_id, self.user_id, self.user_id)
+        )

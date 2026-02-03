@@ -10,7 +10,7 @@ from src.repository.users import UserRespository
 from src.commands.users import UserGetByID
 from src.commands.base import UserID, ReArrangeBase
 from src.service.fractional_index import fractional_index
-
+from dataclasses import dataclass
 
 E = TypeVar("E", bound=EntityNotFoundError)
 P = ParamSpec("P")
@@ -84,7 +84,7 @@ def require_access(
         
 
 
-
+@dataclass
 class BaseService[T](ABC):
     
     """
@@ -92,16 +92,12 @@ class BaseService[T](ABC):
     """
 
     _not_found_exc: ClassVar[Type[E]] 
-    _entity: Entity
+    _entity: ClassVar[Entity]
     
-    def __init__(
-        self,
-        user_repo: Optional[UserRespository] = None,
-        permission_policy: Optional[PermissionPolicy] = None
-    ):
-        super().__init__() 
-        self.user_repo = user_repo or UserRespository()
-        self.permission_policy = permission_policy or PermissionPolicy()
+    # Instance Variables
+    user_repo: UserRespository
+    permission_policy: PermissionPolicy
+    
 
 
     def _require_entity(self, entity: Optional[T], **error_kwargs) -> T:
@@ -199,4 +195,4 @@ class BaseService[T](ABC):
     @abstractmethod
     async def get(self, query: BaseModel) -> T:
         "Get a specific entity if exists or raise error"
-    
+        
