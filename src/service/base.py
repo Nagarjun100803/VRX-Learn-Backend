@@ -84,7 +84,7 @@ def require_access(
         
 
 
-@dataclass
+@dataclass(slots=True, kw_only=True)
 class BaseService[T](ABC):
     
     """
@@ -139,6 +139,7 @@ class BaseService[T](ABC):
        
        
     async def generate_position_string(self, **scope_kwargs: dict[str, Any]) -> str:
+        self.repo: BaseRepository
         current_max = await self.repo.get_max_position_string(**scope_kwargs)
         new_key = fractional_index.generate_key(current_max, None)
         print(f"Current key : {current_max} and new key is {new_key}")
@@ -149,7 +150,7 @@ class BaseService[T](ABC):
         self, 
         cmd: ReArrangeBase, 
         scope: str
-        ):
+        ) -> T:
         
         # Get the participants data.
         participants_data: ReorderParicipants = await self.repo.get_reorder_participants(

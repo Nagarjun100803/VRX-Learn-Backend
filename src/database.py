@@ -119,6 +119,7 @@ class AsyncPgDBManager:
         async with self.connection() as conn:
             async with conn.transaction():
                 for idx, executable in enumerate(executables, start=1):
+                    print(executable.preview())
                     if idx != len(executables):
                         await conn.execute(executable.sql, *executable.values)
                     else:
@@ -128,4 +129,4 @@ class AsyncPgDBManager:
                     
     
 
-async_db_manager = AsyncPgDBManager()
+# async_db_manager = AsyncPgDBManager()

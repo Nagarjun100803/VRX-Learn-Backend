@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 from src.api.routers.users import user_router
 from src.api.routers.courses import router as course_router
 from src.api.routers.modules import router as module_router
-from src.database import async_db_manager
+from src.api.routers.lessons import router as lesson_router
+from src.dependencies import db
 from src.exceptions import DomainError
 from src.api.exception_registry import exception_registry
 
@@ -14,9 +15,9 @@ async def lifespan(app: FastAPI):
     """
         Lifespan event to initialize and close the database pool.
     """
-    await async_db_manager.init_pool()
+    await db.init_pool()
     yield 
-    await async_db_manager.close_pool()
+    await db.close_pool()
 
 
 api_version = "/api/v1"
@@ -35,6 +36,7 @@ async def health_check() -> dict:
 app.include_router(user_router, prefix=api_version)
 app.include_router(course_router, prefix=api_version)
 app.include_router(module_router, prefix=api_version)
+app.include_router(lesson_router, prefix=api_version)
 
 
 @app.exception_handler(DomainError)

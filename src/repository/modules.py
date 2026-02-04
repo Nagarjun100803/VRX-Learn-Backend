@@ -3,8 +3,10 @@ from typing import ClassVar, Optional, Type, override
 from src.repository.base import BaseRepository
 from src.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate, ReArrangeModule
 from src.repository.ownership_specification import BaseOwnershipSpec, ModuleOwnershipSpec
+from dataclasses import dataclass
 
 
+@dataclass(kw_only=True)
 class ModuleRepository(BaseRepository[Module]):
     
     tablename: ClassVar[str] = "modules"

@@ -1,19 +1,17 @@
 import asyncio
-from typing import Type, Optional, ClassVar
+from typing import Type, ClassVar
 from dataclasses import dataclass
-from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
 from src.repository.modules import ModuleRepository
 from src.repository.courses import CourseRepository
 from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet, ReArrangeModule
-from src.service.permission_policy import Entity, PermissionPolicy
+from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
+from src.dependencies import course_repository
 
 
-course_repository = CourseRepository()
-# NOTE: Need to create all singleton in a file, and import.
 
-@dataclass
+@dataclass(kw_only=True)
 class ModuleService(BaseService[Module]):
     
     _entity: ClassVar[Entity] = Entity.MODULE
@@ -55,6 +53,7 @@ class ModuleService(BaseService[Module]):
 
     @require_access(action="update", user_id_alias="updated_by", entity_id_alias="id")
     async def update(self, cmd: ModuleUpdate):
+        # TODO: If new title is provided, need to check for the duplicate name.
         module = await self.repo.update(cmd)
         return self._require_entity(module, value=cmd.id)
     
@@ -63,6 +62,7 @@ class ModuleService(BaseService[Module]):
     @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id")
     async def delete(self, cmd: ModuleDelete):
         module = await self.repo.delete(cmd)
+        # TODO: Need to delete all the media and lessons associated with this module id.
         return self._require_entity(module, value=cmd.id)
     
     
@@ -77,6 +77,6 @@ class ModuleService(BaseService[Module]):
     async def rearrange_sequence(
         self, cmd: ReArrangeModule, 
         scope: str = "course_id"
-    ) -> str: 
+    ) -> Module: 
                 
         return await super().rearrange_sequence(cmd, scope)

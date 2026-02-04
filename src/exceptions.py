@@ -149,6 +149,8 @@ class EnrollmentAlreadyExistsError(AlreadyExistsError):
 class MediaAlreadyExistsError(AlreadyExistsError):
     _entity: ClassVar[str] = "Media"
     
+class LessonAlreadyExistsError(AlreadyExistsError):
+    _entity: ClassVar[str] = "Lesson"
 
 """
 ==================================

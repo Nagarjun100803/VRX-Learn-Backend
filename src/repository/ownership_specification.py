@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from src.commands.base import ID, UserID
-from src.database import AsyncPgDBManager, async_db_manager
+from src.database import AsyncPgDBManager
 from src.query_builder.base import BaseExecutableSQL
 from dataclasses import dataclass
 

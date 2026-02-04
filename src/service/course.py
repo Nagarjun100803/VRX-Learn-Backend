@@ -1,15 +1,14 @@
 import asyncio
-from typing import ClassVar, Type, Union, Optional, override
+from typing import ClassVar, Type, Union, override
 from src.service.base import BaseService, require_access
 from src.commands.courses import Course, CourseCreate, CourseDelete, CourseGet, CourseInfoUpdate, RecordedCourseDetailsUpdate, CourseGetByIDQuery
 from src.repository.courses import CourseRepository
-from src.service.permission_policy import Entity, PermissionPolicy
+from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, CourseNotFoundError, CourseAlreadyExistsError
-from src.repository.users import UserRespository
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(kw_only=True)
 class CourseService(BaseService[Course]):
     
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = CourseNotFoundError

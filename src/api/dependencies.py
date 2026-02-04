@@ -1,72 +1,36 @@
 from typing import Annotated
 from fastapi import Depends
-
-# Base Dependency
-from src.database import async_db_manager
-
-# User Dependency.
 from src.commands.base import UserID
-from src.service.users import UserService, PasswordHandler
-from src.repository.users import UserRespository
-from src.service.permission_policy import PermissionPolicy
-
-# Course Dependency.
-from src.repository.courses import CourseRepository
-from src.service.course import CourseService
-
-
-# Module Dependency.
-from src.repository.modules import ModuleRepository
-from src.service.modules import ModuleService
-
-# DB Connection
-db = async_db_manager
-
-# Repositories
-user_repository = UserRespository(db=db)
-course_reposiory = CourseRepository(db=db)
-module_repository = ModuleRepository(db=db)
+from src.dependencies import (
+    user_service, course_service, module_service, 
+    lesson_service, media_service
+)
+from src.dependencies import (
+    UserService, CourseService, ModuleService,
+    LessonService, MediaService
+)
 
 
-# Helper classes
-permission_policy = PermissionPolicy()
-password_handler = PasswordHandler()
 
-
+# Helper functions to build a Services used for Depedency Injection.
 
 def get_user_service() -> UserService:
-    """
-        Helper function used to build a UserService used
-        for Depedency Injection.
-    """
-    return UserService(
-        user_repo=user_repository,
-        permission_policy=permission_policy,
-        password_handler=password_handler,
-        repo=user_repository
-    )
-  
+    return user_service
 
 def get_course_service() -> CourseService:
-    return CourseService(
-        user_repo=user_repository,
-        permission_policy=permission_policy,
-        repo=course_reposiory
-    )  
+    return course_service 
     
 
 def get_module_service() -> ModuleService:
-    return ModuleService(
-        user_repo=user_repository,
-        permission_policy=permission_policy,
-        repo=module_repository,
-        course_repo=course_reposiory
-    )
+    return module_service
+
+def get_lesson_service() -> LessonService:
+    return lesson_service
 
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]
-
+LessonServiceDependency = Annotated[LessonService, Depends(get_lesson_service)]
 
 
 def sample_get_current_user() -> UserID:
