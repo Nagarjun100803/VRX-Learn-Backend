@@ -159,7 +159,7 @@ class BaseRepository[T](ABC):
         entitiy = await self.pick(id=query.id)
         return self._to_domain(entitiy)
     
-    
+    # TODO: Need to refactor this to make it optimal.
     async def exists_by(
         self,
         where_clause: Optional[BaseWhere] = None,

@@ -23,7 +23,7 @@ class ModuleService(BaseService[Module]):
             
      
     @require_access(action="create", user_id_alias="created_by", entity_id_alias="course_id", parent_repo=course_repository)    
-    async def create(self, cmd: ModuleCreate):
+    async def create(self, cmd: ModuleCreate) -> Module:
         
         # Conditions
         course_exist_flag, duplicate_module_title_flag = await asyncio.gather(
@@ -52,23 +52,36 @@ class ModuleService(BaseService[Module]):
 
 
     @require_access(action="update", user_id_alias="updated_by", entity_id_alias="id")
-    async def update(self, cmd: ModuleUpdate):
-        # TODO: If new title is provided, need to check for the duplicate name.
-        module = await self.repo.update(cmd)
-        return self._require_entity(module, value=cmd.id)
+    async def update(self, cmd: ModuleUpdate) -> Module:
+        # Get the module.
+        module = await self.repo.pick(columns=("id", "title", "course_id"), id=cmd.id)
+        if module is None:
+            raise CourseModuleNotFoundError(value=cmd.id)
+        
+        # Check for title change.
+        if cmd.title != module["title"]:
+            duplicate_title_flag = await self.repo.exists_by(title=cmd.title, course_id=module["course_id"])
+            if duplicate_title_flag:
+                raise CourseModuleAlreadyExistsError(value=cmd.title, identifier="title")
+            
+        # Update the fields.
+        return self._require_entity(
+            await self.repo.update(cmd),
+            value=cmd.id
+        )
+            
     
    
     
     @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id")
-    async def delete(self, cmd: ModuleDelete):
+    async def delete(self, cmd: ModuleDelete) -> Module:
         module = await self.repo.delete(cmd)
-        # TODO: Need to delete all the media and lessons associated with this module id.
         return self._require_entity(module, value=cmd.id)
     
     
     
     @require_access(action="view", user_id_alias="viewer_id", entity_id_alias="id", obj_name="query")
-    async def get(self, query: ModuleGetQuery):
+    async def get(self, query: ModuleGetQuery) -> Module:
         module = await self.repo.get(query)
         return self._require_entity(module, value=query.id)
     
