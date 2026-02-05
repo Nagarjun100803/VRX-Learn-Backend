@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from asyncpg.protocol.record import Record
 from typing import Any, ClassVar, Literal, Optional, Type, Union, override
 from src.query_builder.base import BaseExecutableSQL
@@ -11,7 +12,7 @@ from src.commands.courses import(
 from src.repository.ownership_specification import BaseOwnershipSpec, CourseOwnershipSpec
 
 
-
+@dataclass(kw_only=True)
 class CourseRepository(BaseRepository[Course]):
          
     tablename: ClassVar[str] = "courses"

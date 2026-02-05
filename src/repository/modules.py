@@ -3,8 +3,11 @@ from typing import ClassVar, Optional, Type, override
 from src.repository.base import BaseRepository
 from src.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate, ReArrangeModule
 from src.repository.ownership_specification import BaseOwnershipSpec, ModuleOwnershipSpec
+from dataclasses import dataclass
+from src.commands.media import MediableType
 
 
+@dataclass(kw_only=True)
 class ModuleRepository(BaseRepository[Module]):
     
     tablename: ClassVar[str] = "modules"
@@ -34,22 +37,43 @@ class ModuleRepository(BaseRepository[Module]):
         print(f"Delete payload is {data}")
         
         executables = [
-            
             # If necessary we can unlink the connections.
-            
-            # self.db.query_builder.build_update(
-            #     "lessons",
-            #     data,
-            #     where_clause=self.db.query_builder.build_base_where(
-            #         condition="Where module_id = ($module_id) and deleted_at is Null",
-            #         values={"module_id": cmd.id}
-            #     )
-            # ),
+            self.db.query_builder.build_update(
+                "media_assets", data,
+                where_clause=self.db.query_builder.build_base_where(
+                    condition="""
+                        Where 
+                            mediable_type = ($mediable_type) and 
+                            mediable_id In (
+                                select 
+                                    id
+                                from 
+                                    lessons as l
+                                where
+                                    l.module_id = ($module_id) and 
+                                    l.deleted_at is Null
+                            ) and
+                            deleted_at is Null 
+                    """,
+                    values={
+                        "mediable_type": MediableType.LESSON,
+                        "module_id": cmd.id
+                    }
+                )
+                
+            ),
+            self.db.query_builder.build_update(
+                "lessons", data,
+                where_clause=self.db.query_builder.build_base_where(
+                    condition="Where module_id = ($module_id) and deleted_at is Null",
+                    values={"module_id": cmd.id}
+                )
+            ),
             self.db.query_builder.build_update(
                 self.tablename, data,
                 where_clause=self.db.query_builder.build_where_pk(cmd.id)
             )
-            
+   
         ]
         module = await self.db.with_transaction(executables, return_last=True)
         return self._to_domain(module)

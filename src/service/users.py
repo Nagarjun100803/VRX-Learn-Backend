@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from typing import ClassVar, Optional, Type, override
 from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
-from src.service.permission_policy import Entity, UserRoleOrVirtual
+from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, UnAuthenticated, UserNotFoundError, UserAlreadyExistsError, PasswordMismatchError
 from src.commands.users import (
     User, UserCreate, UserDelete, PasswordUpdate,
@@ -28,10 +28,10 @@ class PasswordHandler:
         return _pwd_context.verify(raw_password, hashed_password)
     
     
-@dataclass
+@dataclass(kw_only=True)
 class UserService(BaseService[User]):
     
-    _not_found_exc: ClassVar[Type[UserNotFoundError]] = UserNotFoundError
+    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = UserNotFoundError
     _entity: ClassVar[Entity] = Entity.USER 
     
     repo: UserRespository

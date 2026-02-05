@@ -14,7 +14,7 @@ from src.exceptions import MediaNotFoundError, MediaAlreadyExistsError
 
 # NOTE: Media Assests table allows more than one file for a mediable_type, Eg. LESSON, ASSIGNMENT etc.
 
-@dataclass
+@dataclass(slots=True, kw_only=True)
 class MediaService:
     file_service: S3
     repo: MediaRepository

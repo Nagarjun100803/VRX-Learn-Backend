@@ -3,7 +3,7 @@ import asyncio
 from typing import Any, List, Optional, Union
 from pathlib import Path
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
 from enum import StrEnum
 from functools import lru_cache
 from src.settings import settings
@@ -21,7 +21,8 @@ class FileMetadata:
     content_type: AllowedContentTypes
     size: int
     
-    
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 @dataclass
 class BaseObjectStorageService(ABC):

@@ -1,4 +1,5 @@
 import asyncio
+from dataclasses import dataclass
 from typing import ClassVar, Optional, Union, override
 from asyncpg.protocol.record import Record
 from src.commands.users import UserCreate, UserDelete, UserGetByEmail, UserGetByID, PasswordUpdate, User
@@ -7,7 +8,7 @@ from src.repository.ownership_specification import BaseOwnershipSpec, UserOwners
 
 
 
-
+@dataclass(kw_only=True)
 class UserRespository(BaseRepository[User]):
     
     tablename: ClassVar[str] = "users"

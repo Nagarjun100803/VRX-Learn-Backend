@@ -1,9 +1,10 @@
 from abc import abstractmethod, ABC
 from datetime import UTC, datetime
 from asyncpg.protocol.record import Record
+from dataclasses import dataclass
 from pydantic import AliasChoices, BaseModel, Field
 from typing import Annotated, Any, ClassVar, Literal, Optional, Sequence, Type
-from src.database import AsyncPgDBManager, async_db_manager
+from src.database import AsyncPgDBManager
 from src.commands.base import UserID, ID, ReArrangeBase
 from src.query_builder.base import BaseWhere
 from src.query_builder.asyncpg import AsyncPgWhere
@@ -30,7 +31,7 @@ class ReorderParicipants(BaseModel):
             self.succeeding.position_string if self.succeeding else None
         )
 
-
+@dataclass(slots=True, kw_only=True)
 class BaseRepository[T](ABC):
     
     """
@@ -40,12 +41,8 @@ class BaseRepository[T](ABC):
     
     tablename: ClassVar[str] = "Sample"
     _ownership_spec: ClassVar[Type[BaseOwnershipSpec]]
+    db: AsyncPgDBManager
     
-    
-    def __init__(self, db: Optional[AsyncPgDBManager] = None) -> None:
-        super().__init__()
-        self.db = db or async_db_manager
-
 
     @abstractmethod
     def _to_domain(self, row: Optional[Record]) -> Optional[T]:
@@ -162,7 +159,7 @@ class BaseRepository[T](ABC):
         entitiy = await self.pick(id=query.id)
         return self._to_domain(entitiy)
     
-    
+    # TODO: Need to refactor this to make it optimal.
     async def exists_by(
         self,
         where_clause: Optional[BaseWhere] = None,
@@ -231,7 +228,7 @@ class BaseRepository[T](ABC):
         self,
         target_id: int,
         position_string: str
-    ) -> Optional[Record]:
+    ) -> T:
         
         executable = self.db.query_builder.build_update(
             self.tablename,

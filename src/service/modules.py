@@ -1,19 +1,17 @@
 import asyncio
-from typing import Type, Optional, ClassVar
+from typing import Type, ClassVar
 from dataclasses import dataclass
-from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
 from src.repository.modules import ModuleRepository
 from src.repository.courses import CourseRepository
 from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet, ReArrangeModule
-from src.service.permission_policy import Entity, PermissionPolicy
+from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
+from src.dependencies import course_repository
 
 
-course_repository = CourseRepository()
-# NOTE: Need to create all singleton in a file, and import.
 
-@dataclass
+@dataclass(kw_only=True)
 class ModuleService(BaseService[Module]):
     
     _entity: ClassVar[Entity] = Entity.MODULE
@@ -25,7 +23,7 @@ class ModuleService(BaseService[Module]):
             
      
     @require_access(action="create", user_id_alias="created_by", entity_id_alias="course_id", parent_repo=course_repository)    
-    async def create(self, cmd: ModuleCreate):
+    async def create(self, cmd: ModuleCreate) -> Module:
         
         # Conditions
         course_exist_flag, duplicate_module_title_flag = await asyncio.gather(
@@ -54,21 +52,36 @@ class ModuleService(BaseService[Module]):
 
 
     @require_access(action="update", user_id_alias="updated_by", entity_id_alias="id")
-    async def update(self, cmd: ModuleUpdate):
-        module = await self.repo.update(cmd)
-        return self._require_entity(module, value=cmd.id)
+    async def update(self, cmd: ModuleUpdate) -> Module:
+        # Get the module.
+        module = await self.repo.pick(columns=("id", "title", "course_id"), id=cmd.id)
+        if module is None:
+            raise CourseModuleNotFoundError(value=cmd.id)
+        
+        # Check for title change.
+        if cmd.title != module["title"]:
+            duplicate_title_flag = await self.repo.exists_by(title=cmd.title, course_id=module["course_id"])
+            if duplicate_title_flag:
+                raise CourseModuleAlreadyExistsError(value=cmd.title, identifier="title")
+            
+        # Update the fields.
+        return self._require_entity(
+            await self.repo.update(cmd),
+            value=cmd.id
+        )
+            
     
    
     
     @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id")
-    async def delete(self, cmd: ModuleDelete):
+    async def delete(self, cmd: ModuleDelete) -> Module:
         module = await self.repo.delete(cmd)
         return self._require_entity(module, value=cmd.id)
     
     
     
     @require_access(action="view", user_id_alias="viewer_id", entity_id_alias="id", obj_name="query")
-    async def get(self, query: ModuleGetQuery):
+    async def get(self, query: ModuleGetQuery) -> Module:
         module = await self.repo.get(query)
         return self._require_entity(module, value=query.id)
     
@@ -77,6 +90,6 @@ class ModuleService(BaseService[Module]):
     async def rearrange_sequence(
         self, cmd: ReArrangeModule, 
         scope: str = "course_id"
-    ) -> str: 
+    ) -> Module: 
                 
         return await super().rearrange_sequence(cmd, scope)

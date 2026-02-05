@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from asyncpg.protocol.record import Record
 from typing import Optional, Union,  ClassVar
 from src.repository.base import BaseRepository
 from src.commands.media import MediaCreate, MediaGet, MediaStatusUpdate, MediaDelete, Media
 
 
-
+@dataclass(kw_only=True)
 class MediaRepository(BaseRepository[Media]):
     
     tablename: ClassVar[str] = "media_assets"
