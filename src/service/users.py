@@ -1,5 +1,5 @@
-from passlib.context import CryptContext
-from typing import ClassVar, Optional, Type, override
+from passlib.hash import argon2
+from typing import ClassVar, Type, override
 from src.repository.users import UserRespository
 from src.service.base import BaseService, require_access
 from src.service.permission_policy import Entity
@@ -12,21 +12,18 @@ from src.commands.users import (
 from src.commands.base import UserID
 from dataclasses import dataclass
 
-_pwd_context = CryptContext(
-        schemes=["argon2"],
-        deprecated="auto"
-    )
-
 
 
 class PasswordHandler:
     "Helper class to perfrom the password hashing and verifying."
     def hash_password(self, raw_password: str) -> str:
-        return _pwd_context.hash(raw_password)
+        return argon2.hash(raw_password)
+        
 
     def verify_password(self, raw_password: str, hashed_password: str) -> bool:
-        return _pwd_context.verify(raw_password, hashed_password)
-    
+        res = argon2.verify(raw_password, hashed_password)
+        print(F"Verification is {res}")
+        return res
     
 @dataclass(kw_only=True)
 class UserService(BaseService[User]):
@@ -103,8 +100,8 @@ class UserService(BaseService[User]):
         user = await self.repo.get(UserGetByEmail(email=auth.email))
         if user is None or \
             not self.password_handler.verify_password(
-                user.password, auth.password
+                auth.password, user.password
             ):
-            raise UnAuthenticated()
+            raise UnAuthenticated("Invalid email or password.")
         return user
     

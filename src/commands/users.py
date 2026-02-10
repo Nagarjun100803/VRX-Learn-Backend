@@ -10,15 +10,14 @@ class UserRole(StrEnum):
     TRAINER = "trainer"
     TRAINEE = "trainee"
     
-    
+Email = Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]    
     
 class UserCreate(BaseModel):
     username: Annotated[str, StringConstraints(min_length=5)]
-    email: EmailStr
+    email: Email
     password: str
     role: UserRole = UserRole.TRAINEE
     created_by: UserID
-    model_config = ConfigDict(str_strip_whitespace=True, str_to_lower=True)
 
 
 

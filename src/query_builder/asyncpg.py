@@ -143,7 +143,7 @@ class AsyncPgQueryBuilder(BaseQueryBuilder):
         tablename: str,
         columns: Sequence[str] = ("*", ),
         where_clause: Optional[AsyncPgWhere] = None
-    ):
+    ) -> AsyncPgExecutableSQL:
         
         sql = "SELECT "
         requested_columns = columns if columns else ["*"]
@@ -171,18 +171,34 @@ class AsyncPgQueryBuilder(BaseQueryBuilder):
         sql += ";"
         
         return AsyncPgExecutableSQL(sql=sql, values=tuple(values))
-            
-            
-    # def build_where_id(
-    #     self,
-    #     entity_id: AnyID
-    # ) -> AsyncPgWhere:
+    
         
-    #     entity_id = any_id_adaptor.validate_python(entity_id) # Return the numeric part.
-    #     return AsyncPgWhere(
-    #         condition="where id = ($id) and deleted_at is null",
-    #         values={"id": entity_id}
-    #     )
+    def build_exists(
+        self,
+        tablename: str,
+        where_clause: Optional[AsyncPgWhere] = None,
+        **filter_kwargs: dict[str, Any]
+    ) -> AsyncPgExecutableSQL:
+        
+        where_clause = where_clause or self.build_where_from_dict(filter_kwargs)
+        
+        # Get the select statement first.
+        executable = self.build_simple_select(
+            tablename=tablename,
+            columns=("1",),
+            where_clause=where_clause
+        )     
+        
+        # Get the executable and update the sql only.
+        # Strip the trailing semicolon if it exists before wrapping
+        inner_sql = executable.sql.rstrip(";")
+        new_sql = f"""
+            select exists ({inner_sql});
+        """
+        return AsyncPgExecutableSQL(sql=new_sql, values=executable.values)
+        
+            
+
         
     def build_base_where(
         self,
@@ -208,6 +224,13 @@ class AsyncPgQueryBuilder(BaseQueryBuilder):
             condition=f"where {column} = ($value) and deleted_at is null",
             values={"value": value}
         )
+    
+    def build_where_from_dict(self, filters: dict[str, Any]) -> AsyncPgWhere:
+            where_clause = "WHERE "
+            where_clause += " AND ".join([f'{col}=(${col})' for col in filters.keys()])
+            where_clause += " AND deleted_at IS NULL"
+            return AsyncPgWhere(condition=where_clause, values=filters)
+        
         
         
     def build_where_pk(self, value: AnyID) -> AsyncPgWhere:
@@ -216,3 +239,4 @@ class AsyncPgQueryBuilder(BaseQueryBuilder):
     
     def build_executable(self, sql, values):
         return AsyncPgExecutableSQL(sql=sql, values=values)
+    

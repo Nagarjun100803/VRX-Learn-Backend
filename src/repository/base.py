@@ -134,18 +134,15 @@ class BaseRepository[T](ABC):
         if not any([where_clause, filter_kwargs]):
             raise ValueError("Requires either a BaseWhere or a Search Kwargs to filter.")
         
-        critera = where_clause
+        criteria = where_clause
         
         if where_clause is None:
-            where_clause_condition = "WHERE "
-            where_clause_condition += " AND ".join([f'{col}=(${col})' for col in filter_kwargs.keys()])
-            where_clause_condition += " AND deleted_at IS NULL"
-            critera = AsyncPgWhere(condition=where_clause_condition, values=filter_kwargs)
+            criteria = self.db.query_builder.build_where_from_dict(filter_kwargs)
         
         executable = self.db.query_builder.build_simple_select(
             self.tablename,
             columns=columns,
-            where_clause= critera
+            where_clause=criteria
         )    
         
         result = await self.db.execute(executable, fetch_returns="one" if not fetch_all else "all") 
@@ -159,19 +156,23 @@ class BaseRepository[T](ABC):
         entitiy = await self.pick(id=query.id)
         return self._to_domain(entitiy)
     
-    # TODO: Need to refactor this to make it optimal.
+
     async def exists_by(
         self,
         where_clause: Optional[BaseWhere] = None,
         **filter_kwargs: dict[str, Any],
     ) -> bool:
         
-        result = await self.pick(
-            columns=("1",), 
-            where_clause=where_clause, 
+        executable = self.db.query_builder.build_exists(
+            self.tablename,
+            where_clause,
             **filter_kwargs
         )
-        return bool(result)
+        
+        result = await self.db.execute(executable, fetch_returns="one")
+        return result["exists"]
+        
+        
     
     
         

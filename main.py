@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
-from src.api.routers.users import user_router
+from src.api.routers.users import router as user_router
 from src.api.routers.courses import router as course_router
 from src.api.routers.modules import router as module_router
 from src.api.routers.lessons import router as lesson_router

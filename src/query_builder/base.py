@@ -49,6 +49,13 @@ class BaseQueryBuilder(ABC):
     ) -> BaseExecutableSQL: ...
     
 
+    @abstractmethod
+    def build_exists(
+        self,
+        tablename: str,
+        where_clause: Optional[BaseWhere] = None,
+        **filter_kwargs: dict[str, Any]
+    ) -> BaseExecutableSQL: ...
     
     @abstractmethod
     def build_where(
@@ -71,6 +78,12 @@ class BaseQueryBuilder(ABC):
     ) -> BaseWhere: ...
     
    
+    def build_where_from_dict(
+        self,
+        filters: dict[str, Any]
+    ) -> BaseWhere: ...
+    
+    
     def build_executable(
        self,
        sql: str,
