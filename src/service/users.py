@@ -21,9 +21,8 @@ class PasswordHandler:
         
 
     def verify_password(self, raw_password: str, hashed_password: str) -> bool:
-        res = argon2.verify(raw_password, hashed_password)
-        print(F"Verification is {res}")
-        return res
+        return argon2.verify(raw_password, hashed_password)
+        
     
 @dataclass(kw_only=True)
 class UserService(BaseService[User]):

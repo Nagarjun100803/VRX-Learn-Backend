@@ -1,11 +1,12 @@
-from typing import ClassVar, Optional, Any
+from enum import StrEnum
+from typing import ClassVar, Optional, Any, Sequence, Union
 
 from src.service.permission_policy import UserRole
 
 
 class DomainError(Exception):
     """Base class for all domain exceptions. Don't use it directly"""
-    _default: ClassVar[str] = "A domain error occured"
+    _default: ClassVar[str] = "A domain error occurred"
     
     def __init__(self, message: Optional[str] = None):
         self.message = message or self._default
@@ -72,6 +73,9 @@ class MediaNotFoundError(EntityNotFoundError):
     
 class LessonNotFoundError(EntityNotFoundError):
     _entity = "Lesson"
+    
+class AssignmentNotFoundError(EntityNotFoundError):
+    _entity = "Assignment"
 
 """
 ======================================
@@ -152,6 +156,9 @@ class MediaAlreadyExistsError(AlreadyExistsError):
 class LessonAlreadyExistsError(AlreadyExistsError):
     _entity: ClassVar[str] = "Lesson"
 
+class AssignmentAlreadyExistsError(AlreadyExistsError):
+    _entity: ClassVar[str] = "Assignment"
+
 """
 ==================================
 Validation Errors
@@ -165,6 +172,50 @@ class ValidationError(DomainError):
 
 class PasswordMismatchError(ValidationError):
     _default = "Password and confirm password did not match."
+    
+
+class InvalidContentTypeError(ValidationError):
+    
+    _template = "Invalid content type '{content_type}'. Allowed types are: {allowed_types}."
+    
+    def __init__(
+        self,
+        content_type: str,
+        allowed_types: Union[Sequence[str], StrEnum, None] = None,
+        message: Optional[str] = None,
+    ) -> None:
+        
+        if message is None and allowed_types is None:
+            raise ValueError("Requires either a custom message or allowed_types.")
+        
+        self.content_type = content_type
+        self.allowed_types = allowed_types._member_names_ if issubclass(allowed_types, StrEnum) else allowed_types
+        message = message or self._template.format(content_type=content_type, allowed_types=self.allowed_types)
+            
+        super().__init__(message)
+        
+
+
+
+class FileSizeExceededError(ValidationError):
+    _default = "The uploaded file exceeds the maximum allowed size."
+    _template = "The uploaded file exceeds the maximum allowed size of {max_size} bytes."
+    
+    def __init__(
+        self, 
+        max_size: Optional[int], 
+        message: Optional[str] = None
+    ) -> None:
+        if not any([max_size, message]):
+            raise ValueError("Requires either max_size or a custom message.")
+        
+        if not message:
+            message = self._template.format(max_size=max_size)
+        else:
+            message = self._default
+            
+        super().__init__(message)
+        
     
 
 class InvalidRoleError(ValidationError):

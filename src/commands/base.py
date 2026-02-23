@@ -93,8 +93,8 @@ class ModuleBase(EntityBase):
     PREFIX: ClassVar[str] = "M"
     
     
-class ResourceBase(EntityBase):
-    PREFIX: ClassVar[str] = "R"
+class AssignmentBase(EntityBase):
+    PREFIX: ClassVar[str] = "A"
     
 
 class EnrollmentBase(EntityBase):    
@@ -136,10 +136,10 @@ ModuleID = Annotated[
     PlainSerializer(partial(to_external_id, cls=ModuleBase), when_used="json")
 ]
 
-ResourceID = Annotated[
+AssignmentID = Annotated[
     ID,
-    BeforeValidator(partial(to_internal_id, cls=ResourceBase)),
-    PlainSerializer(partial(to_external_id, cls=ResourceBase), when_used="json")
+    BeforeValidator(partial(to_internal_id, cls=AssignmentBase)),
+    PlainSerializer(partial(to_external_id, cls=AssignmentBase), when_used="json")
 ]
 
 EnrollmentID = Annotated[
@@ -162,7 +162,7 @@ LessonID = Annotated[
 
 
 
-AnyID = Union[UserID, CourseID, ModuleID, ResourceID, EnrollmentID]
+AnyID = Union[UserID, CourseID, ModuleID, AssignmentID, EnrollmentID]
 any_id_adaptor = TypeAdapter(AnyID)
 
 

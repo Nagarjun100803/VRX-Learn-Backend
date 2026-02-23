@@ -5,6 +5,7 @@ from src.api.routers.users import router as user_router
 from src.api.routers.courses import router as course_router
 from src.api.routers.modules import router as module_router
 from src.api.routers.lessons import router as lesson_router
+from src.api.routers.assignments import router as assignment_router
 from src.dependencies import db
 from src.exceptions import DomainError
 from src.api.exception_registry import exception_registry
@@ -37,7 +38,7 @@ app.include_router(user_router, prefix=api_version)
 app.include_router(course_router, prefix=api_version)
 app.include_router(module_router, prefix=api_version)
 app.include_router(lesson_router, prefix=api_version)
-
+app.include_router(assignment_router, prefix=api_version)
 
 @app.exception_handler(DomainError)
 async def custom_exception_handler(

@@ -4,14 +4,13 @@ from src.api.jwt import JWTHandler, JWTPayload
 from src.commands.base import UserID
 from src.dependencies import (
     user_service, course_service, module_service, 
-    lesson_service, media_service
+    lesson_service, media_service, assignment_service, jwt_handler
 )
 from src.dependencies import (
     UserService, CourseService, ModuleService,
-    LessonService, MediaService
+    LessonService, MediaService, AssignmentService
 )
 from src.exceptions import UnAuthenticated
-
 
 # Helper functions to build a Services used for Depedency Injection.
 
@@ -29,7 +28,10 @@ def get_lesson_service() -> LessonService:
     return lesson_service
 
 def get_jwt_handler() -> JWTHandler:
-    return JWTHandler()
+    return jwt_handler
+
+def get_assignment_service() -> AssignmentService:
+    return assignment_service
 
 
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
@@ -37,6 +39,7 @@ CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]
 LessonServiceDependency = Annotated[LessonService, Depends(get_lesson_service)]
 JWTServiceDependency = Annotated[JWTHandler, Depends(get_jwt_handler)]
+AssignmentServiceDependency = Annotated[AssignmentService, Depends(get_assignment_service)]
 
 
 
@@ -52,7 +55,7 @@ async def get_current_user(
         payload = jwt_handler.decode_jwt_token(access_token)
         return payload.user_id
     
-    except Exception:
+    except Exception: 
         raise UnAuthenticated(message="Invalid or Expired token.")
     
 

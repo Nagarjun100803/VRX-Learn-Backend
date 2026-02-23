@@ -11,7 +11,10 @@ class AllowedContentTypes(StrEnum):
     JPG = "image/jpg"
     JPEG = "image/jpeg"
     DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    MP4 = "video/mp4"
+    DOC = "application/msword"
+    PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+    PPT = "application/vnd.ms-powerpoint"
+    MP4 = "video/mp4"   
 
 
 
