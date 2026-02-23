@@ -1,4 +1,5 @@
 # Database initalization.
+from src.api.jwt import JWTHandler
 from src.database import AsyncPgDBManager
 from src.query_builder.asyncpg import AsyncPgQueryBuilder
 
@@ -12,6 +13,7 @@ from src.repository.courses import CourseRepository
 from src.repository.modules import ModuleRepository
 from src.repository.media import MediaRepository
 from src.repository.lessons import LessonRepository
+from src.repository.assignments import AssignmentRepository
 
 # Repositories.
 user_repository = UserRespository(db=db)
@@ -19,6 +21,7 @@ course_repository = CourseRepository(db=db)
 module_repository = ModuleRepository(db=db)
 media_repository = MediaRepository(db=db)
 lesson_repository = LessonRepository(db=db)
+assignment_repository = AssignmentRepository(db=db)
 
 
 # Service Imports.
@@ -27,12 +30,14 @@ from src.service.course import CourseService
 from src.service.modules import ModuleService
 from src.service.media import MediaService
 from src.service.lessons import LessonService
+from src.service.assignments import AssignmentService
 from src.service.files import S3, get_session
 from src.service.permission_policy import PermissionPolicy
 
 # Helper classes.
 password_handler = PasswordHandler()
 permission_policy = PermissionPolicy()
+jwt_handler = JWTHandler()
 
 # Services.
 user_service = UserService(
@@ -71,6 +76,13 @@ lesson_service = LessonService(
     media_service=media_service
 )
 
+assignment_service = AssignmentService(
+    user_repo=user_repository,
+    permission_policy=permission_policy,
+    repo=assignment_repository,
+    course_repo=course_repository,
+    media_service=media_service
+)
 
 
 

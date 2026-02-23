@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, SecretStr, Field
-from typing import Annotated
+from typing import Annotated, Literal
 
 
 
@@ -49,6 +49,6 @@ settings = Settings()
 
 
 if __name__ == "__main__":
-    print(settings)
+    print(settings.model_dump_json(indent=4))
     
 

@@ -1,12 +1,13 @@
 import os
 import asyncio
-from typing import Any, List, Optional, Union
+from typing import Annotated, Any, List, Optional, Union, BinaryIO
 from pathlib import Path
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, asdict
 from enum import StrEnum
 from functools import lru_cache
 from src.settings import settings
+from pydantic import BaseModel, Field
 
 # AWS SDK
 import aioboto3
@@ -15,14 +16,18 @@ from mypy_boto3_s3.type_defs import DeleteObjectOutputTypeDef, DeleteTypeDef
 from src.commands.media import AllowedContentTypes
 
 
-@dataclass
-class FileMetadata:
+
+
+class FileMetadata(BaseModel):
     filename: Union[Path, str]
     content_type: AllowedContentTypes
-    size: int
+    size: Annotated[int, Field(gt=0, examples=[1024])]
     
     def to_dict(self) -> dict:
-        return asdict(self)
+        # NOTE: Implement this helper not to break previous 
+        # dataclass version of this class.
+        return self.model_dump()
+
 
 @dataclass
 class BaseObjectStorageService(ABC):
@@ -122,22 +127,29 @@ class S3(BaseObjectStorageService):
             )
         )
         
-    # NOTE: Need to create a function that takes an actual file object
-    # and stores it in object storage.    
+        
     async def upload_file(
         self, 
-        filename: Union[str, Path],
-        s3_key: Optional[str] = None
-    ):
-        async with self.session.client("s3") as s3:
-            s3: S3Client
-            return await s3.upload_file(
-                Bucket=self.bucket,
-                Key=os.path.basename(filename) if s3_key is None else s3_key,
-                Filename=str(filename)
-            )
+        key: str,
+        fileobj: BinaryIO,
+        content_type: AllowedContentTypes,
+    ) -> dict[str, str]:
         
-
+        async with get_session().client("s3") as s3:
+            s3: S3Client
+            await s3.upload_fileobj(
+                Fileobj=fileobj,
+                Bucket=self.bucket,
+                Key=key,
+                ExtraArgs={
+                    "ContentType": content_type
+                }
+            )
+        return {
+            "key": key,
+            "status": "uploaded"
+        }
+        
     async def delete_files(
         self,
         filenames: List[str]

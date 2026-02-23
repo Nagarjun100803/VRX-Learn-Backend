@@ -124,3 +124,32 @@ class LessonOwnershipSpec(BaseOwnershipSpec):
         return self.db.query_builder.build_executable(
             sql, values=(self.entity_id, self.user_id, self.user_id)
         )
+        
+
+class AssignmentOwnershipSpec(BaseOwnershipSpec):
+    
+    def get_executable(self):
+        
+        sql = """
+            SELECT 
+                1 
+            WHERE EXISTS (
+                SELECT 
+                    1
+                FROM 
+                    assignments AS a
+                JOIN 
+                    courses AS c 
+                ON 
+                    c.id = a.course_id
+                WHERE 
+                    a.id = ($1)
+                    AND (c.manager_id = ($2) OR c.trainer_id = ($3))
+                    AND a.deleted_at IS NULL 
+                    AND c.deleted_at IS NULL
+                );
+        """
+        
+        return self.db.query_builder.build_executable(
+            sql=sql, values=(self.entity_id, self.user_id, self.user_id)
+        )
