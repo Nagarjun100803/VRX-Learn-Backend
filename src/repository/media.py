@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from asyncpg.protocol.record import Record
+from asyncpg import Connection, Record
 from typing import Optional, Union,  ClassVar
 from src.repository.base import BaseRepository
 from src.commands.media import MediaCreate, MediaGet, MediaStatusUpdate, MediaDelete, Media
@@ -17,14 +17,14 @@ class MediaRepository(BaseRepository[Media]):
         return Media(**row)
 
     
-    async def add(self, cmd: MediaCreate) -> Media:
-        return await super().add(cmd)
+    async def add(self, cmd: MediaCreate, connection: Optional[Connection] = None) -> Media:
+        return await super().add(cmd, connection=connection)
     
-    async def update(self, cmd: MediaStatusUpdate) -> Optional[Media]:
-        return await super().update(cmd)
+    async def update(self, cmd: MediaStatusUpdate, connection: Optional[Connection] = None) -> Optional[Media]:
+        return await super().update(cmd, connection=connection)
     
-    async def delete(self, cmd: MediaDelete) -> Optional[Media]:
-        return await super().delete(cmd)
+    async def delete(self, cmd: MediaDelete, connection: Optional[Connection] = None) -> Optional[Media]:
+        return await super().delete(cmd, connection=connection)
     
-    async def get(self, query: MediaGet) -> Optional[Media]:
-        return await super().get(query)
+    async def get(self, query: MediaGet, connection: Optional[Connection] = None) -> Optional[Media]:
+        return await super().get(query, connection=connection)

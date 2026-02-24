@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 from datetime import UTC, datetime
 from asyncpg.protocol.record import Record
+from asyncpg import Connection
 from dataclasses import dataclass
 from pydantic import AliasChoices, BaseModel, Field
 from typing import Annotated, Any, ClassVar, Literal, Optional, Sequence, Type
@@ -77,19 +78,19 @@ class BaseRepository[T](ABC):
     
     
     @abstractmethod
-    async def add(self, cmd: BaseModel) -> T:
+    async def add(self, cmd: BaseModel, connection: Optional[Connection] = None) -> T:
         "Insert new record."
         executable = self.db.query_builder.build_insert(
             self.tablename, 
             cmd.model_dump(),
         )
         
-        entity = await self.db.execute(executable, fetch_returns="one")    
+        entity = await self.db.execute(executable, fetch_returns="one", connection=connection)    
         return self._to_domain(entity)
     
 
     @abstractmethod
-    async def update(self, cmd: BaseModel) -> Optional[T]:
+    async def update(self, cmd: BaseModel, connection: Optional[Connection] = None) -> Optional[T]:
         "Update an existing record."
         
         # Add a updated_at field.
@@ -100,14 +101,14 @@ class BaseRepository[T](ABC):
             where_clause=self.db.query_builder.build_where_pk(cmd.id)
         )
         
-        entity = await self.db.execute(executable, fetch_returns="one")
+        entity = await self.db.execute(executable, fetch_returns="one", connection=connection)
         
         return self._to_domain(entity)
         
     
     
     @abstractmethod
-    async def delete(self, cmd: BaseModel) -> Optional[T]:
+    async def delete(self, cmd: BaseModel, connection: Optional[Connection] = None) -> Optional[T]:
         "Delete a record."
         
         data = cmd.model_dump(exclude={"id"})
@@ -117,7 +118,7 @@ class BaseRepository[T](ABC):
             where_clause=self.db.query_builder.build_where_pk(cmd.id)
         )
         
-        entity = await self.db.execute(executable, fetch_returns="one")
+        entity = await self.db.execute(executable, fetch_returns="one", connection=connection)
         return self._to_domain(entity)
     
     
@@ -127,6 +128,7 @@ class BaseRepository[T](ABC):
         columns: Sequence[str] = ("*",),
         where_clause: Optional[BaseWhere] = None,
         fetch_all: bool = False,
+        connection: Optional[Connection] = None,
         **filter_kwargs: dict[str, Any]
     ) -> Optional[Record]:
         
@@ -145,21 +147,22 @@ class BaseRepository[T](ABC):
             where_clause=criteria
         )    
         
-        result = await self.db.execute(executable, fetch_returns="one" if not fetch_all else "all") 
+        result = await self.db.execute(executable, fetch_returns="one" if not fetch_all else "all", connection=connection) 
         return result
     
     
     
     @abstractmethod
-    async def get(self, query: BaseModel):
+    async def get(self, query: BaseModel, connection: Optional[Connection] = None) -> Optional[T]:
         "Get a specific record by its id."
-        entitiy = await self.pick(id=query.id)
+        entitiy = await self.pick(id=query.id, connection=connection)
         return self._to_domain(entitiy)
     
 
     async def exists_by(
         self,
         where_clause: Optional[BaseWhere] = None,
+        connection: Optional[Connection] = None,
         **filter_kwargs: dict[str, Any],
     ) -> bool:
         
@@ -169,17 +172,18 @@ class BaseRepository[T](ABC):
             **filter_kwargs
         )
         
-        result = await self.db.execute(executable, fetch_returns="one")
+        result = await self.db.execute(executable, fetch_returns="one", connection=connection)
         return result["exists"]
         
         
     
     
         
-    async def get_max_position_string(self, **scope_kwargs: dict[str, Any]) -> Optional[str]:
+    async def get_max_position_string(self, connection: Optional[Connection] = None, **scope_kwargs: dict[str, Any]) -> Optional[str]:
         
         position_string = await self.pick(
             columns=("""Max(position_string) as max_position_string""",), 
+            connection=connection,
             **scope_kwargs
         )
         return position_string.get("max_position_string", None)
@@ -189,7 +193,8 @@ class BaseRepository[T](ABC):
     async def get_reorder_participants(
         self,
         participants: ReArrangeBase,
-        scope: str
+        scope: str,
+        connection: Optional[Connection] = None
     ):
         
         sql = """
@@ -214,7 +219,7 @@ class BaseRepository[T](ABC):
             )
         )
         
-        participants_data: Record = await self.db.execute(executable, fetch_returns="one")
+        participants_data: Record = await self.db.execute(executable, fetch_returns="one", connection=connection)
         
         # Postgres will return the result as json str not dict.
         data = {
@@ -228,7 +233,8 @@ class BaseRepository[T](ABC):
     async def update_position(
         self,
         target_id: int,
-        position_string: str
+        position_string: str,
+        connection: Optional[Connection] = None
     ) -> T:
         
         executable = self.db.query_builder.build_update(
@@ -239,7 +245,8 @@ class BaseRepository[T](ABC):
         
         return self._to_domain(
             await self.db.execute(
-                executable, fetch_returns="one"
+                executable, fetch_returns="one",
+                connection=connection
             )
         )
         

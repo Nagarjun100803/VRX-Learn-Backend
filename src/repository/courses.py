@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from asyncpg.protocol.record import Record
+from asyncpg import Connection, Record
 from typing import Any, ClassVar, Literal, Optional, Type, Union, override
 from src.query_builder.base import BaseExecutableSQL
 from src.repository.base import BaseRepository
@@ -31,14 +31,14 @@ class CourseRepository(BaseRepository[Course]):
     
     
     @override
-    async def add(self, cmd: CourseCreate) -> Course:
+    async def add(self, cmd: CourseCreate, connection: Optional[Connection] = None) -> Course:
         
         data = cmd.model_dump(exclude_none=True, exclude={"details", "trainer_id"})
         data.update(cmd.details.model_dump())
         data.update({"slug": cmd.get_slug(), "trainer_id": cmd.trainer_id})
         executable = self.db.query_builder.build_insert(self.tablename, data)
         
-        course: Record = await self.db.execute(executable, fetch_returns="one")
+        course: Record = await self.db.execute(executable, fetch_returns="one", connection=connection)
         
         return self._to_domain(course)
     
@@ -47,15 +47,16 @@ class CourseRepository(BaseRepository[Course]):
         self, cmd: Union[
             CourseInfoUpdate, 
             RecordedCourseDetailsUpdate
-        ]
+        ],
+        connection: Optional[Connection] = None
     ) -> Optional[Course]:
         
-        return await super().update(cmd)
+        return await super().update(cmd, connection=connection)
         
             
   
     @override
-    async def delete(self, cmd: CourseDelete) -> Optional[Course]:
+    async def delete(self, cmd: CourseDelete, connection: Optional[Connection] = None) -> Optional[Course]:
         data = cmd.model_dump(exclude={"id"})
         data = self._add_audit_field(data, "delete")
         print(data)
@@ -90,13 +91,13 @@ class CourseRepository(BaseRepository[Course]):
             print("\n")
         
         # # Handover to transaction.
-        course: Optional[Record] = await self.db.with_transaction(executables)
+        course: Optional[Record] = await self.db.soft_delete(executables, return_last=True, connection=connection)
 
         return self._to_domain(course)
     
 
-    async def get(self, query: CourseGet):
-        return await super().get(query)
+    async def get(self, query: CourseGet, connection: Optional[Connection] = None):
+        return await super().get(query, connection=connection)
     
 
 
