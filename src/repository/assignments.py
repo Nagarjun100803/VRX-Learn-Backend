@@ -1,10 +1,11 @@
-from asyncpg import Record
+from asyncpg import Record, Connection
+from dataclasses import dataclass
 from typing import Optional, ClassVar
 from src.commands.assignments import Assignment, AssignmentCreateWithPosition, AssignmentUpdate, AssignmentDelete, AssignmentGet
 from src.repository.base import BaseRepository
 from src.repository.ownership_specification import BaseOwnershipSpec, AssignmentOwnershipSpec
 
-
+@dataclass(kw_only=True)
 class AssignmentRepository(BaseRepository[Assignment]):
     
     tablename: ClassVar[str] = "assignments"
@@ -17,16 +18,16 @@ class AssignmentRepository(BaseRepository[Assignment]):
         return Assignment(**row)
     
         
-    async def add(self, cmd: AssignmentCreateWithPosition) -> Assignment:
-        return await super().add(cmd)
+    async def add(self, cmd: AssignmentCreateWithPosition, connection: Optional[Connection] = None) -> Assignment:
+        return await super().add(cmd, connection=connection)
     
-    async def update(self, cmd: AssignmentUpdate) -> Optional[Assignment]:
-        return await super().update(cmd)
+    async def update(self, cmd: AssignmentUpdate, connection: Optional[Connection] = None) -> Optional[Assignment]:
+        return await super().update(cmd, connection=connection)
     
-    async def delete(self, cmd: AssignmentDelete) -> Optional[Assignment]:
+    async def delete(self, cmd: AssignmentDelete, connection: Optional[Connection] = None) -> Optional[Assignment]:
         # TODO: Need to unlink all the submitted assignments from it.
-        return await super().delete(cmd)
+        return await super().delete(cmd, connection=connection)
     
-    async def get(self, query: AssignmentGet) -> Optional[Assignment]:
-        return await super().get(query)
+    async def get(self, query: AssignmentGet, connection: Optional[Connection] = None) -> Optional[Assignment]:
+        return await super().get(query, connection=connection)
 

@@ -1,7 +1,8 @@
 import asyncio
+from asyncpg import Connection
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Type, ClassVar
+from typing import Type, ClassVar, Optional
 from src.service.base import BaseService
 from src.repository.assignments import AssignmentRepository
 from src.repository.courses import CourseRepository
@@ -45,7 +46,7 @@ class AssignmentService(BaseService[Assignment]):
 
 
     @require_access(action="create", user_id_alias="created_by", entity_id_alias="course_id", parent_repo=course_repository)
-    async def create(self, cmd: AssignmentCreate) -> Assignment:
+    async def create(self, cmd: AssignmentCreate, connection: Optional[Connection] = None) -> Assignment:
         # Check if the Assignment title is exist within a course.
         course_id_exist_flag, _ = await asyncio.gather(
             self.course_repo.exists_by(id=cmd.course_id),
@@ -61,7 +62,8 @@ class AssignmentService(BaseService[Assignment]):
             AssignmentCreateWithPosition(
                 **cmd.model_dump(),
                 position_string=position_string
-            )
+            ),
+            connection=connection
         )
     
     
@@ -127,32 +129,37 @@ class AssignmentService(BaseService[Assignment]):
         if file_cmd.content_type not in AllowedAssignmentFileType:
             raise InvalidContentTypeError(content_type=file_cmd.content_type, allowed_types=AllowedAssignmentFileType)
         
-        assignment, course_details, = await asyncio.gather(
-            self.create(cmd),
-            # Get a course title and id of this course
-            self.course_repo.pick(columns=("id", "title"), id=cmd.course_id)
-        )
-        
-        # Generate a s3 key for this assignment.
-        key = f"C-{course_details["id"]}:{course_details["title"]}/Assignments/A-{assignment.id}:{Path(assignment.title).name.strip().replace(" ", "")}"
-        file_cmd.filename = key
-        
-        # Create a media with Assignment Mediable Type and 
-        # Pass mediable_id = new assignment id.
-        media = MediaCreate(
-            filename=file_cmd.filename,
-            mime_type=file_cmd.content_type,
-            file_size=file_cmd.size,
-            mediable_id=assignment.id,
-            mediable_type=MediableType.ASSIGNMENT,
-            is_private=True,
-            status=MediaStatus.PENDING,
-            created_by=cmd.created_by
-        )
-        
-        # presigned url.
-        url = await self.media_service.prepare_upload_url(media)
-        
+        # Create an assignment and media in a transaction. 
+        # So if any of the operation fails, the transaction will be rolled back and 
+        # we won't have an orphan media or assignment.
+        async with self.repo.db.transaction() as connection:
+    
+            assignment, course_details, = await asyncio.gather(
+                self.create(cmd, connection=connection),
+                # Get a course title and id of this course
+                self.course_repo.pick(columns=("id", "title"), id=cmd.course_id)
+            )
+            
+            # Generate a s3 key for this assignment.
+            key = f"C-{course_details["id"]}:{course_details["title"]}/Assignments/A-{assignment.id}:{Path(assignment.title).name.strip().replace(" ", "")}"
+            file_cmd.filename = key
+            
+            # Create a media with Assignment Mediable Type and 
+            # Pass mediable_id = new assignment id.
+            media = MediaCreate(
+                filename=file_cmd.filename,
+                mime_type=file_cmd.content_type,
+                file_size=file_cmd.size,
+                mediable_id=assignment.id,
+                mediable_type=MediableType.ASSIGNMENT,
+                is_private=True,
+                status=MediaStatus.PENDING,
+                created_by=cmd.created_by
+            )
+            
+            # presigned url.
+            url = await self.media_service.prepare_upload_url(media, connection=connection)
+            
         return AssignmentUploadUrl(
             id=assignment.id,
             upload_url=url

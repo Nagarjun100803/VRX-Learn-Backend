@@ -1,4 +1,4 @@
-from asyncpg.protocol.record import Record
+from asyncpg import Record, Connection
 from typing import ClassVar, Optional, Type, override
 from src.repository.base import BaseRepository
 from src.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate, ReArrangeModule
@@ -21,16 +21,16 @@ class ModuleRepository(BaseRepository[Module]):
         return Module(**row)
         
     
-    async def add(self, cmd: ModuleCreateWithPosition) -> Module:
-        return await super().add(cmd)
+    async def add(self, cmd: ModuleCreateWithPosition, connection: Optional[Connection] = None) -> Module:
+        return await super().add(cmd, connection=connection)
     
     
-    async def update(self, cmd: ModuleUpdate) -> Optional[Module]:
-        return await super().update(cmd)
+    async def update(self, cmd: ModuleUpdate, connection: Optional[Connection] = None) -> Optional[Module]:
+        return await super().update(cmd, connection=connection)
     
     
     @override
-    async def delete(self, cmd: ModuleDelete) -> Optional[Module]:
+    async def delete(self, cmd: ModuleDelete, connection: Optional[Connection] = None) -> Optional[Module]:
         # Unlink the relationships.
         data = cmd.model_dump(exclude={"id"})
         data = self._add_audit_field(data, action="delete")
@@ -75,12 +75,12 @@ class ModuleRepository(BaseRepository[Module]):
             )
    
         ]
-        module = await self.db.with_transaction(executables, return_last=True)
+        module = await self.db.soft_delete(executables, return_last=True, connection=connection)
         return self._to_domain(module)
                 
                 
-    async def get(self, query: ModuleGetQuery) -> Optional[Module]:
-        return await super().get(query)
+    async def get(self, query: ModuleGetQuery, connection: Optional[Connection] = None) -> Optional[Module]:
+        return await super().get(query, connection=connection)
     
 
 

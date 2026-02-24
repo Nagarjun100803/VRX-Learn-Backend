@@ -1,6 +1,7 @@
 import asyncio
 from dataclasses import dataclass
 from typing import ClassVar, Optional, Union, override
+from asyncpg import Connection
 from asyncpg.protocol.record import Record
 from src.commands.users import UserCreate, UserDelete, UserGetByEmail, UserGetByID, PasswordUpdate, User
 from src.repository.base import BaseRepository
@@ -22,12 +23,12 @@ class UserRespository(BaseRepository[User]):
         return User(**dict(row))
     
     
-    async def add(self, cmd: UserCreate) -> User:
-        return await super().add(cmd)
+    async def add(self, cmd: UserCreate, connection: Optional[Connection] = None) -> User:
+        return await super().add(cmd, connection)
         
 
     @override
-    async def update(self, cmd: PasswordUpdate) -> Optional[User]:
+    async def update(self, cmd: PasswordUpdate, connection: Optional[Connection] = None) -> Optional[User]:
                 
         executable = self.db.query_builder.build_update(
             self.tablename,
@@ -37,13 +38,13 @@ class UserRespository(BaseRepository[User]):
             )
         )
         
-        user = await self.db.execute(executable, fetch_returns="one")
+        user = await self.db.execute(executable, fetch_returns="one", connection=connection)
         
         return self._to_domain(user)
         
     
     @override
-    async def delete(self, cmd: UserDelete) -> Optional[User]:
+    async def delete(self, cmd: UserDelete, connection: Optional[Connection] = None) -> Optional[User]:
         
         # Soft delete from all linked tables.
         data = cmd.model_dump(exclude="id")
@@ -78,13 +79,13 @@ class UserRespository(BaseRepository[User]):
             print("=="*10)
             print("\n")
             
-        user = await self.db.with_transaction(executables)
+        user = await self.db.soft_delete(executables, return_last=True, connection=connection)
         
         return self._to_domain(user)
     
     
     @override
-    async def get(self, query: Union[UserGetByID, UserGetByEmail]) -> Optional[User]:
+    async def get(self, query: Union[UserGetByID, UserGetByEmail], connection: Optional[Connection] = None) -> Optional[User]:
         
         if isinstance(query, UserGetByID):
             return await super().get(query)
@@ -96,7 +97,7 @@ class UserRespository(BaseRepository[User]):
             )
         )
         
-        user = await self.db.execute(executable, fetch_returns="one")
+        user = await self.db.execute(executable, fetch_returns="one", connection=connection)
 
         return self._to_domain(user)
     

@@ -1,3 +1,4 @@
+from asyncpg import Connection, Record
 from dataclasses import dataclass
 from typing import ClassVar, Optional, Type
 from src.repository.base import BaseRepository
@@ -12,20 +13,20 @@ class LessonRepository(BaseRepository[Lesson]):
     tablename: ClassVar[str] = "lessons"
     _ownership_spec: ClassVar[Type[BaseOwnershipSpec]] = LessonOwnershipSpec
     
-    def _to_domain(self, row) -> Optional[Lesson]:
+    def _to_domain(self, row: Optional[Record]) -> Optional[Lesson]:
         if row is None:
             return None
         return Lesson(**row)
     
-    async def add(self, cmd: LessonCreateWithPosition):
-        return await super().add(cmd)
+    async def add(self, cmd: LessonCreateWithPosition, connection: Optional[Connection] = None) -> Lesson:
+        return await super().add(cmd, connection=connection)
     
     
-    async def update(self, cmd: LessonTitleUpdate) -> Optional[Lesson]:
-        return await super().update(cmd)
+    async def update(self, cmd: LessonTitleUpdate, connection: Optional[Connection] = None) -> Optional[Lesson]:
+        return await super().update(cmd, connection=connection)
     
     
-    async def delete(self, cmd: LessonDelete) -> Optional[Lesson]:
+    async def delete(self, cmd: LessonDelete, connection: Optional[Connection] = None) -> Optional[Lesson]:
         # Delete the media record and actual lesson.
         data = cmd.model_dump(exclude={"id"})
         data = self._add_audit_field(data, "delete")
@@ -46,10 +47,10 @@ class LessonRepository(BaseRepository[Lesson]):
             )
         ]
         
-        lesson = await self.db.with_transaction(executables, return_last=True)
+        lesson = await self.db.soft_delete(executables, return_last=True, connection=connection)
         return self._to_domain(lesson)
     
 
-    async def get(self, query: LessonGet) -> Optional[Lesson]:
-        return await super().get(query)
+    async def get(self, query: LessonGet, connection: Optional[Connection] = None) -> Optional[Lesson]:
+        return await super().get(query, connection=connection)
     

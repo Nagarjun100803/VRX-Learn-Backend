@@ -1,7 +1,8 @@
 import asyncio
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Type
+from typing import ClassVar, Type, Optional
+from asyncpg import Connection
 from src.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonTitleUpdate, LessonDelete, LessonGetQuery, LessonReArrange, LessonUpload
 from src.commands.media import MediaCreate, MediaStatus, MediableType
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
@@ -27,7 +28,7 @@ class LessonService(BaseService[Lesson]):
     
 
     @require_access(action="create", user_id_alias="created_by", entity_id_alias= "module_id", parent_repo=module_repository)
-    async def create(self, cmd: LessonCreate) -> Lesson:
+    async def create(self, cmd: LessonCreate, connection: Optional[Connection] = None) -> Lesson:
         
         module_exist_flag, duplicate_title_flag = await asyncio.gather(
             self.module_repo.exists_by(id=cmd.module_id),
@@ -46,7 +47,8 @@ class LessonService(BaseService[Lesson]):
             LessonCreateWithPosition(
                 **cmd.model_dump(),
                 position_string=position_string
-            )
+            ),
+            connection=connection
         )
     
              
@@ -101,24 +103,27 @@ class LessonService(BaseService[Lesson]):
         cmd: LessonCreate,
         file_cmd: FileMetadata
     ) -> LessonUpload:
-        lesson = await self.create(cmd)
         
-        # Get the Id and create a record in media
-        key = f"modules/{lesson.module_id}/lessons/{lesson.id}/{Path(file_cmd.filename).name.strip().replace(" ", "_")}"
-        file_cmd.filename = key
-        
-        media = MediaCreate(
-            filename=key,
-            mime_type=file_cmd.content_type,
-            file_size=file_cmd.size,
-            mediable_id=lesson.id,
-            mediable_type=MediableType.LESSON,
-            created_by=lesson.created_by,
-            is_private=True,
-            status=MediaStatus.PENDING
-        )
-        
-        upload_url = await self.media_service.prepare_upload_url(media, expire_mins=120)
+        async with self.repo.db.transaction() as connection:
+            lesson = await self.create(cmd, connection=connection)
+            
+            # Get the Id and create a record in media
+            # TODO: Need to add the course details in the Key.
+            key = f"modules/{lesson.module_id}/lessons/{lesson.id}/{Path(file_cmd.filename).name.strip().replace(" ", "_")}"
+            file_cmd.filename = key
+            
+            media = MediaCreate(
+                filename=key,
+                mime_type=file_cmd.content_type,
+                file_size=file_cmd.size,
+                mediable_id=lesson.id,
+                mediable_type=MediableType.LESSON,
+                created_by=lesson.created_by,
+                is_private=True,
+                status=MediaStatus.PENDING
+            )
+            
+            upload_url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=connection)
         
         return LessonUpload(lesson_id=lesson.id, upload_url=upload_url)
   
