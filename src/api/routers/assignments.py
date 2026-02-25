@@ -1,4 +1,6 @@
-from fastapi import APIRouter, status
+from typing import Union
+
+from fastapi import APIRouter, HTTPException, status
 from src.api.dependencies import AssignmentServiceDependency, CurrentUser
 from src.commands.base import AssignmentID
 from src.api.schemas.assignments import AssignmentCreateSchema, AssignmentUpdateSchema, AssignmentOut
@@ -22,13 +24,29 @@ async def get_assignment(
         )
     )
     
-@router.post("/", response_model=AssignmentUploadUrl)
+@router.post("/", response_model=Union[AssignmentUploadUrl, AssignmentOut])
 async def create_assignment(
     assignment_payload: AssignmentCreateSchema,
     assignment_service: AssignmentServiceDependency,
     current_user: CurrentUser
 ):
-    print(f"Payload is {assignment_payload.model_dump_json(indent=4)}")
+    
+    # If no instruction's and attachment is provided.
+    if assignment_payload.assignment.instructions.strip() == "" and \
+        assignment_payload.file_metadata is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Either instruction or attachment is required."
+            )
+    
+    # Assignment creation without an attachment.
+    if assignment_payload.file_metadata is None:
+        return await assignment_service.create(
+            AssignmentCreate(
+                **assignment_payload.assignment.model_dump(),
+                created_by=current_user
+            )
+        )
     
     return await assignment_service.init_assignment_create(
         file_cmd=assignment_payload.file_metadata,
