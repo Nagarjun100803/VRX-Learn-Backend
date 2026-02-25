@@ -34,13 +34,16 @@ def get_assignment_service() -> AssignmentService:
     return assignment_service
 
 
+def get_media_service() -> MediaService:
+    return media_service
+
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]
 LessonServiceDependency = Annotated[LessonService, Depends(get_lesson_service)]
 JWTServiceDependency = Annotated[JWTHandler, Depends(get_jwt_handler)]
 AssignmentServiceDependency = Annotated[AssignmentService, Depends(get_assignment_service)]
-
+MediaServiceDependency = Annotated[MediaService, Depends(get_media_service)]
 
 
 async def get_current_user(

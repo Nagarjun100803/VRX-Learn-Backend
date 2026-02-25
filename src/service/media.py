@@ -18,8 +18,6 @@ from src.exceptions import MediaNotFoundError, MediaAlreadyExistsError
 
 @dataclass(slots=True, kw_only=True)
 class MediaService:
-    file_service: S3
-    repo: MediaRepository
     
     """
     Workflow for uploading a media file:
@@ -40,6 +38,9 @@ class MediaService:
     the entire transaction can be rolled back to maintain data integrity.
     """
     
+    file_service: S3
+    repo: MediaRepository
+    
     
     def _require_entity(self, entity: Optional[Media], **error_kwargs) -> Media:
         if entity is None:
@@ -52,7 +53,7 @@ class MediaService:
             raise MediaAlreadyExistsError(cmd.filename, identifier="filename/key")
         return await self.repo.add(cmd, connection=connection)
         
-
+    # NOTE: No Authorization logic implemented.
     async def update(self, cmd: MediaStatusUpdate, connection: Optional[Connection] = None) -> Media:
         return self._require_entity(
             await self.repo.update(cmd, connection=connection),
