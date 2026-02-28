@@ -16,7 +16,7 @@ def to_internal_id(
         
         e.g., id U-1 becomes 1
     """
-    return cls(id=id).remove_prefix().id
+    return cls(id=id).id
 
 
 def to_external_id(
@@ -29,7 +29,8 @@ def to_external_id(
         
         e.g., id 1 becomes U-1
     """
-    return cls(id=id).add_prefix().id
+    obj = cls(id=id)
+    return f"{cls.PREFIX}-{obj.id}"
 
 
 class EntityBase(BaseModel):
@@ -39,23 +40,28 @@ class EntityBase(BaseModel):
     
     @model_validator(mode="after")
     def validate_id(self) -> Self:
-    
-        if not self.get_number_part().isdigit():
-            raise ValueError("Value should be a number and should not have any decimal values.")
-        
-        prefix = self.get_prefix()
-                
-        if prefix and prefix != self.__class__.PREFIX:
-            raise ValueError(f"Prefix should be {self.__class__.PREFIX}, got {prefix}")
-        
-        if not self.has_prefix():
-            self.remove_prefix()
-            
+        raw = str(self.id)
+        parts = raw.split("-")
+
+        # Allow "123" or "PREFIX-123", nothing else
+        if len(parts) > 2:
+            raise ValueError(f"Invalid id format: {raw!r}")
+
+        number_part = parts[-1]
+        if not number_part.isdigit() or number_part == "0":
+            raise ValueError(f"ID number part must be a positive integer, got {number_part!r}")
+
+        if len(parts) == 2:
+            prefix = parts[0]
+            if prefix != self.__class__.PREFIX:
+                raise ValueError(f"Prefix should be {self.__class__.PREFIX!r}, got {prefix!r}")
+
+        self.id = int(number_part)
         return self
 
     @field_serializer("id", return_type=str, when_used="json")
     def seriaize_id(self, id: ID):
-        return self.add_prefix().id
+        return f"{self.__class__.PREFIX}-{id}"
     
     
     def get_number_part(self) -> str:
