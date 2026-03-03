@@ -3,6 +3,7 @@ from src.commands.base import ID, UserID
 from src.database import AsyncPgDBManager
 from src.query_builder.base import BaseExecutableSQL
 from dataclasses import dataclass
+from src.commands.enrollments import EnrollmentStatus
 
 
 @dataclass
@@ -152,4 +153,54 @@ class AssignmentOwnershipSpec(BaseOwnershipSpec):
         
         return self.db.query_builder.build_executable(
             sql=sql, values=(self.entity_id, self.user_id, self.user_id)
+        )
+
+        
+class EnrollmentOwnershipSpec(BaseOwnershipSpec):
+    
+    def get_executable(self):
+        sql = """
+            SELECT
+                1
+            WHERE EXISTS(
+                SELECT
+                    1
+                FROM
+                    enrollments AS e
+                JOIN
+                    courses AS c
+                ON
+                    c.id = e.course_id
+                WHERE
+                    (
+                        e.id = ($1) 
+                        AND e.deleted_at IS NULL AND 
+                        c.deleted_at IS NULL
+                    ) AND 
+                    (
+                        -- Case 1: Trainer and Manager can access anytime
+                        (
+                            c.trainer_id = ($2) OR 
+                            c.manager_id = ($3)
+                        ) OR
+                        (
+                            -- Case 2: Trainee enrollment Check with a proper status and expiration time.
+                            -- NOTE: expire_at is null means the course can be accessed without any time limit.
+                            e.user_id = ($4) AND 
+                            e.status = ANY($5::text[]) AND
+                            (
+                                e.expire_at IS NULL 
+                                OR e.expire_at >= NOW()
+                            )
+                        )
+                    )      
+                );
+        """
+        
+        return self.db.query_builder.build_executable(
+            sql=sql,
+            values=(
+                self.entity_id, self.user_id, self.user_id, self.user_id,
+                (EnrollmentStatus.COMPLETED.value, EnrollmentStatus.IN_PROGRESS.value)
+            )
         )

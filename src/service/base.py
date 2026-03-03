@@ -54,14 +54,15 @@ def require_access(
             # Now check the user is exist to perform the action.
             actor = await self.user_repo.get(UserGetByID(id=user_id))
             if not actor:
-                raise UnauthorizedError()
+                raise UnauthorizedError(message=f"User not found with this Id: {user_id} to perform this action.")
             
+            # TODO: Need to add SUBADMIN role and its permission.
             if actor.role == UserRole.ADMIN:
                 return await func(self, *args, **kwargs)
             
             policy = self.permission_policy.get_policy(actor.role, self._entity)
             if not policy.allows(action):
-                raise UnauthorizedError()
+                raise UnauthorizedError(message=f"Permission denied by policy for role '{actor.role}' to perform this action.")
             
             # This self.repo refers actual entity's repo. 
             # it may be course, enrollement based on runtime.
@@ -74,7 +75,7 @@ def require_access(
                     
                 )
             ): 
-                raise UnauthorizedError()
+                raise UnauthorizedError(message=f"User with id '{user_id}' does not have ownership of the entity with id '{entity_id}' to perform this action.")
             
             return await func(self, *args, **kwargs)
  
