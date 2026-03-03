@@ -1,7 +1,6 @@
-import asyncio
 from dataclasses import dataclass
 from asyncpg import Connection, Record
-from typing import Any, ClassVar, Literal, Optional, Type, Union, override
+from typing import ClassVar, Optional, Type, Union, override
 from src.query_builder.base import BaseExecutableSQL
 from src.repository.base import BaseRepository
 from src.commands.courses import(
