@@ -26,14 +26,14 @@ Price = Annotated[float, Field(gt=1000)]
 
 class RecordedCourseDetails(BaseModel):
     type: Literal[CourseType.PRE_RECORDED] = CourseType.PRE_RECORDED
-    total_hours: float
+    total_hours: Annotated[float, Field(gt=0)]
     price: Price
 
 
 class CourseCreateCore(BaseModel): # Will act as mixin. used by Presentation layer [Fastapi]
     title: CourseTitle
-    short_description: CourseShortDescription
-    long_description: CourseLongDescription
+    short_description: Optional[CourseShortDescription] = None
+    long_description: Optional[CourseLongDescription] = None
     thumbnail: Optional[str] = None
     details: Union[RecordedCourseDetails, LiveCourseDetails] = Field(discriminator="type")
     trainer_id: UserID

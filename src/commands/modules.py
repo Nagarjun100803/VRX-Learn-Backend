@@ -13,7 +13,7 @@ ModuleDescription = Annotated[str, StringConstraints(min_length=20)]
 
 class ModuleCreateCore(BaseModel):
     title: ModuleTitile
-    description: ModuleDescription
+    description: Optional[ModuleDescription] = None
     course_id: CourseID
 
     model_config = ConfigDict(str_strip_whitespace=True)  
