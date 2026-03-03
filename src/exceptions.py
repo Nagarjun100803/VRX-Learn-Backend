@@ -65,8 +65,8 @@ class CourseNotFoundError(EntityNotFoundError):
 class CourseModuleNotFoundError(EntityNotFoundError):
     _entity = "Module"
     
-class ResourceNotFoundError(EntityNotFoundError):
-    _entity = "Resource"
+class EnrollmentNotFoundError(EntityNotFoundError):
+    _entity = "Enrollment"
 
 class MediaNotFoundError(EntityNotFoundError):
     _entity = "Media"
@@ -111,13 +111,13 @@ class AlreadyExistsError(DomainError):
     """Base class for AlreadyExists domain errors. Do not use directly."""
 
     _entity: ClassVar[str]
-    _default: ClassVar[str] = "{display_name} already exists with {identifier} = '{value}'."
+    _default: ClassVar[str] = "{display_name} already exists with '{identifier}' = '{value}'."
     
     
     def __init__(
         self,
         value: Any,
-        identifier: str = "id",
+        identifier: Any = "id",
         *,
         alias: Optional[str] = None,
         message: Optional[str] = None
@@ -140,10 +140,7 @@ class CourseAlreadyExistsError(AlreadyExistsError):
 
 class CourseModuleAlreadyExistsError(AlreadyExistsError):
     _entity: ClassVar[str] = "Module"
-    
-class ResourceAlreadyExistsError(AlreadyExistsError):
-    _entity: ClassVar[str] = "Resource"
-    
+        
 class UserAlreadyExistsError(AlreadyExistsError):
     _entity: ClassVar[str] = "User"
     
@@ -219,14 +216,19 @@ class FileSizeExceededError(ValidationError):
     
 
 class InvalidRoleError(ValidationError):
-    _default = "The user is not a {role}"
+    _default = "The user is not a '{role}'"
     
     def __init__(
         self, 
-        role: UserRole, 
+        role: Optional[UserRole] = None, 
         message: Optional[str] = None, 
-    ):
-        message = message or self._default.format(role=role)
+    ) -> None:
+        
+        if role is None and message is None:
+            raise ValueError("Either role or message must be provided.")
+        
+        message = message or self._default.format(role=str(role))
+        self.message = message
         super().__init__(message)
 
 

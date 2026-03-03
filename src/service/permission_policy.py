@@ -8,6 +8,7 @@ class Entity(StrEnum):
     COURSE = "course"
     MODULE = "module"
     LESSON = "lesson"
+    ENROLLMENT = "enrollment"
     ASSIGNMENT = "assignment"
     SUBMISSIONS = "submissions"
     LAB_CREDENTIALS = "lab_credentials"
@@ -59,6 +60,7 @@ class PermissionPolicy:
             Entity.COURSE: OWNED_VIEW_UPDATE,
             Entity.MODULE: OWNED_STAFF_EDIT,
             Entity.LESSON: OWNED_STAFF_EDIT,
+            Entity.ENROLLMENT: OWNED_STAFF_EDIT,
             Entity.ASSIGNMENT: OWNED_VIEW_UPDATE,
             Entity.SUBMISSIONS: OWNED_VIEW_UPDATE,
             Entity.LAB_CREDENTIALS: OWNED_READ_ONLY
@@ -68,6 +70,7 @@ class PermissionPolicy:
             Entity.COURSE: OWNED_READ_ONLY,
             Entity.MODULE: OWNED_STAFF_EDIT,
             Entity.LESSON: OWNED_STAFF_EDIT,
+            Entity.ENROLLMENT: OWNED_READ_ONLY,
             Entity.ASSIGNMENT: OWNED_STAFF_EDIT,
             Entity.SUBMISSIONS: OWNED_VIEW_UPDATE,
             Entity.LAB_CREDENTIALS: OWNED_STAFF_EDIT
@@ -77,6 +80,7 @@ class PermissionPolicy:
             Entity.COURSE: OWNED_READ_ONLY,
             Entity.MODULE: OWNED_READ_ONLY,
             Entity.LESSON: OWNED_READ_ONLY,
+            Entity.ENROLLMENT: OWNED_READ_ONLY,
             Entity.ASSIGNMENT: OWNED_READ_ONLY,
             Entity.SUBMISSIONS: OWNED_STAFF_EDIT,
             Entity.LAB_CREDENTIALS: OWNED_READ_ONLY

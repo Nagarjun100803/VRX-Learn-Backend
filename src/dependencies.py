@@ -14,6 +14,7 @@ from src.repository.modules import ModuleRepository
 from src.repository.media import MediaRepository
 from src.repository.lessons import LessonRepository
 from src.repository.assignments import AssignmentRepository
+from src.repository.enrollments import EnrollmentRepository
 
 # Repositories.
 user_repository = UserRespository(db=db)
@@ -22,6 +23,7 @@ module_repository = ModuleRepository(db=db)
 media_repository = MediaRepository(db=db)
 lesson_repository = LessonRepository(db=db)
 assignment_repository = AssignmentRepository(db=db)
+enrollment_repository = EnrollmentRepository(db=db)
 
 
 # Service Imports.
@@ -31,6 +33,7 @@ from src.service.modules import ModuleService
 from src.service.media import MediaService
 from src.service.lessons import LessonService
 from src.service.assignments import AssignmentService
+from src.service.enrollments import EnrollmentService
 from src.service.files import S3, get_session
 from src.service.permission_policy import PermissionPolicy
 
@@ -84,7 +87,12 @@ assignment_service = AssignmentService(
     media_service=media_service
 )
 
-
+enrollment_service = EnrollmentService(
+    user_repo=user_repository,
+    permission_policy=permission_policy,
+    repo=enrollment_repository,
+    course_repo=course_repository
+)
 
 
 
