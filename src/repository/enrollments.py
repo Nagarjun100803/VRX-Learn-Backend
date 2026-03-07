@@ -1,19 +1,15 @@
 from asyncpg import Connection, Record
 from src.repository.base import BaseRepository
-from src.repository.ownership_specification import BaseOwnershipSpec, EnrollmentOwnershipSpec
-from dataclasses import dataclass
-from typing import ClassVar, Type, Optional
+from typing import ClassVar, Optional
 from src.commands.enrollments import (
         Enrollment, EnrollmentCreate, EnrollmentUpdate, 
         EnrollmentDelete, EnrollmentGet
 )
 
 
-@dataclass(kw_only=True)
 class EnrollmentRepository(BaseRepository[Enrollment]):
    
     tablename: ClassVar[str] = "enrollments"
-    _ownership_spec: ClassVar[Type[BaseOwnershipSpec]] = EnrollmentOwnershipSpec
     
     
     def _to_domain(self, row: Optional[Record]) -> Optional[Enrollment]:

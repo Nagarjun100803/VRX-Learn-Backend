@@ -32,7 +32,9 @@ async def create_assignment(
 ):
     
     # If no instruction's and attachment is provided.
-    if assignment_payload.assignment.instructions.strip() == "" and \
+    instructions = assignment_payload.assignment.instructions
+    if instructions is not None and \
+        instructions.strip() == "" and \
         assignment_payload.file_metadata is None:
             raise HTTPException(
                 status_code=400,

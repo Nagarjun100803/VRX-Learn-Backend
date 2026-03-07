@@ -1,91 +1,19 @@
-import inspect
-from functools import wraps
-from typing import Any, Callable, Literal, Optional, Type, ClassVar, TypeVar, ParamSpec
+from typing import Any, Literal, Optional, Type, ClassVar, TypeAlias, TypeVar, Union
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-from src.exceptions import EntityNotFoundError, UnauthorizedError, InvalidRoleError, UserNotFoundError, ValidationError
+from src.exceptions import EntityNotFoundError, ValidationError
 from src.repository.base import BaseRepository, ReorderParicipants
-from src.service.permission_policy import Action, Entity, PermissionPolicy, UserRole, UserRoleOrVirtual
-from src.repository.users import UserRespository
-from src.commands.users import UserGetByID
-from src.commands.base import UserID, ReArrangeBase
+from src.commands.base import ReArrangeBase
 from src.service.fractional_index import fractional_index
-from dataclasses import dataclass
+from src.commands.users import UserRole
+from src.auth import Entity
+
+
 
 E = TypeVar("E", bound=EntityNotFoundError)
-P = ParamSpec("P")
-R = TypeVar("R")
 
+UserRoleOrVirtual: TypeAlias = Union[UserRole, Literal["manager"]]
 
-
-def require_access(
-    action: Action,
-    user_id_alias: str,
-    entity_id_alias: Optional[str] = None,
-    parent_repo: Optional[BaseRepository] = None,
-    obj_name: Literal["cmd", "query"] = "cmd" # type: ignore
-    ):
-        
-    def dec(func: Callable[P, R]) -> Callable[P, R]:
-        # Get the function signature only once.
-        sig = inspect.signature(func)
-        @wraps(func)
-        async def wrapper(self: BaseService, *args: P.args, **kwargs: P.kwargs) -> R:
-            # Bind the parameter to this wrapper function.
-            bound_arguments = sig.bind(self, *args, **kwargs)
-            bound_arguments.apply_defaults()
-            
-            # Check the obj_name is found in function signature as parameter.
-            obj = bound_arguments.arguments.get(obj_name)
-            if obj is None:
-                raise ValueError(f"Argument {obj_name} was not found in function call.")
-            
-            # Get the enities from the object.
-            user_id = getattr(obj, user_id_alias, None)
-            entity_id = getattr(obj, entity_id_alias or "", None)
-            
-    
-            # Check the action Type.
-            if user_id is None:
-                raise AttributeError(f"The object {obj_name} is missing required attribute '{user_id_alias}'")
-            if action != Action.CREATE and entity_id is None:
-                raise AttributeError(f"The object {obj_name} is missing required attribute {entity_id_alias} to check permission.")
-            
-            # Now check the user is exist to perform the action.
-            actor = await self.user_repo.get(UserGetByID(id=user_id))
-            if not actor:
-                raise UnauthorizedError(message=f"User not found with this Id: {user_id} to perform this action.")
-            
-            # TODO: Need to add SUBADMIN role and its permission.
-            if actor.role == UserRole.ADMIN:
-                return await func(self, *args, **kwargs)
-            
-            policy = self.permission_policy.get_policy(actor.role, self._entity)
-            if not policy.allows(action):
-                raise UnauthorizedError(message=f"Permission denied by policy for role '{actor.role}' to perform this action.")
-            
-            # This self.repo refers actual entity's repo. 
-            # it may be course, enrollement based on runtime.
-            
-            # Choose which repo to use to check the ownership.
-            repo = parent_repo if parent_repo is not None else self.repo
-            if (
-                    (policy.scope == "specific") and 
-                    (not await repo.verify_ownership(entity_id=entity_id, user_id=user_id)
-                    
-                )
-            ): 
-                raise UnauthorizedError(message=f"User with id '{user_id}' does not have ownership of the entity with id '{entity_id}' to perform this action.")
-            
-            return await func(self, *args, **kwargs)
- 
-        return wrapper
-    
-    return dec
-        
-
-
-@dataclass(slots=True, kw_only=True)
 class BaseService[T](ABC):
     
     """
@@ -94,10 +22,6 @@ class BaseService[T](ABC):
 
     _not_found_exc: ClassVar[Type[E]] 
     _entity: ClassVar[Entity]
-    
-    # Instance Variables
-    user_repo: UserRespository
-    permission_policy: PermissionPolicy
     
 
 
@@ -110,35 +34,8 @@ class BaseService[T](ABC):
             raise self._not_found_exc(**error_kwargs)
         return entity
           
-    
-    async def validate_role(
-        self,
-        role: UserRoleOrVirtual,
-        user_id: UserID
-    ) -> None:
-
-        exc = InvalidRoleError(role)
-        user = await self.user_repo.get(UserGetByID(id=user_id))
-        if user is None:
-            raise UserNotFoundError(
-                value=user_id, identifier="id", alias=role
-            )
-    
-        # Virtual role mappings.
-        virtual_role_mappings = {
-            "manager": {UserRole.SUBADMIN, UserRole.TRAINER}
-        }
-          
-        if role in virtual_role_mappings:
-            is_valid = user.role in virtual_role_mappings[role]
-            
-        else:
-            is_valid = user.role == role
-            
-        if not is_valid:
-            raise exc
-       
-       
+           
+    # TODO: Need to refactor this into Rearrange Service.
     async def generate_position_string(self, **scope_kwargs: dict[str, Any]) -> str:
         self.repo: BaseRepository
         current_max = await self.repo.get_max_position_string(**scope_kwargs)

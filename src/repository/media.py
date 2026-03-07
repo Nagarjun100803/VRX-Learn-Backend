@@ -1,15 +1,12 @@
-from dataclasses import dataclass
 from asyncpg import Connection, Record
-from typing import Optional, Union,  ClassVar
+from typing import Optional, ClassVar
 from src.repository.base import BaseRepository
 from src.commands.media import MediaCreate, MediaGet, MediaStatusUpdate, MediaDelete, Media
 
 
-@dataclass(kw_only=True)
 class MediaRepository(BaseRepository[Media]):
     
     tablename: ClassVar[str] = "media_assets"
-    _ownership_spec = None 
 
     def _to_domain(self, row: Optional[Record]) -> Optional[Media]:
         if row is None:

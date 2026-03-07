@@ -1,19 +1,14 @@
-import asyncio
-from dataclasses import dataclass
 from typing import ClassVar, Optional, Union, override
 from asyncpg import Connection
 from asyncpg.protocol.record import Record
 from src.commands.users import UserCreate, UserDelete, UserGetByEmail, UserGetByID, PasswordUpdate, User
 from src.repository.base import BaseRepository
-from src.repository.ownership_specification import BaseOwnershipSpec, UserOwnershipSpec
 
 
 
-@dataclass(kw_only=True)
 class UserRespository(BaseRepository[User]):
     
     tablename: ClassVar[str] = "users"
-    _ownership_spec: ClassVar[BaseOwnershipSpec] = UserOwnershipSpec
     
     
     @override

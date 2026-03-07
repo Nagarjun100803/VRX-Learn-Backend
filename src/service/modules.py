@@ -1,28 +1,38 @@
 import asyncio
 from typing import Type, ClassVar
-from dataclasses import dataclass
-from src.service.base import BaseService, require_access
+from src.service.base import BaseService
 from src.repository.modules import ModuleRepository
 from src.repository.courses import CourseRepository
-from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet, ReArrangeModule
-from src.service.permission_policy import Entity
+from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ReArrangeModule
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
-from src.dependencies import course_repository
+from src.auth import AuthService, Entity, Action, require_authorization
 
 
-
-@dataclass(kw_only=True)
 class ModuleService(BaseService[Module]):
     
     _entity: ClassVar[Entity] = Entity.MODULE
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = CourseModuleNotFoundError
     
-    course_repo: CourseRepository
-    repo: ModuleRepository
-    
+    def __init__(
+        self,
+        repo: ModuleRepository,
+        course_repo: CourseRepository,
+        auth_service: AuthService
+    ) -> None:
+        
+        self.repo = repo
+        self.course_repo = course_repo
+        self.auth_service = auth_service
+
             
      
-    @require_access(action="create", user_id_alias="created_by", entity_id_alias="course_id", parent_repo=course_repository)    
+    @require_authorization(
+        action=Action.CREATE,
+        entity=Entity.MODULE,
+        user_id_field="created_by",
+        parent_id_field="course_id",
+        object_name="cmd"
+    )
     async def create(self, cmd: ModuleCreate) -> Module:
         
         # Conditions
@@ -51,7 +61,13 @@ class ModuleService(BaseService[Module]):
     
 
 
-    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="id")
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.MODULE,
+        user_id_field="updated_by",
+        entity_id_field="id",
+        object_name="cmd"
+    )
     async def update(self, cmd: ModuleUpdate) -> Module:
         # Get the module.
         module = await self.repo.pick(columns=("id", "title", "course_id"), id=cmd.id)
@@ -73,20 +89,37 @@ class ModuleService(BaseService[Module]):
     
    
     
-    @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id")
+    @require_authorization(
+        action=Action.DELETE,
+        entity=Entity.MODULE,
+        user_id_field="deleted_by",
+        entity_id_field="id",
+        object_name="cmd"
+    )
     async def delete(self, cmd: ModuleDelete) -> Module:
         module = await self.repo.delete(cmd)
         return self._require_entity(module, value=cmd.id)
     
     
     
-    @require_access(action="view", user_id_alias="viewer_id", entity_id_alias="id", obj_name="query")
+    @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.MODULE,
+        user_id_field="viewer_id",
+        entity_id_field="id",
+        object_name="query"
+    )
     async def get(self, query: ModuleGetQuery) -> Module:
         module = await self.repo.get(query)
         return self._require_entity(module, value=query.id)
     
 
-    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="target_id")
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.MODULE,
+        user_id_field="updated_by",
+        entity_id_field="target_id"
+    )
     async def rearrange_sequence(
         self, cmd: ReArrangeModule, 
         scope: str = "course_id"
