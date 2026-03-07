@@ -1,13 +1,10 @@
 from typing import Any, Literal, Optional, Type, ClassVar, TypeAlias, TypeVar, Union
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-from src.exceptions import EntityNotFoundError, InvalidRoleError, UserNotFoundError, ValidationError
+from src.exceptions import EntityNotFoundError, ValidationError
 from src.repository.base import BaseRepository, ReorderParicipants
-from src.repository.users import UserRespository
-from src.commands.users import UserGetByID
-from src.commands.base import UserID, ReArrangeBase
+from src.commands.base import ReArrangeBase
 from src.service.fractional_index import fractional_index
-from dataclasses import dataclass
 from src.commands.users import UserRole
 from src.auth import Entity
 
@@ -17,7 +14,6 @@ E = TypeVar("E", bound=EntityNotFoundError)
 
 UserRoleOrVirtual: TypeAlias = Union[UserRole, Literal["manager"]]
 
-@dataclass(slots=True, kw_only=True)
 class BaseService[T](ABC):
     
     """
@@ -26,9 +22,6 @@ class BaseService[T](ABC):
 
     _not_found_exc: ClassVar[Type[E]] 
     _entity: ClassVar[Entity]
-    
-    # Instance Variables
-    user_repo: UserRespository
     
 
 
@@ -41,34 +34,7 @@ class BaseService[T](ABC):
             raise self._not_found_exc(**error_kwargs)
         return entity
           
-    
-    async def validate_role(
-        self,
-        role: UserRoleOrVirtual,
-        user_id: UserID
-    ) -> None:
-
-        exc = InvalidRoleError(role)
-        user = await self.user_repo.get(UserGetByID(id=user_id))
-        if user is None:
-            raise UserNotFoundError(
-                value=user_id, identifier="id", alias=role
-            )
-    
-        # Virtual role mappings.
-        virtual_role_mappings = {
-            "manager": {UserRole.SUBADMIN, UserRole.TRAINER}
-        }
-          
-        if role in virtual_role_mappings:
-            is_valid = user.role in virtual_role_mappings[role]
-            
-        else:
-            is_valid = user.role == role
-            
-        if not is_valid:
-            raise exc
-       
+           
     # TODO: Need to refactor this into Rearrange Service.
     async def generate_position_string(self, **scope_kwargs: dict[str, Any]) -> str:
         self.repo: BaseRepository

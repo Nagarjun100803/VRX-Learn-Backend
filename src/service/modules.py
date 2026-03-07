@@ -1,24 +1,29 @@
 import asyncio
 from typing import Type, ClassVar
-from dataclasses import dataclass
 from src.service.base import BaseService
 from src.repository.modules import ModuleRepository
 from src.repository.courses import CourseRepository
-from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet, ReArrangeModule
+from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ReArrangeModule
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
 from src.auth import AuthService, Entity, Action, require_authorization
 
 
-@dataclass(kw_only=True)
 class ModuleService(BaseService[Module]):
     
     _entity: ClassVar[Entity] = Entity.MODULE
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = CourseModuleNotFoundError
     
-    course_repo: CourseRepository
-    repo: ModuleRepository
-    auth_service: AuthService
-    
+    def __init__(
+        self,
+        repo: ModuleRepository,
+        course_repo: CourseRepository,
+        auth_service: AuthService
+    ) -> None:
+        
+        self.repo = repo
+        self.course_repo = course_repo
+        self.auth_service = auth_service
+
             
      
     @require_authorization(

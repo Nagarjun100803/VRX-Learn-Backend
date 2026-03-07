@@ -2,7 +2,6 @@ from abc import abstractmethod, ABC
 from datetime import UTC, datetime
 from asyncpg.protocol.record import Record
 from asyncpg import Connection
-from dataclasses import dataclass
 from pydantic import AliasChoices, BaseModel, Field
 from typing import Annotated, Any, ClassVar, Literal, Optional, Sequence
 from src.database import AsyncPgDBManager
@@ -29,16 +28,21 @@ class ReorderParicipants(BaseModel):
             self.succeeding.position_string if self.succeeding else None
         )
 
-@dataclass(slots=True, kw_only=True)
 class BaseRepository[T](ABC):
     
     """
         Base class that provides an interface and performs common database 
         operations for all repositories. Do not use this class directly.
     """
-    
     tablename: ClassVar[str] = "Sample"
-    db: AsyncPgDBManager
+    
+    def __init__(
+        self,
+        db: AsyncPgDBManager
+    ) -> None:
+        
+        self.db = db
+    
         
 
     @abstractmethod

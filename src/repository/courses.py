@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from asyncpg import Connection, Record
 from typing import ClassVar, Optional, Union, override
 from src.query_builder.base import BaseExecutableSQL
@@ -10,7 +9,6 @@ from src.commands.courses import(
 )
 
 
-@dataclass(kw_only=True)
 class CourseRepository(BaseRepository[Course]):
          
     tablename: ClassVar[str] = "courses"

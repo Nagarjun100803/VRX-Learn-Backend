@@ -1,12 +1,10 @@
 from asyncpg import Connection, Record
-from dataclasses import dataclass
 from typing import ClassVar, Optional
 from src.repository.base import BaseRepository
 from src.commands.lessons import Lesson, LessonCreateWithPosition, LessonDelete, LessonGet, LessonTitleUpdate
 from src.commands.media import MediableType
 
 
-@dataclass(kw_only=True)
 class LessonRepository(BaseRepository[Lesson]):   
      
     tablename: ClassVar[str] = "lessons"

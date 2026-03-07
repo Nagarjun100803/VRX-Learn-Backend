@@ -8,13 +8,11 @@ db = AsyncPgDBManager(query_builder=query_builder)
 
 
 # Repository Imports.
-from src.repository.users import UserRespository
-from src.repository.courses import CourseRepository
-from src.repository.modules import ModuleRepository
-from src.repository.media import MediaRepository
-from src.repository.lessons import LessonRepository
-from src.repository.assignments import AssignmentRepository
-from src.repository.enrollments import EnrollmentRepository
+from src.repository import (
+    UserRespository, CourseRepository, ModuleRepository,
+    EnrollmentRepository, LessonRepository, MediaRepository,
+    AssignmentRepository
+)
 
 # Repositories.
 user_repository = UserRespository(db=db)
@@ -27,16 +25,14 @@ enrollment_repository = EnrollmentRepository(db=db)
 
 
 # Service Imports.
-
-from src.auth.auth import AuthService # Authorization Layer.
-from src.service.users import UserService, PasswordHandler
-from src.service.course import CourseService
-from src.service.modules import ModuleService
-from src.service.media import MediaService
-from src.service.lessons import LessonService
-from src.service.assignments import AssignmentService
-from src.service.enrollments import EnrollmentService
-from src.service.files import S3, get_session
+from src.service import (
+    UserService, CourseService, ModuleService, 
+    LessonService, EnrollmentService, AssignmentService,
+    MediaService, S3
+)
+from src.service.files import get_session
+from src.service.users import PasswordHandler
+from src.auth.auth import AuthService
 
 # Helper classes.
 password_handler = PasswordHandler()
@@ -50,7 +46,6 @@ auth_service = AuthService(
 )
 
 user_service = UserService(
-    user_repo=user_repository,
     repo=user_repository,
     password_handler=password_handler,
     auth_service=auth_service
@@ -63,10 +58,9 @@ course_service = CourseService(
 )
 
 module_service = ModuleService(
-    user_repo=user_repository,
     course_repo=course_repository,
     repo=module_repository,
-auth_service=auth_service
+    auth_service=auth_service
 )
 
 session = get_session()
@@ -78,7 +72,6 @@ media_service = MediaService(
 )
 
 lesson_service = LessonService(
-    user_repo=user_repository,
     repo=lesson_repository,
     module_repo=module_repository,
     media_service=media_service,
@@ -86,7 +79,6 @@ lesson_service = LessonService(
 )
 
 assignment_service = AssignmentService(
-    user_repo=user_repository,
     repo=assignment_repository,
     course_repo=course_repository,
     media_service=media_service,

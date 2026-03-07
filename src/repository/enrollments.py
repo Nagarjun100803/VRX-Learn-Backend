@@ -1,6 +1,5 @@
 from asyncpg import Connection, Record
 from src.repository.base import BaseRepository
-from dataclasses import dataclass
 from typing import ClassVar, Optional
 from src.commands.enrollments import (
         Enrollment, EnrollmentCreate, EnrollmentUpdate, 
@@ -8,7 +7,6 @@ from src.commands.enrollments import (
 )
 
 
-@dataclass(kw_only=True)
 class EnrollmentRepository(BaseRepository[Enrollment]):
    
     tablename: ClassVar[str] = "enrollments"

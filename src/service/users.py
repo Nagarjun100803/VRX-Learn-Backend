@@ -8,7 +8,6 @@ from src.commands.users import (
     UserCreateWithConfirmPassword, UserGetByIDQuery, 
     UserGetByID, UserAuth, UserGetByEmail
 )
-from dataclasses import dataclass
 from src.auth import AuthService, Entity, Action, require_authorization
 
 
@@ -22,15 +21,21 @@ class PasswordHandler:
         return argon2.verify(raw_password, hashed_password)
         
     
-@dataclass(kw_only=True)
 class UserService(BaseService[User]):
     
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = UserNotFoundError
     _entity: ClassVar[Entity] = Entity.USER 
     
-    repo: UserRespository
-    password_handler: PasswordHandler
-    auth_service: AuthService
+    def __init__(
+        self,
+        repo: UserRespository,
+        password_handler: PasswordHandler,
+        auth_service: AuthService
+    ) -> None:
+        
+        self.repo = repo
+        self.password_handler = password_handler
+        self.auth_service = auth_service
 
 
     @require_authorization(

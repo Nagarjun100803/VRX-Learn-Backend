@@ -1,5 +1,3 @@
-import asyncio
-from dataclasses import dataclass
 from typing import ClassVar, Optional, Union, override
 from asyncpg import Connection
 from asyncpg.protocol.record import Record
@@ -8,7 +6,6 @@ from src.repository.base import BaseRepository
 
 
 
-@dataclass(kw_only=True)
 class UserRespository(BaseRepository[User]):
     
     tablename: ClassVar[str] = "users"

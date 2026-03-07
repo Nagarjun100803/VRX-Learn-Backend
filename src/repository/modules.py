@@ -2,11 +2,9 @@ from asyncpg import Record, Connection
 from typing import ClassVar, Optional, override
 from src.repository.base import BaseRepository
 from src.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate, ReArrangeModule
-from dataclasses import dataclass
 from src.commands.media import MediableType
 
 
-@dataclass(kw_only=True)
 class ModuleRepository(BaseRepository[Module]):
     
     tablename: ClassVar[str] = "modules"

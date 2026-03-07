@@ -1,9 +1,9 @@
 import asyncio
-from dataclasses import dataclass
 from typing import Type, ClassVar
 from src.commands.users import UserGetByID
 from src.repository.courses import CourseRepository
 from src.repository.enrollments import EnrollmentRepository
+from src.repository.users import UserRespository
 from src.service.base import BaseService
 from src.repository.enrollments import EnrollmentRepository
 from src.commands.enrollments import (
@@ -19,11 +19,20 @@ from src.auth import require_authorization, Action, Entity, AuthService
 from src.commands.users import UserRole
 
 
-@dataclass(kw_only=True)
 class EnrollmentService(BaseService[Enrollment]):
-    repo: EnrollmentRepository
-    course_repo: CourseRepository
-    auth_service: AuthService
+    
+    def __init__(
+        self,
+        repo: EnrollmentRepository,
+        user_repo: UserRespository,
+        course_repo: CourseRepository,
+        auth_service: AuthService
+    ) -> None:
+        
+        self.repo = repo
+        self.user_repo = user_repo
+        self.course_repo = course_repo
+        self.auth_service = auth_service
     
     # Class Variables.
     _entity: ClassVar[Entity] = Entity.ENROLLMENT

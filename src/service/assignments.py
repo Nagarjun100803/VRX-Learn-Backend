@@ -1,6 +1,5 @@
 import asyncio
 from asyncpg import Connection
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Type, ClassVar, Optional
 from src.service.base import BaseService
@@ -26,13 +25,20 @@ from src.auth import AuthService, Entity, Action, require_authorization
 MAX_FILE_SIZE_FOR_ASSIGNMENT = 5 * 1024 * 1024 # 5 Mega Bytes.
 
 
-@dataclass(kw_only=True)
 class AssignmentService(BaseService[Assignment]):
     
-    repo: AssignmentRepository
-    course_repo: CourseRepository
-    media_service: MediaService
-    auth_service: AuthService
+    def __init__(
+        self,
+        repo: AssignmentRepository,
+        course_repo: CourseRepository,
+        media_service: MediaService,
+        auth_service: AuthService
+    ) -> None:
+        
+        self.repo = repo
+        self.course_repo = course_repo
+        self.media_service = media_service
+        self.auth_service = auth_service
     
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = AssignmentNotFoundError
     _entity: ClassVar[Entity] = Entity.ASSIGNMENT

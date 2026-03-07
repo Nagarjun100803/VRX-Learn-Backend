@@ -1,5 +1,4 @@
 import asyncio
-from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar, Type, Optional
 from asyncpg import Connection
@@ -14,16 +13,23 @@ from src.service.files import FileMetadata
 from src.auth import AuthService, require_authorization, Entity, Action
 
 
-@dataclass(kw_only=True)
 class LessonService(BaseService[Lesson]):
     
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = LessonNotFoundError
     _entity: ClassVar[Type[Entity]] = Entity.LESSON
     
-    repo: LessonRepository
-    module_repo: ModuleRepository
-    media_service: MediaService
-    auth_service: AuthService
+    def __init__(
+        self,
+        repo: LessonRepository,
+        module_repo: ModuleRepository,
+        media_service: MediaService,
+        auth_service: AuthService
+    ) -> None:
+        
+        self.repo = repo
+        self.module_repo = module_repo
+        self.media_service = media_service
+        self.auth_service = auth_service
     
 
     @require_authorization(

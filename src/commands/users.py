@@ -53,4 +53,7 @@ class UserAuth(BaseModel):
     
 
 class User(AuditFields, UserCreate, UserBase): 
-    ...
+    
+    def is_manager(self) -> bool:
+        return self.role in {UserRole.SUBADMIN, UserRole.TRAINER}
+        
