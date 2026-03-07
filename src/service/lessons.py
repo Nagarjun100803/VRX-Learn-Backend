@@ -7,13 +7,12 @@ from src.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition,
 from src.commands.media import MediaCreate, MediaStatus, MediableType
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
 from src.repository.modules import ModuleRepository
-from src.service.base import BaseService, require_access
+from src.service.base import BaseService
 from src.service.permission_policy import Entity
 from src.repository.lessons import LessonRepository
 from src.service.media import MediaService
 from src.service.files import FileMetadata
-from src.dependencies import module_repository
-
+from src.auth import AuthService, require_authorization, Entity, Action
 
 
 @dataclass(kw_only=True)
@@ -25,9 +24,16 @@ class LessonService(BaseService[Lesson]):
     repo: LessonRepository
     module_repo: ModuleRepository
     media_service: MediaService
+    auth_service: AuthService
     
 
-    @require_access(action="create", user_id_alias="created_by", entity_id_alias= "module_id", parent_repo=module_repository)
+    @require_authorization(
+        action=Action.CREATE,
+        entity=Entity.LESSON,
+        user_id_field="created_by",
+        parent_id_field="module_id",
+        object_name="cmd"
+    )
     async def create(self, cmd: LessonCreate, connection: Optional[Connection] = None) -> Lesson:
         
         module_exist_flag, duplicate_title_flag = await asyncio.gather(
@@ -52,7 +58,13 @@ class LessonService(BaseService[Lesson]):
         )
     
              
-    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="id")
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.LESSON,
+        user_id_field="updated_by",
+        entity_id_field="id",
+        object_name="cmd"   
+    )
     async def update(self, cmd: LessonTitleUpdate) -> Lesson:
         
         lesson = await self.repo.pick(columns=("id", "module_id"), id=cmd.id)
@@ -71,7 +83,13 @@ class LessonService(BaseService[Lesson]):
     
     
             
-    @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id") 
+    @require_authorization(
+        action=Action.DELETE,
+        entity=Entity.LESSON,
+        user_id_field="deleted_by",
+        entity_id_field="id",
+        object_name="cmd"
+    )
     async def delete(self, cmd: LessonDelete) -> Lesson:
         # TODO: Need to delete the actual file from the object storage also.
         return self._require_entity(
@@ -81,7 +99,13 @@ class LessonService(BaseService[Lesson]):
 
     
     
-    @require_access(action="view", user_id_alias="viewer_id", entity_id_alias="id", obj_name="query")
+    @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.LESSON,
+        user_id_field="viewer_id",
+        entity_id_field="id",
+        object_name="query"
+    )
     async def get(self, query: LessonGetQuery):
         return self._require_entity(
             await self.repo.get(query),
@@ -89,7 +113,13 @@ class LessonService(BaseService[Lesson]):
         )
     
     
-    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="target_id")
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.LESSON,
+        user_id_field="updated_by",
+        entity_id_field="target_id",
+        object_name="cmd"
+    )
     async def rearrange_sequence(
         self, 
         cmd: LessonReArrange, 

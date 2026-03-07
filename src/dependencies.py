@@ -27,6 +27,8 @@ enrollment_repository = EnrollmentRepository(db=db)
 
 
 # Service Imports.
+
+from src.auth.auth import AuthService # Authorization Layer.
 from src.service.users import UserService, PasswordHandler
 from src.service.course import CourseService
 from src.service.modules import ModuleService
@@ -43,24 +45,30 @@ permission_policy = PermissionPolicy()
 jwt_handler = JWTHandler()
 
 # Services.
+
+auth_service = AuthService(
+    user_repo=user_repository,
+    db=db
+)
+
 user_service = UserService(
     user_repo=user_repository,
-    permission_policy=permission_policy,
     repo=user_repository,
-    password_handler=password_handler
+    password_handler=password_handler,
+    auth_service=auth_service
 )
 
 course_service = CourseService(
     user_repo=user_repository,
-    permission_policy=permission_policy,
-    repo=course_repository
+    repo=course_repository,
+    auth_service=auth_service
 )
 
 module_service = ModuleService(
     user_repo=user_repository,
-    permission_policy=permission_policy,
     course_repo=course_repository,
-    repo=module_repository
+    repo=module_repository,
+auth_service=auth_service
 )
 
 session = get_session()
@@ -73,25 +81,25 @@ media_service = MediaService(
 
 lesson_service = LessonService(
     user_repo=user_repository,
-    permission_policy=permission_policy,
     repo=lesson_repository,
     module_repo=module_repository,
-    media_service=media_service
+    media_service=media_service,
+    auth_service=auth_service
 )
 
 assignment_service = AssignmentService(
     user_repo=user_repository,
-    permission_policy=permission_policy,
     repo=assignment_repository,
     course_repo=course_repository,
-    media_service=media_service
+    media_service=media_service,
+    auth_service=auth_service
 )
 
 enrollment_service = EnrollmentService(
     user_repo=user_repository,
-    permission_policy=permission_policy,
     repo=enrollment_repository,
-    course_repo=course_repository
+    course_repo=course_repository,
+    auth_service=auth_service
 )
 
 

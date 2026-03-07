@@ -173,8 +173,8 @@ def require_authorization(
         
             # Get the enities from the object.
             user_id = getattr(obj, user_id_field, None)
-            entity_id = getattr(obj, entity_id_field) if entity_id_field else None
-            parent_id = getattr(obj, parent_id_field) if parent_id_field else None
+            entity_id = getattr(obj, entity_id_field, None) if entity_id_field else None
+            parent_id = getattr(obj, parent_id_field, None) if parent_id_field else None
             
             if user_id is None:
                 raise ValueError(

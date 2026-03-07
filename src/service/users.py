@@ -1,7 +1,7 @@
 from passlib.hash import argon2
 from typing import ClassVar, Type, override
 from src.repository.users import UserRespository
-from src.service.base import BaseService, require_access
+from src.service.base import BaseService
 from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, UnAuthenticated, UserNotFoundError, UserAlreadyExistsError, PasswordMismatchError
 from src.commands.users import (
@@ -9,9 +9,8 @@ from src.commands.users import (
     UserCreateWithConfirmPassword, UserGetByIDQuery, 
     UserGetByID, UserAuth, UserGetByEmail
 )
-from src.commands.base import UserID
 from dataclasses import dataclass
-
+from src.auth import AuthService, Entity, Action, require_authorization
 
 
 class PasswordHandler:
@@ -32,9 +31,16 @@ class UserService(BaseService[User]):
     
     repo: UserRespository
     password_handler: PasswordHandler
+    auth_service: AuthService
 
 
-    @require_access(action="create", user_id_alias="created_by", obj_name="cmd")
+    @require_authorization(
+        action=Action.CREATE,
+        entity=Entity.USER,
+        user_id_field="created_by",
+        parent_id_field=None, #Explicitly set None, because it is root.
+        object_name="cmd"
+    )
     @override
     async def create(self, cmd: UserCreateWithConfirmPassword) -> User:
         
@@ -49,7 +55,7 @@ class UserService(BaseService[User]):
             )
     
         hashed_password = self.password_handler.hash_password(cmd.password)
-        user = await self.user_repo.add(
+        user = await self.repo.add(
             UserCreate(
                 username=cmd.username,
                 email=cmd.email,
@@ -66,13 +72,13 @@ class UserService(BaseService[User]):
     @override
     async def update(self, cmd: PasswordUpdate) -> User:
         # Check user found with the email.
-        if not await self.user_repo.exists_by(email=cmd.email):
+        if not await self.repo.exists_by(email=cmd.email):
             raise UserNotFoundError(
                 value=cmd.email, 
                 identifier="email"
             )
         hashed_password = self.password_handler.hash_password(cmd.new_password)
-        user = await self.user_repo.update(
+        user = await self.repo.update(
             PasswordUpdate(
                 email=cmd.email, 
                 new_password=hashed_password
@@ -81,17 +87,29 @@ class UserService(BaseService[User]):
         return self._require_entity(user)
         
     
-    @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id")
+    @require_authorization(
+        action=Action.DELETE,
+        entity=Entity.USER,
+        user_id_field="deleted_by",
+        entity_id_field="id",
+        object_name="cmd"
+    )
     @override
     async def delete(self, cmd: UserDelete) -> User:
-        user = await self.user_repo.delete(cmd)
+        user = await self.repo.delete(cmd)
         return self._require_entity(user, value=cmd.id)
     
     
-    @require_access(action="view", user_id_alias="viewer_id",  entity_id_alias="id", obj_name="query")
+    @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.USER,
+        user_id_field="viwer_id",
+        entity_id_field="id",
+        object_name="cmd"
+    )
     @override
     async def get(self, query: UserGetByIDQuery) -> User:
-        user = await self.user_repo.get(UserGetByID(id=query.id))
+        user = await self.repo.get(UserGetByID(id=query.id))
         return self._require_entity(user, value=query.id)
            
         

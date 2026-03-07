@@ -21,9 +21,8 @@ from src.exceptions import (
     AssignmentAlreadyExistsError, CourseNotFoundError, FileSizeExceededError, 
     InvalidContentTypeError,
 )
-from src.service.base import require_access
-from src.dependencies import course_repository
 
+from src.auth import AuthService, Entity, Action, require_authorization
 
 MAX_FILE_SIZE_FOR_ASSIGNMENT = 5 * 1024 * 1024 # 5 Mega Bytes.
 
@@ -34,6 +33,7 @@ class AssignmentService(BaseService[Assignment]):
     repo: AssignmentRepository
     course_repo: CourseRepository
     media_service: MediaService
+    auth_service: AuthService
     
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = AssignmentNotFoundError
     _entity: ClassVar[Entity] = Entity.ASSIGNMENT
@@ -45,7 +45,13 @@ class AssignmentService(BaseService[Assignment]):
             raise AssignmentAlreadyExistsError(value=title, identifier="title")
 
 
-    @require_access(action="create", user_id_alias="created_by", entity_id_alias="course_id", parent_repo=course_repository)
+    @require_authorization(
+        action=Action.CREATE,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="created_by",
+        parent_id_field="course_id",
+        object_name="cmd"
+    )
     async def create(self, cmd: AssignmentCreate, connection: Optional[Connection] = None) -> Assignment:
         # Check if the Assignment title is exist within a course.
         course_id_exist_flag, _ = await asyncio.gather(
@@ -67,7 +73,13 @@ class AssignmentService(BaseService[Assignment]):
         )
     
     
-    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="id")
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="updated_by",
+        entity_id_field="id",
+        object_name="cmd"
+    )
     async def update(self, cmd: AssignmentUpdate) -> Assignment:
         
         assignment = await self.repo.get(AssignmentGet(id=cmd.id))
@@ -84,7 +96,13 @@ class AssignmentService(BaseService[Assignment]):
         )
     
     
-    @require_access(action="delete", user_id_alias="deleted_by", entity_id_alias="id")
+    @require_authorization(
+        action=Action.DELETE,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="deleted_by",
+        entity_id_field="id",
+        object_name="cmd"        
+    )
     async def delete(self, cmd: AssignmentDelete) -> Assignment:
         return self._require_entity(
             await self.repo.delete(cmd),
@@ -92,7 +110,13 @@ class AssignmentService(BaseService[Assignment]):
         )
     
     
-    @require_access(action="view", user_id_alias="viewer_id", entity_id_alias="id", obj_name="query")
+    @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="viewer_id",
+        entity_id_field="id",
+        object_name="query"
+    )
     async def get(self, query: AssignmentGetQuery) -> Assignment:
         return self._require_entity(
             await self.repo.get(
@@ -102,7 +126,13 @@ class AssignmentService(BaseService[Assignment]):
         )
         
     
-    @require_access(action="update", user_id_alias="updated_by", entity_id_alias="target_id")
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="updated_by",
+        entity_id_field="target_id",
+        object_name="cmd"
+    )
     async def rearrange_sequence(
         self, 
         cmd: AssignmentReArrange, 
