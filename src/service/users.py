@@ -2,7 +2,6 @@ from passlib.hash import argon2
 from typing import ClassVar, Type, override
 from src.repository.users import UserRespository
 from src.service.base import BaseService
-from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, UnAuthenticated, UserNotFoundError, UserAlreadyExistsError, PasswordMismatchError
 from src.commands.users import (
     User, UserCreate, UserDelete, PasswordUpdate,

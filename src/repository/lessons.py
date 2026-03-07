@@ -1,9 +1,8 @@
 from asyncpg import Connection, Record
 from dataclasses import dataclass
-from typing import ClassVar, Optional, Type
+from typing import ClassVar, Optional
 from src.repository.base import BaseRepository
-from src.commands.lessons import Lesson, LessonCreateWithPosition, LessonDelete, LessonGet, LessonTitleUpdate, LessonReArrange
-from src.repository.ownership_specification import BaseOwnershipSpec, LessonOwnershipSpec
+from src.commands.lessons import Lesson, LessonCreateWithPosition, LessonDelete, LessonGet, LessonTitleUpdate
 from src.commands.media import MediableType
 
 
@@ -11,7 +10,6 @@ from src.commands.media import MediableType
 class LessonRepository(BaseRepository[Lesson]):   
      
     tablename: ClassVar[str] = "lessons"
-    _ownership_spec: ClassVar[Type[BaseOwnershipSpec]] = LessonOwnershipSpec
     
     def _to_domain(self, row: Optional[Record]) -> Optional[Lesson]:
         if row is None:

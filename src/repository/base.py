@@ -4,13 +4,10 @@ from asyncpg.protocol.record import Record
 from asyncpg import Connection
 from dataclasses import dataclass
 from pydantic import AliasChoices, BaseModel, Field
-from typing import Annotated, Any, ClassVar, Literal, Optional, Sequence, Type
+from typing import Annotated, Any, ClassVar, Literal, Optional, Sequence
 from src.database import AsyncPgDBManager
-from src.commands.base import UserID, ID, ReArrangeBase
+from src.commands.base import ReArrangeBase
 from src.query_builder.base import BaseWhere
-from src.query_builder.asyncpg import AsyncPgWhere
-from src.repository.ownership_specification import BaseOwnershipSpec
-from src.commands.base import ID
 import json
 
 
@@ -41,24 +38,14 @@ class BaseRepository[T](ABC):
     """
     
     tablename: ClassVar[str] = "Sample"
-    _ownership_spec: ClassVar[Type[BaseOwnershipSpec]]
     db: AsyncPgDBManager
-    
+        
 
     @abstractmethod
     def _to_domain(self, row: Optional[Record]) -> Optional[T]:
         "Converts raw database record to Domain object."
         
-    
-    async def verify_ownership(
-        self,
-        entity_id: ID,
-        user_id: UserID,
-    ) -> bool:
-        
-        spec = self._ownership_spec(entity_id, user_id, self.db)
-        return await spec.is_satisfied()
-        
+            
 
     def _add_audit_field(
         self,

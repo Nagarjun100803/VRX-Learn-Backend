@@ -1,7 +1,10 @@
 from enum import StrEnum
 from typing import ClassVar, Optional, Any, Sequence, Union
+from typing import TYPE_CHECKING
 
-from src.service.permission_policy import UserRole
+
+if TYPE_CHECKING:
+    from src.auth import UserRole
 
 
 class DomainError(Exception):
@@ -220,7 +223,7 @@ class InvalidRoleError(ValidationError):
     
     def __init__(
         self, 
-        role: Optional[UserRole] = None, 
+        role: Optional["UserRole"] = None, 
         message: Optional[str] = None, 
     ) -> None:
         

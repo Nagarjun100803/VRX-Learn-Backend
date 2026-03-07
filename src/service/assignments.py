@@ -8,7 +8,6 @@ from src.repository.assignments import AssignmentRepository
 from src.repository.courses import CourseRepository
 from src.service.files import FileMetadata
 from src.service.media import MediaService
-from src.service.permission_policy import Entity
 from src.commands.assignments import (
     Assignment, AssignmentCreate, AssignmentCreateWithPosition, 
     AssignmentDelete, AssignmentGetQuery, AssignmentGet, 

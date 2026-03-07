@@ -8,7 +8,6 @@ from src.commands.media import MediaCreate, MediaStatus, MediableType
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
 from src.repository.modules import ModuleRepository
 from src.service.base import BaseService
-from src.service.permission_policy import Entity
 from src.repository.lessons import LessonRepository
 from src.service.media import MediaService
 from src.service.files import FileMetadata

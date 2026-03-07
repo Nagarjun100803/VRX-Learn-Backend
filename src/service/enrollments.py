@@ -1,11 +1,10 @@
 import asyncio
 from dataclasses import dataclass
 from typing import Type, ClassVar
-from src.commands.users import UserGetByID, UserRole
+from src.commands.users import UserGetByID
 from src.repository.courses import CourseRepository
 from src.repository.enrollments import EnrollmentRepository
 from src.service.base import BaseService
-from src.service.permission_policy import Entity
 from src.repository.enrollments import EnrollmentRepository
 from src.commands.enrollments import (
     EnrollmentCreate, EnrollmentGet,
@@ -17,6 +16,7 @@ from src.exceptions import (
     UserNotFoundError, InvalidRoleError
 )
 from src.auth import require_authorization, Action, Entity, AuthService
+from src.commands.users import UserRole
 
 
 @dataclass(kw_only=True)

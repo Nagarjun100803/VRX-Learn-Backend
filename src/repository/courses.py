@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from asyncpg import Connection, Record
-from typing import ClassVar, Optional, Type, Union, override
+from typing import ClassVar, Optional, Union, override
 from src.query_builder.base import BaseExecutableSQL
 from src.repository.base import BaseRepository
 from src.commands.courses import(
@@ -8,14 +8,12 @@ from src.commands.courses import(
     CourseInfoUpdate, RecordedCourseDetailsUpdate,
     CourseType   
 )
-from src.repository.ownership_specification import BaseOwnershipSpec, CourseOwnershipSpec
 
 
 @dataclass(kw_only=True)
 class CourseRepository(BaseRepository[Course]):
          
     tablename: ClassVar[str] = "courses"
-    _ownership_spec: ClassVar[Type[BaseOwnershipSpec]] = CourseOwnershipSpec
     
     @override
     def _to_domain(self, row: Optional[Record]) -> Course:

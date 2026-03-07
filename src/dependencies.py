@@ -37,11 +37,9 @@ from src.service.lessons import LessonService
 from src.service.assignments import AssignmentService
 from src.service.enrollments import EnrollmentService
 from src.service.files import S3, get_session
-from src.service.permission_policy import PermissionPolicy
 
 # Helper classes.
 password_handler = PasswordHandler()
-permission_policy = PermissionPolicy()
 jwt_handler = JWTHandler()
 
 # Services.

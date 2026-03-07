@@ -1,7 +1,7 @@
-from pydantic import EmailStr, BaseModel, StringConstraints, ConfigDict
-from enum import StrEnum
+from pydantic import EmailStr, BaseModel, StringConstraints
 from typing import Annotated
 from src.commands.base import UserBase, UserID, AuditFields
+from enum import StrEnum
 
 
 class UserRole(StrEnum):
@@ -9,14 +9,15 @@ class UserRole(StrEnum):
     SUBADMIN = "subadmin"
     TRAINER = "trainer"
     TRAINEE = "trainee"
-    
+
+
 Email = Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]    
     
 class UserCreate(BaseModel):
     username: Annotated[str, StringConstraints(min_length=5)]
     email: Email
     password: str
-    role: UserRole = UserRole.TRAINEE
+    role: "UserRole" = "trainee" # Add explicit value, due to circular import issue.
     created_by: UserID
 
 

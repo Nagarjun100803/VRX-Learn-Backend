@@ -3,7 +3,6 @@ from typing import ClassVar, Type, Union, override
 from src.service.base import BaseService
 from src.commands.courses import Course, CourseCreate, CourseDelete, CourseGet, CourseInfoUpdate, RecordedCourseDetailsUpdate, CourseGetByIDQuery
 from src.repository.courses import CourseRepository
-from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, CourseNotFoundError, CourseAlreadyExistsError
 from dataclasses import dataclass
 from src.auth import require_authorization, Entity, Action, AuthService

@@ -1,6 +1,6 @@
 from enum import StrEnum
 from typing import Literal, NamedTuple, FrozenSet, Union
-
+from src.commands.users import UserRole
 
 class Entity(StrEnum):
     USER = "user"
@@ -11,12 +11,6 @@ class Entity(StrEnum):
     ASSIGNMENT = "assignment"
     ASSIGNMENT_SUBMISSION = "assignment-submission"
 
-
-class UserRole(StrEnum):
-    ADMIN = "admin"
-    SUBADMIN = "subadmin"
-    TRAINER = "trainer"
-    TRAINEE = "trainee"
     
 
 class Action(StrEnum):

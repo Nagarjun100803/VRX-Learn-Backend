@@ -5,9 +5,7 @@ from src.service.base import BaseService
 from src.repository.modules import ModuleRepository
 from src.repository.courses import CourseRepository
 from src.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ModuleGet, ReArrangeModule
-from src.service.permission_policy import Entity
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
-from src.dependencies import course_repository
 from src.auth import AuthService, Entity, Action, require_authorization
 
 

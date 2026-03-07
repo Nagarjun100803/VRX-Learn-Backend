@@ -1,19 +1,21 @@
-from typing import Any, Optional, Type, ClassVar, TypeVar
+from typing import Any, Literal, Optional, Type, ClassVar, TypeAlias, TypeVar, Union
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
 from src.exceptions import EntityNotFoundError, InvalidRoleError, UserNotFoundError, ValidationError
 from src.repository.base import BaseRepository, ReorderParicipants
-from src.service.permission_policy import Entity, UserRole, UserRoleOrVirtual
 from src.repository.users import UserRespository
 from src.commands.users import UserGetByID
 from src.commands.base import UserID, ReArrangeBase
 from src.service.fractional_index import fractional_index
 from dataclasses import dataclass
+from src.commands.users import UserRole
+from src.auth import Entity
 
 
 
 E = TypeVar("E", bound=EntityNotFoundError)
 
+UserRoleOrVirtual: TypeAlias = Union[UserRole, Literal["manager"]]
 
 @dataclass(slots=True, kw_only=True)
 class BaseService[T](ABC):

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, StringConstraints, EmailStr
+from pydantic import BaseModel, ConfigDict, StringConstraints
 from typing import Annotated
 from src.commands.users import UserRole, Email
 from src.commands.base import UserID
