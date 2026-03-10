@@ -11,7 +11,7 @@ db = AsyncPgDBManager(query_builder=query_builder)
 from src.repository import (
     UserRespository, CourseRepository, ModuleRepository,
     EnrollmentRepository, LessonRepository, MediaRepository,
-    AssignmentRepository
+    AssignmentRepository, AssignmentSubmissionRepository
 )
 
 # Repositories.
@@ -22,13 +22,13 @@ media_repository = MediaRepository(db=db)
 lesson_repository = LessonRepository(db=db)
 assignment_repository = AssignmentRepository(db=db)
 enrollment_repository = EnrollmentRepository(db=db)
-
+assignment_submission_repository = AssignmentSubmissionRepository(db=db)
 
 # Service Imports.
 from src.service import (
     UserService, CourseService, ModuleService, 
     LessonService, EnrollmentService, AssignmentService,
-    MediaService, S3
+    MediaService, S3, AssignmentSubmissionService
 )
 from src.service.files import get_session
 from src.service.users import PasswordHandler
@@ -92,5 +92,10 @@ enrollment_service = EnrollmentService(
     auth_service=auth_service
 )
 
-
+assignment_submission_service = AssignmentSubmissionService(
+    repo=assignment_submission_repository,
+    assignment_repo=assignment_repository,
+    media_service=media_service,
+    auth_service=auth_service
+)
 

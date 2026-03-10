@@ -5,6 +5,7 @@ from src.service.modules import ModuleService
 from src.service.lessons import LessonService
 from src.service.media import MediaService
 from src.service.assignments import AssignmentService
+from src.service.assignment_submissions import AssignmentSubmissionService
 
 from src.service.files import S3
 
@@ -17,5 +18,6 @@ __all__ = [
     "LessonService",
     "MediaService",
     "S3",
-    "AssignmentService"
+    "AssignmentService",
+    "AssignmentSubmissionService"
 ]

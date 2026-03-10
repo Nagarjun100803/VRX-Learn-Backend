@@ -37,7 +37,6 @@ class BaseService[T](ABC):
            
     # TODO: Need to refactor this into Rearrange Service.
     async def generate_position_string(self, **scope_kwargs: dict[str, Any]) -> str:
-        self.repo: BaseRepository
         current_max = await self.repo.get_max_position_string(**scope_kwargs)
         new_key = fractional_index.generate_key(current_max, None)
         print(f"Current key : {current_max} and new key is {new_key}")

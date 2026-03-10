@@ -1,4 +1,5 @@
 import contextlib
+import json
 from typing import Literal, AsyncGenerator, Optional, Union, overload
 import asyncpg
 from asyncpg import Connection, Pool, Record
@@ -31,6 +32,7 @@ class AsyncPgDBManager:
                 max_inactive_connection_lifetime=300.0, # 5 minutes
                 max_queries=1000, # Recycle after 1000 uses
                 command_timeout=30.0, # Don't let a single query hang your app,
+                init=self.set_codecs
             )
 
             self._pool = pool
@@ -47,7 +49,21 @@ class AsyncPgDBManager:
                 print("Database connection pool closed.")
         except Exception as e:
             print(f"Error occured while closing the pool. {str(e)}")
-            
+       
+    
+    @staticmethod
+    async def set_codecs(connection: Connection) -> None:
+        """
+        Registers JSONB codecs so asyncpg can automatically 
+        translate between Python dicts and Postgres jsonb.
+        """
+
+        await connection.set_type_codec(
+            "jsonb",
+            encoder=json.dumps,
+            decoder=json.loads,
+            schema="pg_catalog"
+        )     
     
     @contextlib.asynccontextmanager
     async def _get_connection(self, connection: Optional[Connection]) -> AsyncGenerator[Connection, None]:

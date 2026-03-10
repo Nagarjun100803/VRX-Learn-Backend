@@ -20,8 +20,8 @@ class AssignmentCreateCore(BaseModel):
     title: AssignmentTitle
     instructions: Optional[AssignmentInstruction] = None
     course_id: CourseID
-    due_date: datetime
-    max_score: Annotated[int, Field(gt=5, le=100)]
+    due_date: Optional[datetime] = None
+    max_score: Annotated[int, Field(ge=5, le=100)]
     number_of_attempts: NumberOfAttempts = 1
 
 

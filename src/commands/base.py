@@ -114,6 +114,9 @@ class MediaBase(EntityBase):
 class LessonBase(EntityBase):
     PREFIX: ClassVar[str] = "L"    
 
+class AssignmentSubmissionBase(EntityBase):
+    PREFIX: ClassVar[str] = "AS"
+
 
 BaseID =  Annotated[
     ID,
@@ -166,6 +169,11 @@ LessonID = Annotated[
     PlainSerializer(partial(to_external_id, cls=LessonBase), when_used="json")
 ]
 
+AssignmentSubmissionID = Annotated[
+    ID,
+    BeforeValidator(partial(to_internal_id, cls=AssignmentSubmissionBase)),
+    PlainSerializer(partial(to_external_id, cls=AssignmentSubmissionBase))
+]
 
 
 AnyID = Union[UserID, CourseID, ModuleID, AssignmentID, EnrollmentID]

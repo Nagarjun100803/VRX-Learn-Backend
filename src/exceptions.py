@@ -1,10 +1,8 @@
 from enum import StrEnum
-from typing import ClassVar, Optional, Any, Sequence, Union
-from typing import TYPE_CHECKING
+from typing import ClassVar, Optional, Any, Sequence, Type, Union
+from src.commands.users import UserRole
 
 
-if TYPE_CHECKING:
-    from src.auth import UserRole
 
 
 class DomainError(Exception):
@@ -79,6 +77,10 @@ class LessonNotFoundError(EntityNotFoundError):
     
 class AssignmentNotFoundError(EntityNotFoundError):
     _entity = "Assignment"
+    
+
+class AssignmentSubmissionNotFoundError(EnrollmentNotFoundError):
+    _entity = "Assignment Submission"
 
 """
 ======================================
@@ -181,7 +183,7 @@ class InvalidContentTypeError(ValidationError):
     def __init__(
         self,
         content_type: str,
-        allowed_types: Union[Sequence[str], StrEnum, None] = None,
+        allowed_types: Union[Sequence[str], Type[StrEnum], None] = None,
         message: Optional[str] = None,
     ) -> None:
         
@@ -233,7 +235,80 @@ class InvalidRoleError(ValidationError):
         message = message or self._default.format(role=str(role))
         self.message = message
         super().__init__(message)
+        
+        
+class MaxAttemptsReachedError(ValidationError):
+    
+    _default = "Maximum number of attempts reached for this assignment"
+
+    def __init__(
+        self, 
+        max_attempts: Optional[int] = None,
+        message: Optional[str] = None
+    ) -> None:
+        
+        if message is not None:
+            final_message = message
+            
+        elif max_attempts is not None:
+            final_message = f"{self._default} Allowed: {max_attempts}."
+
+        else:
+            final_message = self._default
+
+        super().__init__(final_message)
+        self.max_attempts = max_attempts
+        
+
+class AssignmentSubmissionAlreadyVerified(ValidationError):
+    _default = "Assignment submission is already verified and graded."
+    
+
+class AssignmentSubmissionNotGraded(ValidationError):
+    _default = "Assignment submission is not verified/graded."
+    
+
+class AssignmentSubmissionMediaNotFoundError(ValidationError):
+    """Raised when submission has no associated media file."""
+    
+    def __init__(self, message: Optional[str] = None) -> None:
+        self.message = message or (
+            "Submission has no attached file. "
+            "Cannot process submission without uploaded media."
+        )
+        super().__init__(self.message)
 
 
+class AssignmentSubmissionMediaNotUploadedError(ValidationError):
+    """Raised when submission media is not yet uploaded to S3."""
     
+    def __init__(self, message: Optional[str] = None) -> None:
+        self.message = message or (
+            "File upload not completed. "
+            "Media status must be UPLOADED before processing."
+        )
+        super().__init__(self.message)
+
+
+
+class InvalidScoreError(ValidationError):
     
+    _default = "Invalid score"
+    
+    def __init__(
+        self, 
+        max_score:Optional[int] = None, 
+        message: Optional[str] = None
+    ) -> None:
+        
+        if message is not None:
+            final_messgae = message
+            
+        elif max_score is not None:
+            final_messgae = f"{self._default}, Score must be less than or equal to {max_score}"
+
+        else:
+            final_messgae = self._default
+        
+        super().__init__(final_messgae)
+        self.max_score = max_score

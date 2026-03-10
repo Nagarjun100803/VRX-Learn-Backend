@@ -19,15 +19,15 @@ class AllowedContentTypes(StrEnum):
 
 
 class MediableType(StrEnum):
-    LESSON = "LESSON"
-    ASSIGNMENT = "ASSIGNMENT"
-    ASSIGNMENT_SUBMISSIONS = "ASSIGNMENT_SUBMISSIONS"
-    LAB_CREDENTIALS = "LAB_CREDENTIALS"
+    LESSON = "lesson"
+    ASSIGNMENT = "assignment"
+    ASSIGNMENT_SUBMISSION = "assignment-submission"
+    LAB_CREDENTIAL = "lab-credential"
     
     
 class MediaStatus(StrEnum):
-    PENDING = "PENDING"
-    UPLOADED = "UPLOADED"
+    PENDING = "pending"
+    UPLOADED = "uploaded"
 
 
 class MediaCreateCore(BaseModel):
