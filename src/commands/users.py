@@ -17,7 +17,7 @@ class UserCreate(BaseModel):
     username: Annotated[str, StringConstraints(min_length=5)]
     email: Email
     password: str
-    role: "UserRole" = "trainee" # Add explicit value, due to circular import issue.
+    role: UserRole = UserRole.TRAINEE
     created_by: UserID
 
 

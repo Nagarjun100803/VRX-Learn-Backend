@@ -5,12 +5,12 @@ from src.commands.base import UserID
 from src.dependencies import (
     user_service, course_service, module_service, 
     lesson_service, media_service, assignment_service, jwt_handler,
-    enrollment_service
+    enrollment_service, assignment_submission_service
 )
 from src.dependencies import (
     UserService, CourseService, ModuleService,
     LessonService, MediaService, AssignmentService,
-    EnrollmentService
+    EnrollmentService, AssignmentSubmissionService
     
 )
 from src.exceptions import UnAuthenticated
@@ -43,6 +43,9 @@ def get_media_service() -> MediaService:
 def get_enrollment_service() -> EnrollmentService:
     return enrollment_service
 
+def get_assignment_submission_service() -> AssignmentSubmissionService:
+    return assignment_submission_service
+
 
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
@@ -52,6 +55,7 @@ JWTServiceDependency = Annotated[JWTHandler, Depends(get_jwt_handler)]
 AssignmentServiceDependency = Annotated[AssignmentService, Depends(get_assignment_service)]
 MediaServiceDependency = Annotated[MediaService, Depends(get_media_service)]
 EnrollmentServiceDependency = Annotated[EnrollmentService, Depends(get_enrollment_service)]
+AssignmentSubmissionServiceDependency = Annotated[AssignmentSubmissionService, Depends(get_assignment_submission_service)]
 
 
 async def get_current_user(
