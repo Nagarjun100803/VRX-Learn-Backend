@@ -2,7 +2,7 @@ import re
 import sqlparse
 from typing import Any, Optional, Self, Sequence
 from pydantic import BaseModel, model_validator
-from src.commands.base import EntityBase, any_id_adaptor, AnyID
+from src.command.commands.base import EntityBase, any_id_adaptor, AnyID
 from src.query_builder.base import BaseQueryBuilder, BaseWhere, BaseExecutableSQL
 
 

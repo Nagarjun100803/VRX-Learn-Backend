@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from src.api.dependencies import EnrollmentServiceDependency, CurrentUser
-from src.commands.base import EnrollmentID
-from src.commands.enrollments import EnrollmentCreate, EnrollmentDelete, EnrollmentGet, EnrollmentUpdate
+from src.command.commands.base import EnrollmentID
+from src.command.commands.enrollments import EnrollmentCreate, EnrollmentDelete, EnrollmentGet, EnrollmentUpdate
 from src.api.schemas.enrollments import EnrollmentOut, EnrollmentCreateSchema, EnrollmentUpdateSchema
 
 

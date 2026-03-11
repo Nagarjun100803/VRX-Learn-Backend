@@ -1,6 +1,6 @@
 from enum import StrEnum
 from typing import Literal, NamedTuple, FrozenSet, Union
-from src.commands.users import UserRole
+from src.command.commands.users import UserRole
 
 class Entity(StrEnum):
     USER = "user"

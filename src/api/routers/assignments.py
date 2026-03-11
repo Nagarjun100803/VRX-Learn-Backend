@@ -2,9 +2,9 @@ from typing import Union
 
 from fastapi import APIRouter, HTTPException, status
 from src.api.dependencies import AssignmentServiceDependency, CurrentUser
-from src.commands.base import AssignmentID
+from src.command.commands.base import AssignmentID
 from src.api.schemas.assignments import AssignmentCreateSchema, AssignmentUpdateSchema, AssignmentOut
-from src.commands.assignments import AssignmentCreate, AssignmentUpdate, AssignmentDelete, AssignmentGetQuery, AssignmentUploadUrl
+from src.command.commands.assignments import AssignmentCreate, AssignmentUpdate, AssignmentDelete, AssignmentGetQuery, AssignmentUploadUrl
 
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])

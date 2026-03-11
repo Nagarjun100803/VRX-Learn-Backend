@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from src.auth.permission_policy import Entity
 from src.query_builder.base import BaseExecutableSQL
 from src.database import AsyncPgDBManager
-from src.commands.enrollments import EnrollmentStatus
+from src.command.commands.enrollments import EnrollmentStatus
 
 
 

@@ -1,16 +1,16 @@
 from fastapi import APIRouter, status
-from src.commands.base import AssignmentSubmissionID
+from src.command.commands.base import AssignmentSubmissionID
 from src.api.schemas.assignment_submissions import (
     AssignmentSubmissionCreateSchema,
     AssignmentSubmissionFeedbackUpdateSchema,
     AssignmentSubmissionVerifySchema,
     AssignmentSubmissionOut
 )
-from src.commands.assignment_submissions import (
+from src.command.commands.assignment_submissions import (
     AssignmentSubmissionGet, AssignmentSubmissionCreate,
     AssignmentSubmissionVerify
 )
-from src.commands.assignment_submissions import (
+from src.command.commands.assignment_submissions import (
     AssignmentSubmissionFeedbackUpdate, 
     AssignmentSubmissionUploadURL
 )

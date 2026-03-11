@@ -4,9 +4,9 @@ from functools import wraps
 from asyncpg import Connection
 from src.auth.permission_policy import get_policy, Entity, Action
 from src.auth.access_spec import get_spec_type
-from src.commands.users import UserGetByID
+from src.command.commands.users import UserGetByID
 from src.database import AsyncPgDBManager
-from src.repository.users import UserRespository
+from src.command.repositories.users import UserRespository
 from src.exceptions import UnauthorizedError
 
 

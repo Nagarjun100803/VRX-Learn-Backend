@@ -1,0 +1,23 @@
+from src.command.services.users import UserService
+from src.command.services.course import CourseService
+from src.command.services.enrollments import EnrollmentService
+from src.command.services.modules import ModuleService
+from src.command.services.lessons import LessonService
+from src.command.services.media import MediaService
+from src.command.services.assignments import AssignmentService
+from src.command.services.assignment_submissions import AssignmentSubmissionService
+
+from src.command.services.files import S3
+
+
+__all__ = [
+    "UserService",
+    "CourseService",
+    "EnrollmentService",
+    "ModuleService",
+    "LessonService",
+    "MediaService",
+    "S3",
+    "AssignmentService",
+    "AssignmentSubmissionService"
+]

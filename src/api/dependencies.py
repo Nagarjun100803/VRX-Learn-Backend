@@ -1,7 +1,7 @@
 from typing import Annotated, Optional
 from fastapi import Depends, Cookie
 from src.api.jwt import JWTHandler, JWTPayload
-from src.commands.base import UserID
+from src.command.commands.base import UserID
 from src.dependencies import (
     user_service, course_service, module_service, 
     lesson_service, media_service, assignment_service, jwt_handler,

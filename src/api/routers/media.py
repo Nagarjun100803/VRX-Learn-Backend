@@ -1,7 +1,7 @@
 from fastapi import APIRouter
-from src.commands.base import MediaID
+from src.command.commands.base import MediaID
 from src.api.dependencies import MediaServiceDependency, CurrentUser
-from src.commands.media import MediaStatus, MediaStatusUpdate, MediableType
+from src.command.commands.media import MediaStatus, MediaStatusUpdate, MediableType
 
 
 from pydantic import BaseModel

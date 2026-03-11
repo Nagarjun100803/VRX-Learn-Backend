@@ -1,9 +1,9 @@
 from fastapi import APIRouter, status
 from src.api.dependencies import LessonServiceDependency, CurrentUser
-from src.commands.base import LessonID
-from src.commands.lessons import LessonDelete, LessonGetQuery, LessonReArrange, LessonTitleUpdate, LessonUpload, LessonCreate
+from src.command.commands.base import LessonID
+from src.command.commands.lessons import LessonDelete, LessonGetQuery, LessonReArrange, LessonTitleUpdate, LessonUpload, LessonCreate
 from src.api.schemas.lessons import LessonCreateSchema, LessonOutSchema, LessonReArrangeSchema, LessonTitleUpdateSchema
-from src.service.files import FileMetadata
+from src.command.services.files import FileMetadata
 
 
 router = APIRouter(prefix="/lessons", tags=["Lessons"])

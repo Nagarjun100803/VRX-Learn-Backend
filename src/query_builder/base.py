@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence, Union
-from src.commands.base import AnyID
+from src.command.commands.base import AnyID
 
 
 

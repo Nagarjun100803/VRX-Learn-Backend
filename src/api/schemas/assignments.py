@@ -1,8 +1,8 @@
 from typing import Optional, Annotated
 from pydantic import BaseModel
-from src.commands.base import AssignmentID
-from src.commands.assignments import AssignmentCreateCore, AssignmentUpdateCore
-from src.service.files import FileMetadata
+from src.command.commands.base import AssignmentID
+from src.command.commands.assignments import AssignmentCreateCore, AssignmentUpdateCore
+from src.command.services.files import FileMetadata
 
 
 class AssignmentOut(AssignmentCreateCore):
