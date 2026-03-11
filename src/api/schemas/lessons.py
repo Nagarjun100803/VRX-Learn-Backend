@@ -1,9 +1,9 @@
 from pathlib import Path
-from src.commands.base import LessonID
-from src.commands.lessons import LessonCreateCore, LessonTitleUpdateCore, LessonReArrangeCore
+from src.command.commands.base import LessonID
+from src.command.commands.lessons import LessonCreateCore, LessonTitleUpdateCore, LessonReArrangeCore
 from pydantic import Field
 from typing import Annotated, Union
-from src.commands.media import AllowedContentTypes
+from src.command.commands.media import AllowedContentTypes
 
 
 class LessonCreateSchema(LessonCreateCore):

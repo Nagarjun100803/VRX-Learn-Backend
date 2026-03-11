@@ -1,7 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 import jwt
-from src.commands.users import UserRole
+from src.command.commands.users import UserRole
 from pydantic import BaseModel
 from src.exceptions import UnAuthenticated
 

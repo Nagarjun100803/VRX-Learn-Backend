@@ -1,6 +1,6 @@
 from enum import StrEnum
 from typing import ClassVar, Optional, Any, Sequence, Type, Union
-from src.commands.users import UserRole
+from src.command.commands.users import UserRole
 
 
 

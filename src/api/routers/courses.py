@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from src.api.dependencies import CurrentUser, CourseServiceDependency
-from src.commands.base import CourseID
-from src.commands.courses import CourseDelete, CourseGetByIDQuery, CourseCreate, CourseInfoUpdate, RecordedCourseDetailsUpdate
+from src.command.commands.base import CourseID
+from src.command.commands.courses import CourseDelete, CourseGetByIDQuery, CourseCreate, CourseInfoUpdate, RecordedCourseDetailsUpdate
 from src.api.schemas.courses import CourseOutSchema, CourseCreateSchema, CourseInfoUpdateSchema, RecordedCourseDetailsUpdateSchema
 
 

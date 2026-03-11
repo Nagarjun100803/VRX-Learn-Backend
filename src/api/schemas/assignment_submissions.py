@@ -3,16 +3,16 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from src.commands.assignment_submissions import (
+from src.command.commands.assignment_submissions import (
     AssignmentSubmissionCreateCore,
     AssignmentSubmissionStatus, 
     AssignmentSubmissionVerifyCore,
     AssignmentSubmissionFeedbackUpdateCore,
     Score,
 )
-from src.commands.assignment_submissions import AssignmentSubmissionBase
-from src.commands.base import AssignmentID, UserID
-from src.service.files import FileMetadata
+from src.command.commands.assignment_submissions import AssignmentSubmissionBase
+from src.command.commands.base import AssignmentID, UserID
+from src.command.services.files import FileMetadata
 
 
 class AssignmentSubmissionOut(AssignmentSubmissionBase):

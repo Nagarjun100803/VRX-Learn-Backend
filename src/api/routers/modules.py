@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
-from src.commands.base import ModuleID
-from src.commands.modules import ModuleCreate, ModuleUpdate, ModuleDelete, ModuleGetQuery, ReArrangeModule
+from src.command.commands.base import ModuleID
+from src.command.commands.modules import ModuleCreate, ModuleUpdate, ModuleDelete, ModuleGetQuery, ReArrangeModule
 from src.api.schemas.modules import ModuleOutSchema, ModuleCreateSchema, ModuleUpdateSchema, ReArrangeModuleSchema
 from src.api.dependencies import CurrentUser, ModuleServiceDependency
 

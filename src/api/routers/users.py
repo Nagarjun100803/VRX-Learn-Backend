@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
-from src.commands.base import UserID
-from src.commands.users import UserGetByIDQuery, UserCreateWithConfirmPassword, UserDelete, UserAuth
+from src.command.commands.base import UserID
+from src.command.commands.users import UserGetByIDQuery, UserCreateWithConfirmPassword, UserDelete, UserAuth
 from src.api.dependencies import UserServiceDependency, CurrentUser, JWTServiceDependency
 from src.api.schemas.users import UserCreateSchema, UserOutSchema, LoginSchema
 from src.api.jwt import JWTPayloadCreate

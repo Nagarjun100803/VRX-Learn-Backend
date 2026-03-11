@@ -1,6 +1,6 @@
 from typing import Optional
 from datetime import datetime
-from src.commands.enrollments import (
+from src.command.commands.enrollments import (
     EnrollmentBase, EnrollmentCore, 
     EnrollmentUpdateCore, EnrollmentCreateCore
 )
