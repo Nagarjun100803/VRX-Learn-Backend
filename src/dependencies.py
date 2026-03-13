@@ -3,26 +3,12 @@ from src.api.jwt import JWTHandler
 from src.database import AsyncPgDBManager
 from src.query_builder.asyncpg import AsyncPgQueryBuilder
 
-query_builder = AsyncPgQueryBuilder()
-db = AsyncPgDBManager(query_builder=query_builder)
-
-
 # Repository Imports.
 from src.command.repositories import (
     UserRespository, CourseRepository, ModuleRepository,
     EnrollmentRepository, LessonRepository, MediaRepository,
     AssignmentRepository, AssignmentSubmissionRepository
 )
-
-# Repositories.
-user_repository = UserRespository(db=db)
-course_repository = CourseRepository(db=db)
-module_repository = ModuleRepository(db=db)
-media_repository = MediaRepository(db=db)
-lesson_repository = LessonRepository(db=db)
-assignment_repository = AssignmentRepository(db=db)
-enrollment_repository = EnrollmentRepository(db=db)
-assignment_submission_repository = AssignmentSubmissionRepository(db=db)
 
 # Service Imports.
 from src.command.services import (
@@ -33,6 +19,48 @@ from src.command.services import (
 from src.command.services.files import get_session
 from src.command.services.users import PasswordHandler
 from src.auth.auth import AuthService
+
+
+
+# Query Repository imports.
+from src.query.repositories import (
+    TraineeDashboardQueryRepository, TrainerDashboardQueryReository,
+    TraineeCourseContentQueryRepository, TrainerCourseContentQueryRepository
+)
+
+
+
+
+# Query Service imports.
+from src.query.services import (
+    TraineeDashboardQueryService, TrainerDashboardQueryService,
+    TraineeCourseContentQueryService, TrainerCourseContentQueryService
+)
+
+query_builder = AsyncPgQueryBuilder()
+db = AsyncPgDBManager(query_builder=query_builder)
+
+
+# Command Repositories.
+user_repository = UserRespository(db=db)
+course_repository = CourseRepository(db=db)
+module_repository = ModuleRepository(db=db)
+media_repository = MediaRepository(db=db)
+lesson_repository = LessonRepository(db=db)
+assignment_repository = AssignmentRepository(db=db)
+enrollment_repository = EnrollmentRepository(db=db)
+assignment_submission_repository = AssignmentSubmissionRepository(db=db)
+
+
+
+# Query Repositories.
+trainee_dashboard_query_repository = TraineeDashboardQueryRepository(db=db)
+trainer_dashboard_query_repository = TrainerDashboardQueryReository(db=db)
+
+
+trainee_course_content_query_repository = TraineeCourseContentQueryRepository(db=db)
+trainer_course_content_query_repository = TrainerCourseContentQueryRepository(db=db)
+
 
 # Helper classes.
 password_handler = PasswordHandler()
@@ -99,3 +127,22 @@ assignment_submission_service = AssignmentSubmissionService(
     auth_service=auth_service
 )
 
+
+# Query services.
+trainee_dashboard_query_service = TraineeDashboardQueryService(
+    trainee_dashboard_query_repo=trainee_dashboard_query_repository
+)
+
+trainer_dashboard_query_service = TrainerDashboardQueryService(
+    trainer_dashboard_query_repo=trainer_dashboard_query_repository
+)
+
+trainee_course_content_query_service = TraineeCourseContentQueryService(
+    trainee_course_content_repo=trainee_course_content_query_repository,
+    auth_service=auth_service
+)
+
+trainer_course_content_query_service = TrainerCourseContentQueryService(
+    trainer_course_content_repo=trainer_course_content_query_repository,
+    auth_service=auth_service
+)

@@ -8,6 +8,8 @@ from src.api.routers.media import router as MediaAPIRouter
 from src.api.routers.assignments import router as AssignmentAPIRouter
 from src.api.routers.assignment_submissions import router as AssignmentSubmissionAPIRouter
 
+from src.api.routers.dashboards import trainee_router as TraineeDashboardAPIRouter
+from src.api.routers.dashboards import trainer_router as TrainerDashboardAPIRouter
 
 ROUTERS: list[APIRouter] = [
     UserAPIRouter,
@@ -17,7 +19,9 @@ ROUTERS: list[APIRouter] = [
     LessonAPIRouter,
     MediaAPIRouter,
     AssignmentAPIRouter,
-    AssignmentSubmissionAPIRouter
+    AssignmentSubmissionAPIRouter,
+    TraineeDashboardAPIRouter,
+    TrainerDashboardAPIRouter
 ]
 
 __all__ = [
@@ -28,5 +32,7 @@ __all__ = [
     "LessonAPIRouter",
     "MediaAPIRouter",
     "AssignmentAPIRouter",
-    "AssignmentSubmissionAPIRouter"
+    "AssignmentSubmissionAPIRouter",
+    "TraineeDashboardAPIRouter",
+    "TrainerDashboardAPIRouter"
 ]
