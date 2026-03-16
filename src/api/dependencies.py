@@ -1,11 +1,13 @@
 from typing import Annotated, Optional
 from fastapi import Depends, Cookie
-from src.api.jwt import JWTHandler, JWTPayload
+from src.api.auth import AuthenticationService, UserContext
+from src.api.jwt import JWTHandler
 from src.command.commands.base import UserID
+from src.command.commands.users import UserRole
 from src.dependencies import (
     user_service, course_service, module_service, 
     lesson_service, media_service, assignment_service, jwt_handler,
-    enrollment_service, assignment_submission_service
+    enrollment_service, assignment_submission_service, user_repository
 )
 from src.dependencies import (
     UserService, CourseService, ModuleService,
@@ -13,9 +15,10 @@ from src.dependencies import (
     EnrollmentService, AssignmentSubmissionService
     
 )
-from src.exceptions import UnAuthenticated
+from src.exceptions import UnAuthenticated, UnauthorizedError
 
-# Helper functions to build a Services used for Depedency Injection.
+
+# # Helper functions to build a Services used for Depedency Injection.
 
 def get_user_service() -> UserService:
     return user_service
@@ -58,23 +61,42 @@ EnrollmentServiceDependency = Annotated[EnrollmentService, Depends(get_enrollmen
 AssignmentSubmissionServiceDependency = Annotated[AssignmentSubmissionService, Depends(get_assignment_submission_service)]
 
 
-async def get_current_user(
-    jwt_handler: Annotated[JWTHandler, Depends(get_jwt_handler)],
-    access_token: Annotated[Optional[str], Cookie()] = None,
-) -> JWTPayload:
-    
-    if access_token is None:
-        raise UnAuthenticated(message="Missing access token.")
-    
-    try:
-        payload = jwt_handler.decode_jwt_token(access_token)
-        return payload.user_id
-    
-    except Exception: 
-        raise UnAuthenticated(message="Invalid or Expired token.")
+
+authentication_service = AuthenticationService(
+    user_repo=user_repository,
+    jwt_handler=jwt_handler
+)
+
+async def get_current_user_context(
+    access_token: Annotated[
+        Optional[str], Cookie()] = None
+    ) -> UserContext:
+    user_context = await authentication_service.authenticate(token=access_token)
+    return user_context
     
 
+UserContextDependency = Annotated[UserContext, Depends(get_current_user_context)]
+
+async def get_current_user(user_context: UserContextDependency) -> UserID:
+    return user_context.user_id
+
+async def get_current_trainee(user_context: UserContextDependency) -> UserID:
+    return user_context.validate_role(UserRole.TRAINEE).user_id
+
+async def get_current_trainer(user_context: UserContextDependency) -> UserID:
+    return user_context.validate_role(UserRole.TRAINER).user_id
+
+async def get_current_admin(user_context: UserContextDependency) -> UserID:
+    return user_context.validate_role(UserRole.ADMIN).user_id
+
+async def get_current_admin_or_trainer(user_context: UserContextDependency) -> UserID:
+    if not (user_context.role == UserRole.ADMIN or user_context.role == UserRole.TRAINER):
+        raise UnauthorizedError(message=f"Permission Denied: {UserRole.ADMIN.value} or {UserRole.TRAINER.value} required.")
+    return user_context.user_id
 
 CurrentUser = Annotated[UserID, Depends(get_current_user)]
-
+CurrentTrainee = Annotated[UserID, Depends(get_current_trainee)]
+CurrentTrainer = Annotated[UserID, Depends(get_current_trainer)]
+CurrentAdmin = Annotated[UserID, Depends(get_current_admin)]
+CurrentAdminOrTrainer = Annotated[UserID, Depends(get_current_admin_or_trainer)]
 

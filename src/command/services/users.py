@@ -107,9 +107,9 @@ class UserService(BaseService[User]):
     @require_authorization(
         action=Action.VIEW,
         entity=Entity.USER,
-        user_id_field="viwer_id",
+        user_id_field="viewer_id",
         entity_id_field="id",
-        object_name="cmd"
+        object_name="query"
     )
     @override
     async def get(self, query: UserGetByIDQuery) -> User:
