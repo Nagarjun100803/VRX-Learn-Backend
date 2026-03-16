@@ -42,6 +42,6 @@ class JWTHandler:
         try:
             payload = jwt.decode(token, key="secret", algorithms=["HS256"])
             return JWTPayload(**payload)
-        except jwt.PyJWKError:
+        except jwt.PyJWTError:
             raise UnAuthenticated(message="Invalid or Expired token.")
         
