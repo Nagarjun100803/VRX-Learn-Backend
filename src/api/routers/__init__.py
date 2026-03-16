@@ -10,6 +10,9 @@ from src.api.routers.assignment_submissions import router as AssignmentSubmissio
 
 from src.api.routers.dashboards import trainee_router as TraineeDashboardAPIRouter
 from src.api.routers.dashboards import trainer_router as TrainerDashboardAPIRouter
+from src.api.routers.course_contents import trainee_router as TraineeCourseContentAPIRouter
+from src.api.routers.course_contents import trainer_router as TrainerCourseContentAPIRouter
+
 
 ROUTERS: list[APIRouter] = [
     UserAPIRouter,
@@ -21,7 +24,9 @@ ROUTERS: list[APIRouter] = [
     AssignmentAPIRouter,
     AssignmentSubmissionAPIRouter,
     TraineeDashboardAPIRouter,
-    TrainerDashboardAPIRouter
+    TrainerDashboardAPIRouter,
+    TraineeCourseContentAPIRouter,
+    TrainerCourseContentAPIRouter
 ]
 
 __all__ = [
@@ -34,5 +39,7 @@ __all__ = [
     "AssignmentAPIRouter",
     "AssignmentSubmissionAPIRouter",
     "TraineeDashboardAPIRouter",
-    "TrainerDashboardAPIRouter"
+    "TrainerDashboardAPIRouter",
+    "TraineeCourseContentAPIRouter",
+    "TrainerCourseContentAPIRouter"
 ]
