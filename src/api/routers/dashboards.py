@@ -14,7 +14,7 @@ trainee_router = APIRouter(
 )
 
 
-@trainee_router.get("/enrolled_courses", response_model=list[CourseCard])
+@trainee_router.get("/enrolled-courses", response_model=list[CourseCard])
 async def list_enrolled_courses(
     query_service: TraineeDashboardQueryServiceDependency,
     current_user: CurrentTraineeOrTrainer 
@@ -23,7 +23,7 @@ async def list_enrolled_courses(
 
 
 
-@trainee_router.get("/top_new_courses/{n}", response_model=list[CourseCard])
+@trainee_router.get("/top-new-courses/{n}", response_model=list[CourseCard])
 async def list_top_n_new_courses(
     n: int,
     query_service: TraineeDashboardQueryServiceDependency,
@@ -33,7 +33,7 @@ async def list_top_n_new_courses(
 
 
 
-@trainee_router.get("/current_course", response_model=CourseCard)
+@trainee_router.get("/current-course", response_model=CourseCard)
 async def get_current_course(
     query_service: TraineeDashboardQueryServiceDependency,
     current_user: CurrentTraineeOrTrainer
@@ -47,7 +47,7 @@ trainer_router = APIRouter(
     tags=["Dashboard", "Trainer Dashboard"]
 )
 
-@trainer_router.get("/kips", response_model=TrainerKPI)
+@trainer_router.get("/kpis", response_model=TrainerKPI)
 async def get_kpis(
     query_service: TrainerDashboardQueryServiceDependency,
     current_user: CurrentTrainer
@@ -56,7 +56,7 @@ async def get_kpis(
 
 
 
-@trainer_router.get("/assigned_courses", response_model=list[AssignedCourse])
+@trainer_router.get("/assigned-courses", response_model=list[AssignedCourse])
 async def list_assigned_courses(
     query_service: TrainerDashboardQueryServiceDependency,
     current_user: CurrentTrainer

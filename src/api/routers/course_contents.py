@@ -12,7 +12,7 @@ from src.query.dto.course_contents import (
 )
 
 trainee_router = APIRouter(
-    prefix="/course_contents/trainee",
+    prefix="/course-contents/trainee",
     tags=["Course Contents", "Trainee Course Contents"]
 )
 
@@ -32,7 +32,7 @@ async def get_course_contents(
     
 
 trainer_router = APIRouter(
-    prefix="/course_contents/trainer",
+    prefix="/course-contents/trainer",
     tags=["Course Contents", "Trainer Course Contents"]
 )
 

@@ -12,6 +12,8 @@ from src.api.routers.dashboards import trainee_router as TraineeDashboardAPIRout
 from src.api.routers.dashboards import trainer_router as TrainerDashboardAPIRouter
 from src.api.routers.course_contents import trainee_router as TraineeCourseContentAPIRouter
 from src.api.routers.course_contents import trainer_router as TrainerCourseContentAPIRouter
+from src.api.routers.entity_list import trainee_router as TraineeEntityListAPIRouter
+from src.api.routers.entity_list import trainer_router as TrainerEntityListAPIRouter
 
 
 ROUTERS: list[APIRouter] = [
@@ -26,7 +28,9 @@ ROUTERS: list[APIRouter] = [
     TraineeDashboardAPIRouter,
     TrainerDashboardAPIRouter,
     TraineeCourseContentAPIRouter,
-    TrainerCourseContentAPIRouter
+    TrainerCourseContentAPIRouter,
+    TraineeEntityListAPIRouter,
+    TrainerEntityListAPIRouter
 ]
 
 __all__ = [
@@ -41,5 +45,7 @@ __all__ = [
     "TraineeDashboardAPIRouter",
     "TrainerDashboardAPIRouter",
     "TraineeCourseContentAPIRouter",
-    "TrainerCourseContentAPIRouter"
+    "TrainerCourseContentAPIRouter",
+    "TraineeEntityListAPIRouter",
+    "TrainerEntityListAPIRouter"
 ]

@@ -25,7 +25,8 @@ from src.auth.auth import AuthService
 # Query Repository imports.
 from src.query.repositories import (
     TraineeDashboardQueryRepository, TrainerDashboardQueryReository,
-    TraineeCourseContentQueryRepository, TrainerCourseContentQueryRepository
+    TraineeCourseContentQueryRepository, TrainerCourseContentQueryRepository,
+    EntityListQueryRepository
 )
 
 
@@ -34,7 +35,8 @@ from src.query.repositories import (
 # Query Service imports.
 from src.query.services import (
     TraineeDashboardQueryService, TrainerDashboardQueryService,
-    TraineeCourseContentQueryService, TrainerCourseContentQueryService
+    TraineeCourseContentQueryService, TrainerCourseContentQueryService,
+    TraineeEntityListQueryService, TrainerEntityListQueryService
 )
 
 query_builder = AsyncPgQueryBuilder()
@@ -57,10 +59,10 @@ assignment_submission_repository = AssignmentSubmissionRepository(db=db)
 trainee_dashboard_query_repository = TraineeDashboardQueryRepository(db=db)
 trainer_dashboard_query_repository = TrainerDashboardQueryReository(db=db)
 
-
 trainee_course_content_query_repository = TraineeCourseContentQueryRepository(db=db)
 trainer_course_content_query_repository = TrainerCourseContentQueryRepository(db=db)
 
+entity_list_query_repository = EntityListQueryRepository(db=db)
 
 # Helper classes.
 password_handler = PasswordHandler()
@@ -146,3 +148,15 @@ trainer_course_content_query_service = TrainerCourseContentQueryService(
     trainer_course_content_repo=trainer_course_content_query_repository,
     auth_service=auth_service
 )
+
+trainee_entity_list_query_service = TraineeEntityListQueryService(
+    entity_list_query_repo=entity_list_query_repository,
+    auth_service=auth_service
+)
+
+trainer_entity_list_query_service = TrainerEntityListQueryService(
+    entity_list_query_repo=entity_list_query_repository,
+    auth_service=auth_service
+)
+
+

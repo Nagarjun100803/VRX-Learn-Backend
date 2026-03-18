@@ -23,14 +23,21 @@ from src.exceptions import UnauthorizedError
 from src.dependencies import (
     trainee_dashboard_query_service, 
     trainer_dashboard_query_service,
+    
     trainee_course_content_query_service,
-    trainer_course_content_query_service
+    trainer_course_content_query_service,
+    
+    trainee_entity_list_query_service,
+    trainer_entity_list_query_service
 )
 from src.dependencies import (
     TraineeDashboardQueryService,
     TrainerDashboardQueryService,
     TraineeCourseContentQueryService,
-    TrainerCourseContentQueryService
+    TrainerCourseContentQueryService,
+    
+    TraineeEntityListQueryService,
+    TrainerEntityListQueryService
 )
 
 
@@ -82,6 +89,14 @@ def get_trainer_course_content_query_service() -> TrainerCourseContentQueryServi
     return trainer_course_content_query_service
 
 
+def get_trainee_entity_list_query_service() -> TraineeEntityListQueryService:
+    return trainee_entity_list_query_service
+
+
+def get_trainer_entity_list_query_service() -> TrainerEntityListQueryService:
+    return trainer_entity_list_query_service
+
+
 
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
@@ -110,9 +125,12 @@ async def get_current_user_context(
 
 TraineeDashboardQueryServiceDependency = Annotated[TraineeDashboardQueryService, Depends(get_trainee_dashboard_query_service)]
 TrainerDashboardQueryServiceDependency = Annotated[TrainerDashboardQueryService, Depends(get_trainer_dashboard_query_service)]
+
 TraineeCourseContentQueryServiceDependency = Annotated[TraineeCourseContentQueryService, Depends(get_trainee_course_content_query_service)]
 TrainerCourseContentQueryServiceDependency = Annotated[TrainerCourseContentQueryService, Depends(get_trainer_course_content_query_service)]
 
+TraineeEntityListQueryServiceDependency = Annotated[TraineeEntityListQueryService, Depends(get_trainee_entity_list_query_service)]
+TrainerEntityListQueryServiceDependency = Annotated[TrainerEntityListQueryService, Depends(get_trainer_entity_list_query_service)]
     
 
 UserContextDependency = Annotated[UserContext, Depends(get_current_user_context)]
