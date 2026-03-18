@@ -1,16 +1,13 @@
 from typing import Optional
 
-from src.database import AsyncPgDBManager
 from src.query.dto.dashboards import CourseCard, TrainerKPI, AssignedCourse
+from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
 
-class TraineeDashboardQueryRepository:
+class TraineeDashboardQueryRepository(BaseQueryRepository):
     
-    def __init__(self, db: AsyncPgDBManager):
-        self.db = db
-        
-
+    @map_to_dto(dto=CourseCard, dto_mode="list")
     async def enrolled_courses(self, trainee_id: int) -> list[CourseCard]:
         """Returns all the enrolled courses."""
         sql = """
@@ -38,12 +35,11 @@ class TraineeDashboardQueryRepository:
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(trainee_id, )
         )
-        result = await self.db.execute(executable, fetch_returns="all")
-        
-        return [CourseCard(**row) for row in result]
-    
+
+        return await self.db.execute(executable, fetch_returns="all")
 
     
+    @map_to_dto(dto=CourseCard, dto_mode="list")
     async def top_new_courses(self, n: int) -> list[CourseCard]:
         """Returns top n new courses."""
         sql = """
@@ -70,11 +66,10 @@ class TraineeDashboardQueryRepository:
             sql=sql, values=(n, )
         )
         
-        result = await self.db.execute(executable, fetch_returns="all")
+        return await self.db.execute(executable, fetch_returns="all")
         
-        return [CourseCard(**row) for row in result]
         
-    
+    @map_to_dto(dto=CourseCard, dto_mode="single")
     async def current_course(self, trainee_id: int) -> Optional[CourseCard]:
         """Return a current course enrolled."""
         sql = """
@@ -105,18 +100,14 @@ class TraineeDashboardQueryRepository:
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(trainee_id, )
         )
-        result = await self.db.execute(executable, fetch_returns="one")
+        return await self.db.execute(executable, fetch_returns="one")
         
-        return CourseCard(**result) if result is not None else result
         
 
 
-class TrainerDashboardQueryReository:
+class TrainerDashboardQueryReository(BaseQueryRepository):
     
-    def __init__(self, db: AsyncPgDBManager):
-        self.db = db
-        
-    
+    @map_to_dto(dto=TrainerKPI, dto_mode="single")
     async def kpis(self, trainer_id: int) -> Optional[TrainerKPI]:
         """Returns KPI's of a trainer"""
         sql = """
@@ -139,12 +130,11 @@ class TrainerDashboardQueryReository:
             sql=sql, values=(trainer_id, )
         )
         
-        result = await self.db.execute(executable, fetch_returns="one")
-        
-        return TrainerKPI(**result) if result is not None else result
-        
+        return await self.db.execute(executable, fetch_returns="one")
 
-    async def assigned_courses(self, trainer_id: int):
+
+    @map_to_dto(dto=AssignedCourse, dto_mode="list")
+    async def assigned_courses(self, trainer_id: int) -> list[AssignedCourse]:
         """List of courses assigned to a trainer."""    
         sql = """
             SELECT
@@ -172,6 +162,5 @@ class TrainerDashboardQueryReository:
             sql=sql, values=(trainer_id, )
         )    
         
-        result = await self.db.execute(executable, fetch_returns="all")
-        
-        return [AssignedCourse(**row) for row in result]
+        return await self.db.execute(executable, fetch_returns="all")
+

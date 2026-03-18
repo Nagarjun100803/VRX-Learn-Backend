@@ -1,11 +1,12 @@
 from typing import Optional
 
-from src.command.commands.assignments import AssignmentInstruction
+from src.command.commands.assignments import AssignmentTitle
 from src.command.commands.courses import CourseShortDescription, CourseTitle
 from src.command.commands.modules import ModuleDescription, ModuleTitile
 from src.command.commands.base import AssignmentID, CourseID, LessonID, MediaID, ModuleID, UserID
 from src.command.commands.lessons import LessonTitle
 from src.query.dto.base import BaseDTO
+
 
 
 class LessonDetail(BaseDTO):
@@ -15,12 +16,18 @@ class LessonDetail(BaseDTO):
     filename: str
     
 
-class ModuleDetail(BaseDTO):
+
+class TrainerModuleDetail(BaseDTO):
     id: ModuleID
     title: ModuleTitile
     description: Optional[ModuleDescription] = None
-    lessons: list[LessonDetail]
-    
+
+
+
+class TraineeModuleDetail(TrainerModuleDetail):
+    lessons: list[LessonDetail]   
+
+
 
 class CourseDetail(BaseDTO):
     id: CourseID
@@ -28,22 +35,24 @@ class CourseDetail(BaseDTO):
     short_description: Optional[CourseShortDescription] = None
 
 
+
 class AssignmentDetail(BaseDTO):
     id: AssignmentID
-    instruction: Optional[AssignmentInstruction] = None 
-    media_id: Optional[MediaID]
-    filename: Optional[str] = None
+    title: AssignmentTitle
     
+
 
 class TraineeCourseContent(BaseDTO):
     course: CourseDetail
-    module: list[ModuleDetail]
+    modules: list[TraineeModuleDetail]
+
 
 
 class TrainerCourseContent(BaseDTO):
     course: CourseDetail
-    module: list[ModuleDetail]
-    assignment: list[AssignmentDetail]
+    modules: list[TrainerModuleDetail]
+    assignments: list[AssignmentDetail]
+
 
 
 class CourseContentRequestSchema(BaseDTO):
