@@ -1,10 +1,17 @@
 import re
+from httpx import get
 import sqlparse
-from typing import Any, Optional, Self, Sequence
+from typing import Any, Literal, Optional, Self, Sequence, Union
 from pydantic import BaseModel, model_validator
 from src.command.commands.base import EntityBase, any_id_adaptor, AnyID
 from src.query_builder.base import BaseQueryBuilder, BaseWhere, BaseExecutableSQL
 
+
+def get_placeholder_count(sql: str) -> int:
+    """Returns the number of placeholder exists in a sql string."""
+    pattern = r"\$\d+"
+    placholders = re.findall(pattern, sql)
+    return len(placholders)
 
 
 class AsyncPgExecutableSQL(BaseExecutableSQL, BaseModel):
@@ -24,6 +31,87 @@ class AsyncPgExecutableSQL(BaseExecutableSQL, BaseModel):
         return sqlparse.format(preview_string, reindent=True, keyword_case="upper", use_space_around_operators=True)
     
 
+    def where(self, filters: dict[str, Any]) -> "AsyncPgExecutableSQL":    
+        """
+        Add WHERE clause with dynamic filters to SQL.
+        
+        Automatically increments placeholder indices and appends values.
+        Skips None values (optional filters).
+        
+        Args:
+            filters: {column_name: value} dict
+                    - Key: column name with table prefix (e.g., "asub.assignment_id")
+                    - Value: filter value (None values are skipped)
+        
+        Returns:
+            New AsyncPgExecutableSQL with WHERE clause added
+        
+        Example:
+            >>> executable = AsyncPgExecutableSQL(sql="SELECT * FROM asub", values=())
+            >>> executable = executable.where({
+            ...    "asub.assignment_id": 18,
+            ...    "asub.status": "graded",
+            ...    "asub.from_date": None  # ← Skipped
+            ...    })
+            >>> print(executable)
+            >>> AsyncPgExecutable(sql="SELECT * FROM asub WHERE asub.assignment_id = $1 AND asub.status = $2", values=(18, "graded"))
+            >>> print(executable.sql) 
+            >>> "SELECT * FROM asub WHERE asub.assignment_id = $1 AND asub.status = $2"
+            >>> print(executable.values)
+            >>> (18, "graded")
+        """
+       
+        number_of_placholder = get_placeholder_count(self.sql)
+        placholder_idx = number_of_placholder + 1
+        
+        sql = self.sql
+        values = list(self.values)
+        
+        sql += "WHERE "
+        for key, value in filters.items():
+            if value is not None:
+                # Add the column with a placholder.
+                sql += f"{key} = ${placholder_idx} AND "
+                placholder_idx += 1
+                values.append(value)
+        
+        # Remove last AND operator.
+        sql = sql.rpartition("AND")[0]
+    
+        return AsyncPgExecutableSQL(sql=sql, values=tuple(values))
+    
+    
+    @staticmethod
+    def get_sort_order(by: str) -> tuple[str, Literal["ASC", "DESC"]]:
+        if by[0] == "-":
+            return (by[1:], "DESC")
+        return (by, "ASC")
+
+    
+    def order_by(self, by: Union[str, list[str]]) -> "AsyncPgExecutableSQL":
+        
+        sql = self.sql
+        if isinstance(by, str):
+            by = [by]
+        
+        order_spec = []
+        for col in by:
+            col, order = self.get_sort_order(by=col)
+            order_spec.append(f"{col} {order}")
+            
+        sql += " ORDER BY " + ", ".join(order_spec) + " "
+
+        return AsyncPgExecutableSQL(sql=sql, values=self.values)
+            
+        
+    def limit(self, n: int) -> "AsyncPgExecutableSQL":
+        sql = self.sql + f" LIMIT {n} "
+        return AsyncPgExecutableSQL(sql=sql, values=self.values)
+    
+    
+    def offset(self, n: int) -> "AsyncPgExecutableSQL":
+        sql = self.sql + f" OFFSET {n} "
+        return AsyncPgExecutableSQL(sql=sql, values=self.values)
 
 
 class AsyncPgWhere(BaseWhere, BaseModel):
