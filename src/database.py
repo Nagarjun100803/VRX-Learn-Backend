@@ -39,6 +39,8 @@ class AsyncPgDBManager:
             print("Database connection pool created.")
         except Exception as e:
             print(f"Error occured while creating the pool. {str(e)}")
+            print(e)
+            raise e
 
 
     async def close_pool(self) -> None:

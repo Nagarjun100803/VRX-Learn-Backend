@@ -36,8 +36,9 @@ async def login(
     response.set_cookie(
         key="access_token",
         value=token,
-        samesite="lax",
-        httponly=True
+        samesite="none",
+        httponly=True,
+        secure=True
     )
     return response
 

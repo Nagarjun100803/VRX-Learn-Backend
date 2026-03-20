@@ -12,7 +12,7 @@ class DatabaseSettings(BaseSettings):
     user: SecretStr
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file="src/.env",
         env_prefix="DATABASE_",
         extra="ignore"
     )
@@ -41,7 +41,7 @@ class AWSS3Settings(BaseSettings):
 
 
 class Settings(BaseModel):
-    database: Annotated[DatabaseSettings, Field(default_factory=LocalDatabaseSettings)]
+    database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]
     aws: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]
     
     
