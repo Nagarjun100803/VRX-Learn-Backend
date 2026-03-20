@@ -39,14 +39,22 @@ class AWSS3Settings(BaseSettings):
         env_prefix="AWS_"
     )
 
+class CORSSettings(BaseSettings):
+    allowed_origins: list[str]
+
+    model_config = SettingsConfigDict(
+        env_file="src/.env",
+        extra="ignore",
+        env_prefix="CORS_"
+    )
 
 class Settings(BaseModel):
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]
     aws: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]
+    cors: Annotated[CORSSettings, Field(default_factory=CORSSettings)]
     
-    
-settings = Settings()
 
+settings = Settings()
 
 if __name__ == "__main__":
     print(settings.model_dump_json(indent=4))

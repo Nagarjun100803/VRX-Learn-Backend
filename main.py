@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+from src.settings import settings
 from src.dependencies import db
 from src.exceptions import DomainError
 from src.api.exception_registry import exception_registry
@@ -20,7 +22,13 @@ async def lifespan(app: FastAPI):
 api_version = "/api/v1"
 
 app = FastAPI(lifespan=lifespan)
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = settings.cors.allowed_origins,
+    allow_credentials = True,
+    allow_headers = ["*"],
+    allow_methods = ["*"]
+)
 
 @app.get("/health")
 async def health_check() -> dict:
