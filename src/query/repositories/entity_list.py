@@ -1,3 +1,6 @@
+from pypika import Criterion, Parameter, PostgreSQLQuery
+
+from src.pypika_query_builder import assignment_table, module_table, lesson_table
 from src.query.dto.entity_list import AssignmentDetailWithDue, LessonDetail, ModuleDetail
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
@@ -7,18 +10,23 @@ class EntityListQueryRepository(BaseQueryRepository):
     
     @map_to_dto(dto=ModuleDetail, dto_mode="list")
     async def modules(self, course_id: int) -> list[ModuleDetail]:
-        sql = """
-            SELECT
-                m.id,
-                m.title
-            FROM
-                modules AS m
-            WHERE
-                m.course_id = $1 AND
-                m.deleted_at IS NULL
-            ORDER BY
-                m.position_string
-        """
+        
+        sql = PostgreSQLQuery\
+            .from_(module_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        module_table.course_id == Parameter("$1"),
+                        module_table.deleted_at.isnull()
+                    ]
+                )
+            ).orderby(
+                module_table.position_string
+            ).select(
+                module_table.id,
+                module_table.title
+            ).get_sql()
+        
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(course_id, )
         )
@@ -28,18 +36,23 @@ class EntityListQueryRepository(BaseQueryRepository):
     
     @map_to_dto(dto=LessonDetail, dto_mode="list")
     async def lessons(self, module_id: int) -> list[LessonDetail]:
-        sql = """
-            SELECT
-                l.id,
-                l.title
-            FROM
-                lessons AS l
-            WHERE
-                l.module_id = $1 AND
-                l.deleted_at IS NULL
-            ORDER BY
-                l.position_string
-        """
+        
+        sql = PostgreSQLQuery\
+            .from_(lesson_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        lesson_table.module_id == Parameter("$1"),
+                        lesson_table.deleted_at.isnull()
+                    ]
+                )
+            ).orderby(
+                lesson_table.position_string
+            ).select(
+                lesson_table.id,
+                lesson_table.title
+            ).get_sql()    
+    
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(module_id, )
         )
@@ -49,19 +62,24 @@ class EntityListQueryRepository(BaseQueryRepository):
     
     @map_to_dto(dto=AssignmentDetailWithDue, dto_mode="list")
     async def assignments(self, course_id: int) -> list[AssignmentDetailWithDue]:
-        sql = """
-            SELECT
-                a.id,
-                a.title,
-                a.due_date
-            FROM
-                assignments AS a
-            WHERE
-                a.course_id = $1 AND
-                a.deleted_at IS NULL
-            ORDER BY
-                a.due_date
-        """
+        
+        sql = PostgreSQLQuery\
+            .from_(assignment_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.course_id == Parameter("$1"),
+                        assignment_table.deleted_at.isnull()    
+                    ]
+                )
+            ).orderby(
+                assignment_table.due_date
+            ).select(
+                assignment_table.id,
+                assignment_table.title,
+                assignment_table.due_date
+            ).get_sql()
+            
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(course_id, )
         )

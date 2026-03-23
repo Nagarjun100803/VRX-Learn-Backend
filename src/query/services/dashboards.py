@@ -2,7 +2,7 @@ from typing import Optional
 
 from src.query.dto.dashboards import AssignedCourse, CourseCard, TrainerKPI
 from src.query.repositories import (
-    TraineeDashboardQueryRepository, TrainerDashboardQueryReository
+    TraineeDashboardQueryRepository, TrainerDashboardQueryRepository
 )
 
 
@@ -32,7 +32,7 @@ class TrainerDashboardQueryService:
     
     def __init__(
         self,
-        trainer_dashboard_query_repo: TrainerDashboardQueryReository
+        trainer_dashboard_query_repo: TrainerDashboardQueryRepository
     ) -> None:
         self.trainer_dashboard_query_repo = trainer_dashboard_query_repo
         

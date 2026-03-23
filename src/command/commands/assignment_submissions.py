@@ -7,7 +7,7 @@ from src.command.commands.media import Media
 
 
 Feedback = Annotated[str, Field(max_length=2000)]
-Score = MaxScore
+Score = int # Temporary Fix
 Attempt = NumberOfAttempts
 
 class AllowedAssignmentSubmissionFileType(StrEnum):

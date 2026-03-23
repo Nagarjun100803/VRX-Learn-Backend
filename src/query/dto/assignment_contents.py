@@ -1,10 +1,14 @@
 from datetime import date, datetime
 from typing import Literal, Optional
 
+
+
 from src.command.commands.assignment_submissions import AssignmentSubmissionStatus, Attempt, Score
 from src.command.commands.assignments import AssignmentInstruction, AssignmentTitle, MaxScore, NumberOfAttempts
 from src.command.commands.base import AssignmentID, AssignmentSubmissionID, MediaID
 from src.command.commands.users import Email
+from src.exceptions import ValidationError
+from src.pypika_query_builder import CutsomOrder
 from src.query.dto.base import BaseDTO
 
 
@@ -71,7 +75,22 @@ class TrainerSubmissionDetail(BaseDTO):
 
 class AssignmentSubmissionFilters(BaseDTO):
     from_date: Optional[date] = None
-    to_date: Optional[date] = None
+    to_date: date
     status: Optional[AssignmentSubmissionStatus] = None
-    sort_by_grade: Optional[Literal["ASC", "DESC"]] = None
+    sort_by_grade: Optional[Literal["asc", "desc"]] = None
     
+    
+    @property
+    def order(self) -> Optional[CutsomOrder]:
+        if self.sort_by_grade == "asc":
+            return CutsomOrder.asc_nulls_last
+        elif self.sort_by_grade == "desc":
+            return CutsomOrder.desc_nulls_last
+        return None
+    
+    if from_date and (from_date > to_date):
+        raise ValidationError(
+            message="""
+                Invalid date range: 'from_date' cannot be later than 'to_date'.
+            """
+        )

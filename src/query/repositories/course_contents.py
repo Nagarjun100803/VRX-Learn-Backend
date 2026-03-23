@@ -1,4 +1,8 @@
-from src.command.commands.media import MediableType
+from pypika import Criterion, Parameter, PostgreSQLQuery, functions
+from pypika.terms import ValueWrapper
+
+from src.pypika_query_builder import JsonbAgg, JsonbBuildObject, LateralQuery, PGJoinType, lesson_table, course_table, assignment_table, media_asset_table, module_table
+from src.command.commands.media import MediaStatus, MediableType
 from src.query.dto.course_contents import TraineeCourseContent, TrainerCourseContent
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
@@ -8,73 +12,116 @@ class TraineeCourseContentQueryRepository(BaseQueryRepository):
 
     @map_to_dto(dto=TraineeCourseContent, dto_mode="single")    
     async def course_contents(self, course_id: int) -> TraineeCourseContent:
-        sql = """
-            SELECT
-                jsonb_build_object(
-                    'id', c.id,
-                    'title', c.title,
-                    'short_description', c.short_description
-                ) AS course,
-                COALESCE(md.modules, '[]'::jsonb) AS modules
-            FROM
-                courses AS c
-
-            LEFT JOIN LATERAL (
-                SELECT
-                    COALESCE(
-                        jsonb_agg(module_detail ORDER BY module_position)
-                        FILTER (WHERE module_detail IS NOT NULL),
-                        '[]'::jsonb
-                    ) AS modules
-                FROM (
-                    SELECT
-                        jsonb_build_object(
-                            'id', m.id,
-                            'title', m.title,
-                            'description', m.description,
-                            'lessons', COALESCE(
-                                jsonb_agg(ld.lesson_detail ORDER BY ld.lesson_position)
-                                FILTER (WHERE ld.lesson_detail IS NOT NULL),
-                                '[]'::jsonb
-                            )
-                        ) AS module_detail,
-                        m.position_string AS module_position
-                    FROM
-                        modules AS m
-                    LEFT JOIN LATERAL (
-                        SELECT
-                            jsonb_build_object(
-                                'id', l.id,
-                                'title', l.title,
-                                'module_id', l.module_id,
-                                'media_id', me.id,
-                                'filename', me.filename
-                            ) AS lesson_detail,
-                            l.position_string AS lesson_position
-                        FROM
-                            lessons AS l
-                        JOIN
-                            media_assets AS me
-                            ON l.id = me.mediable_id
-                            AND me.mediable_type = $1
-                        WHERE
-                            l.module_id = m.id
-                    ) AS ld ON true
-                    WHERE
-                        m.course_id = c.id
-                    GROUP BY
-                        m.id, m.title, m.description, m.position_string
-                ) AS sub
-            ) AS md ON true
-
-            WHERE
-                c.id = $2
-        """
         
-        executable = self.db.query_builder.build_executable(
-            sql=sql, values=(MediableType.LESSON.value, course_id)
+        lesson_detail_subquery = PostgreSQLQuery\
+        .from_(lesson_table) \
+        .join(media_asset_table) \
+        .on(
+            Criterion.all(
+                terms=[
+                    lesson_table.id == media_asset_table.mediable_id,
+                    media_asset_table.mediable_type == Parameter("$1")
+                ]
+            )
+        ).where(
+            Criterion.all(
+                terms=[
+                    lesson_table.deleted_at.isnull(),
+                    media_asset_table.deleted_at.isnull(),
+                    media_asset_table.status == Parameter("$2"),
+                    # We only want any file with `uploaded` status
+                    
+                    lesson_table.module_id == module_table.id
+                    # This is the reference for outer query.
+                ]
+            )
+        ).select(
+            JsonbBuildObject(
+                'id', lesson_table.id,
+                'title', lesson_table.title,
+                'media_id', media_asset_table.id,
+                'filename', media_asset_table.filename
+            ).as_("lesson"),
+            lesson_table.position_string
+            # This is for ordering.
         )
-        
+            
+        lesson_detail = LateralQuery(lesson_detail_subquery, alias="ld")
+
+        module_detail_subquery = PostgreSQLQuery\
+            .from_(module_table)\
+            .join(lesson_detail, how=PGJoinType.left_lateral)\
+            .on(ValueWrapper(True))\
+            .where(
+                Criterion.all(
+                    terms=[
+                        module_table.deleted_at.isnull(),
+                        module_table.course_id == course_table.id
+                        # This is the reference for outer course table[query].
+                    ]
+                )
+            ).groupby(
+                module_table.id, 
+                module_table.title,
+                module_table.description,
+                module_table.position_string
+            ).select(
+                JsonbBuildObject(
+                    "id", module_table.id,
+                    "title", module_table.title,
+                    "description", module_table.description,
+                    "lessons", functions.Coalesce(
+                        JsonbAgg(lesson_detail.lesson)\
+                        .orderby(lesson_detail.position_string)\
+                        .filter(lesson_detail.lesson.isnotnull()),
+                        ValueWrapper('[]')
+                    )
+                ).as_("module"),
+                module_table.position_string
+                # This is for ordering.
+            )
+            
+        module_detail = LateralQuery(module_detail_subquery, alias="md")
+
+        main_query = PostgreSQLQuery\
+                .from_(course_table)\
+                .join(module_detail, how=PGJoinType.left_lateral)\
+                .on(ValueWrapper(True))\
+                .where(
+                    Criterion.all(
+                        terms=[
+                            course_table.id == Parameter("$3"),
+                            course_table.deleted_at.isnull()
+                        ]
+                    )
+                ).groupby(
+                    course_table.id,
+                    course_table.title,
+                    course_table.short_description
+                ).select(
+                    JsonbBuildObject(
+                        "id", course_table.id,
+                        "title", course_table.title,
+                        "short_description", course_table.short_description
+                    ).as_("course"),
+                    
+                    functions.Coalesce(
+                        JsonbAgg(module_detail.module)\
+                        .orderby(module_detail.position_string)\
+                        .filter(module_detail.module.isnotnull()),
+                        
+                        ValueWrapper("[]")
+                    ).as_("modules")
+                ).get_sql("").replace("LATERAL JOIN", "LATERAL")    
+                
+
+        executable = self.db.query_builder.build_executable(
+            sql=main_query, values=(
+                MediableType.LESSON,
+                MediaStatus.UPLOADED,
+                course_id
+            )
+        )
         return await self.db.execute(executable, fetch_returns="one")
 
         
@@ -83,49 +130,82 @@ class TrainerCourseContentQueryRepository(BaseQueryRepository):
 
     @map_to_dto(dto=TrainerCourseContent, dto_mode="single")    
     async def course_contents(self, course_id: int) -> TrainerCourseContent:
-        sql = """
-            SELECT
-                JSONB_BUILD_OBJECT(
-                    'id', c.id,
-                    'title', c.title,
-                    'short_description', c.short_description
-                ) AS course,
-                COALESCE(md.modules, '[]'::jsonb) AS modules,
-                COALESCE(ad.assignments, '[]'::jsonb) AS assignments
-            FROM
-                courses AS c
-            LEFT JOIN LATERAL(
-                SELECT
-                    JSONB_AGG(
-                        JSONB_BUILD_OBJECT(
-                            'id', m.id,
-                            'title', m.title,
-                            'description', m.description
-                        ) ORDER BY m.position_string
-                    ) FILTER (WHERE m.id is not null) AS modules
-                FROM 
-                    modules as m
-                WHERE
-                    c.id = m.course_id and
-                    m.deleted_at is null
-            ) AS md ON true
-            LEFT JOIN LATERAL(
-                SELECT
-                    JSONB_AGG(
-                        JSONB_BUILD_OBJECT(
-                            'id', a.id,
-                            'title', a.title
-                        ) ORDER BY a.due_date
-                    ) FILTER (WHERE a.id is not null) AS assignments
-                from
-                    assignments AS a
-                WHERE
-                    a.course_id = c.id and
-                    a.deleted_at is null
-            ) AS ad ON true
-            WHERE
-                c.id = $1
-        """
+        
+        module_detail_subquery = PostgreSQLQuery\
+            .from_(module_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        module_table.course_id == course_table.id, # For Outer table reference.
+                        module_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(
+                functions.Coalesce(
+                    JsonbAgg(
+                        JsonbBuildObject(
+                            "id", module_table.id,
+                            "title", module_table.title,
+                            "description", module_table.description
+                        )
+                    ).filter(
+                        module_table.id.isnotnull()
+                    ).orderby(
+                        module_table.position_string
+                    ),
+                    ValueWrapper("[]")
+                ).as_("modules")
+            )
+            
+        module_detail = LateralQuery(module_detail_subquery, alias="md")
+        
+        assignment_detail_subquery = PostgreSQLQuery\
+            .from_(assignment_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.course_id == course_table.id,
+                        assignment_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(
+                functions.Coalesce(
+                    JsonbAgg(
+                        JsonbBuildObject(
+                            "id", assignment_table.id,
+                            "title", assignment_table.title
+                        ) 
+                    ).filter(
+                        assignment_table.id.isnotnull()
+                    ).orderby(assignment_table.due_date) 
+                ).as_("assignments")
+            )
+            
+        assignment_detail = LateralQuery(assignment_detail_subquery, alias="ad")
+        
+        sql = PostgreSQLQuery\
+            .from_(course_table)\
+            .join(module_detail, how=PGJoinType.left_lateral)\
+            .on(ValueWrapper(True))\
+            .join(assignment_detail, how=PGJoinType.left_lateral)\
+            .on(ValueWrapper(True))\
+            .where(
+                Criterion.all(
+                    terms=[
+                        course_table.id == Parameter("$1"),
+                        course_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(
+                JsonbBuildObject(
+                    "id", course_table.id,
+                    "title", course_table.title,
+                    "short_description", course_table.short_description,
+                ).as_("course"),
+                module_detail.modules,
+                assignment_detail.assignments
+            ).get_sql().replace("LATERAL JOIN", "LATERAL")
+
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(course_id, )
         )

@@ -24,7 +24,7 @@ from src.auth.auth import AuthService
 
 # Query Repository imports.
 from src.query.repositories import (
-    TraineeDashboardQueryRepository, TrainerDashboardQueryReository,
+    TraineeDashboardQueryRepository, TrainerDashboardQueryRepository,
     TraineeCourseContentQueryRepository, TrainerCourseContentQueryRepository,
     EntityListQueryRepository
 )
@@ -57,7 +57,7 @@ assignment_submission_repository = AssignmentSubmissionRepository(db=db)
 
 # Query Repositories.
 trainee_dashboard_query_repository = TraineeDashboardQueryRepository(db=db)
-trainer_dashboard_query_repository = TrainerDashboardQueryReository(db=db)
+trainer_dashboard_query_repository = TrainerDashboardQueryRepository(db=db)
 
 trainee_course_content_query_repository = TraineeCourseContentQueryRepository(db=db)
 trainer_course_content_query_repository = TrainerCourseContentQueryRepository(db=db)

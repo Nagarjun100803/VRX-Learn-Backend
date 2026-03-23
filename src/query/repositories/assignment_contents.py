@@ -1,11 +1,23 @@
+import asyncio
 from typing import Optional
 
-import sqlparse
+from pypika import Case, Criterion, Parameter, PostgreSQLQuery, Table, functions as fn
+from pypika.enums import SqlTypes
+from pypika.terms import ExistsCriterion, ValueWrapper
 
-from src.command.commands.assignment_submissions import AssignmentSubmission, AssignmentSubmissionStatus
+from src.pypika_query_builder import (
+    JsonbAgg, JsonbBuildObject, 
+    assignment_table, assignment_submission_table, 
+    media_asset_table, user_table
+)
 from src.command.commands.media import MediaStatus, MediableType
-from src.query.dto.assignment_contents import AssignmentSubmissionFilters, TraineeAssignmentContent, TraineeAssignmentCore, TrainerAssignmentContent, TrainerAssignmentCore, TrainerSubmissionDetail
-from src.query.repositories.base import BaseQueryRepository, PageMeta, map_to_dto
+from src.query.dto.assignment_contents import (
+    AssignmentSubmissionFilters, TraineeAssignmentContent, 
+    TraineeAssignmentCore, TrainerAssignmentContent, 
+    TrainerAssignmentCore, TrainerSubmissionDetail
+)
+from src.query.dto.base import PageMeta, Paginated
+from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
 
@@ -14,47 +26,56 @@ class TraineeAssignmentContentQueryRepository(BaseQueryRepository):
     @map_to_dto(dto=TraineeAssignmentCore, dto_mode="list")
     async def assignments(self, course_id: int, trainee_id: int) -> list[TraineeAssignmentCore]:
         
-        sql = """
-            WITH submissions_cte AS(
-                SELECT
-                    asub.assignment_id --used in where clause in a case statement.
-                FROM
-                    assignment_submissions as asub
-                JOIN
-                    media_assets AS me
-                ON
-                    me.mediable_id = asub.id AND
-                    me.mediable_type = $1 AND
-                    me.status = $2
-                WHERE
-                    asub.created_by = $3 AND
-                    asub.deleted_at IS NULL
-            )
-
-            -- cte end.
-            SELECT
-                a.id,
-                a.title,
-                CASE 
-                    WHEN EXISTS(
-                        SELECT
-                            1
-                        FROM
-                            submissions_cte AS subcte
-                        WHERE
-                            subcte.assignment_id = a.id
-                    ) THEN true
-                    ELSE false
-                END AS is_completed
-            FROM
-                assignments AS a
-            WHERE
-                a.course_id = $4 AND
-                a.deleted_at IS NULL
-            ORDER BY
-                a.due_date
-        """
+        submissions_query = PostgreSQLQuery\
+            .from_(assignment_submission_table)\
+            .join(media_asset_table)\
+            .on(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.id == media_asset_table.mediable_id,
+                        media_asset_table.mediable_type == Parameter("$1"),
+                        media_asset_table.status == Parameter("$2")
+                    ]
+                )
+            ).where(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.created_by == Parameter("$3"),
+                        assignment_submission_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(assignment_submission_table.assignment_id) # Used inn where clause of a case statement.
         
+        submission_cte = Table("submission_cte") # Reference table
+        
+        sql = PostgreSQLQuery\
+            .with_(submissions_query, submission_cte._table_name)\
+            .from_(assignment_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.course_id == Parameter("$4"),
+                        assignment_table.deleted_at.isnull()
+                    ]
+                )
+            ).orderby(
+                assignment_table.due_date
+            ).select(
+                assignment_table.id,
+                assignment_table.title,
+
+                Case().when(
+                    ExistsCriterion(
+                        PostgreSQLQuery\
+                            .from_(submission_cte)\
+                            .where(submission_cte.assignment_id == assignment_table.id)\
+                            .select(ValueWrapper(1))
+                    ),
+                    ValueWrapper(True)
+                ).else_(ValueWrapper(False)).as_("is_completed")
+            ).get_sql()
+
+
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(
                 MediableType.ASSIGNMENT_SUBMISSION,
@@ -69,80 +90,99 @@ class TraineeAssignmentContentQueryRepository(BaseQueryRepository):
     
     @map_to_dto(dto=TraineeAssignmentContent, dto_mode="single")
     async def assignment_contents(self, assignment_id: int, trainee_id: int) -> Optional[TraineeAssignmentContent]:
-        sql = """
-            WITH submissions_cte AS(
-                SELECT
-                    asub.assignment_id, -- Used to join
-                    asub.created_at, -- for ordering.
-                    JSONB_BUILD_OBJECT(
-                        'id', asub.id,
-                        'filename',  me.filename,
-                        'score', asub.score,
-                        'status', asub.status,
-                        'attempt', asub.attempt,
-                        'submitted_at', asub.created_at,
-                        'media_id', me.id
-                    ) as submission
-                FROM
-                    assignment_submissions AS asub
-                JOIN
-                    media_assets as me
-                ON
-                    asub.id = me.mediable_id AND
-                    me.mediable_type = $1
-                WHERE
-                    asub.deleted_at IS NULL AND
-                    me.deleted_at IS NULL AND
-                    asub.created_by = $2
+        
+        submissions_query = PostgreSQLQuery\
+            .from_(assignment_submission_table)\
+            .join(media_asset_table)\
+            .on(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.id == media_asset_table.mediable_id,
+                        media_asset_table.mediable_type == Parameter("$1"),
+                        media_asset_table.status == Parameter("$2")
+                    ]
+                )
+            ).where(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.created_by == Parameter("$3"),
+                        assignment_submission_table.deleted_at.isnull(),
+                        media_asset_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(
+                assignment_submission_table.assignment_id, # For filtering inside of main query.,
+                assignment_submission_table.created_at, # For ordering,
+                JsonbBuildObject(
+                    "id", assignment_submission_table.id,
+                    "filename", media_asset_table.filename,
+                    "score", assignment_submission_table.score,
+                    "status", assignment_submission_table.status,
+                    "attempt", assignment_submission_table.attempt,
+                    "submitted_at", assignment_submission_table.created_at,
+                    "media_id", media_asset_table.id
+                ).as_("submission")
             )
-
-            --- cte end.
-            SELECT
-                JSONB_BUILD_OBJECT(
-                    'id', a.id,
-                    'title', a.title,
-                    'max_score', a.max_score,
-                    'max_attempts', a.number_of_attempts,
-                    'due_date', a.due_date,
-                    'instructions', a.instructions
-                ) AS assignment,
-
-                CASE 
-                    WHEN me.id IS NOT NULL THEN
-                        JSONB_BUILD_OBJECT(
-                            'media_id', me.id,
-                            'filename', me.filename
+            
+        submission_cte = Table("submission_cte") # Reference table
+        
+        sql = PostgreSQLQuery\
+            .with_(submissions_query, submission_cte._table_name)\
+            .from_(assignment_table)\
+            .left_join(media_asset_table)\
+            .on(
+                Criterion.all(
+                    terms=[
+                        assignment_table.id == media_asset_table.mediable_id,
+                        media_asset_table.mediable_type == Parameter("$4"),
+                        media_asset_table.status == Parameter("$5")
+                    ]
+                )
+            ).where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.id == Parameter("$6"),
+                        assignment_table.deleted_at.isnull(),
+                        media_asset_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(
+                
+                JsonbBuildObject(
+                    'id', assignment_table.id,
+                    'title', assignment_table.title,
+                    'max_score', assignment_table.max_score,
+                    'max_attempts', assignment_table.number_of_attempts,
+                    'due_date', assignment_table.due_date,
+                    'instructions', assignment_table.instructions
+                ).as_("assignment"),
+                
+                Case().when(
+                    media_asset_table.id.isnotnull(),
+                        JsonbBuildObject(
+                            "media_id", media_asset_table.id,
+                            "filename", media_asset_table.filename
                         )
-                    ELSE NULL
-                END AS attachment,
-
-                COALESCE(
-                    (
-                        SELECT
-                            JSONB_AGG(subcte.submission ORDER BY subcte.created_at)
-                        FROM
-                            submissions_cte as subcte
-                        WHERE
-                            subcte.assignment_id = a.id
-                    ), '[]'::jsonb
-                ) AS submissions
-
-            FROM
-                assignments AS a
-            LEFT JOIN
-                media_assets AS me
-            ON
-                a.id = me.mediable_id AND
-                me.mediable_type = $3 AND
-                me.status = $4
-            WHERE
-                a.id = $5 AND
-                a.deleted_at IS NULL AND
-                me.deleted_at IS NULL
-        """
+                ).else_(ValueWrapper(None)).as_("attachment"),
+                
+                PostgreSQLQuery\
+                    .from_(submission_cte)\
+                    .where(submission_cte.assignment_id == assignment_table.id)\
+                    .select(
+                        fn.Coalesce(
+                            JsonbAgg(submission_cte.submission)\
+                                .filter(submission_cte.submission.isnotnull())\
+                                .orderby(submission_cte.created_at),
+                                
+                                ValueWrapper("[]")
+                            ).as_("submissions")
+                )  
+            ).get_sql()
+            
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(
                 MediableType.ASSIGNMENT_SUBMISSION,
+                MediaStatus.UPLOADED,
                 trainee_id,
                 MediableType.ASSIGNMENT,
                 MediaStatus.UPLOADED,
@@ -157,19 +197,24 @@ class TrainerAssignmentContentQueryRepository(BaseQueryRepository):
     
     @map_to_dto(dto=TrainerAssignmentCore, dto_mode="list")
     async def assignments(self, course_id: int) -> list[TrainerAssignmentCore]:
-        sql = """
-            SELECT
-                a.id,
-                a.title,
-                a.due_date
-            FROM
-                assignments AS a
-            WHERE
-                a.course_id = $1 AND
-                a.deleted_at IS NULL
-            ORDER BY
-                a.due_date
-        """
+        
+        sql = PostgreSQLQuery\
+            .from_(assignment_table)\
+            .where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.course_id == Parameter("$1"),
+                        assignment_table.deleted_at.isnull()
+                    ]
+                )
+            ).orderby(
+                assignment_table.due_date
+            ).select(
+                assignment_table.id,
+                assignment_table.title,
+                assignment_table.due_date
+            ).get_sql()
+ 
         executable = self.db.query_builder.build_executable(
             sql, values=(course_id, )
         )
@@ -179,43 +224,49 @@ class TrainerAssignmentContentQueryRepository(BaseQueryRepository):
     
     @map_to_dto(dto=TrainerAssignmentContent, dto_mode="single")
     async def assignment_contents(self, assignment_id: int) -> Optional[TrainerAssignmentContent]:
-        sql = """
-            SELECT
-                JSONB_BUILD_OBJECT(
-                    'id', a.id,
-                    'title', a.title,
-                    'max_score', a.max_score,
-                    'max_attempts', a.number_of_attempts,
-                    'due_date', a.due_date,
-                    'instructions', a.instructions
-                ) AS assignment,
-
-                CASE 
-                    WHEN me.id IS NOT NULL THEN
-                        JSONB_BUILD_OBJECT(
-                            'media_id', me.id,
-                            'filename', me.filename
-                        )
-                    ELSE NULL
-                END AS attachment
-            FROM
-                assignments AS a
-            LEFT JOIN
-                media_assets AS me
-            ON
-                a.id = me.mediable_id AND
-                me.mediable_type = $1 AND
-                me.status = $2
-            WHERE
-                a.id = $3 AND
-                a.deleted_at IS NULL AND
-                me.deleted_at IS NULL
-        """
         
+        sql = PostgreSQLQuery\
+            .from_(assignment_table)\
+            .left_join(media_asset_table)\
+            .on(
+                Criterion.all(
+                    terms=[
+                        assignment_table.id == media_asset_table.mediable_id,
+                        media_asset_table.mediable_type == Parameter("$1"),
+                        media_asset_table.status == Parameter("$2")
+                    ]
+                )
+            ).where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.id == Parameter("$3"),
+                        assignment_table.deleted_at.isnull(),
+                        media_asset_table.deleted_at.isnull()
+                    ]
+                )
+            ).select(
+                JsonbBuildObject(
+                    'id', assignment_table.id,
+                    'title', assignment_table.title,
+                    'max_score', assignment_table.max_score,
+                    'max_attempts', assignment_table.number_of_attempts,
+                    'due_date', assignment_table.due_date,
+                    'instructions', assignment_table.instructions
+                ).as_("assignment"),
+                
+                Case().when(
+                    media_asset_table.id.isnotnull(),
+                    JsonbBuildObject(
+                        "media_id", media_asset_table.id,
+                        "filename", media_asset_table.filename
+                    )
+                ).else_(ValueWrapper(None)).as_("attachment")
+            ).get_sql()
+           
         executable = self.db.query_builder.build_executable(
             sql=sql, values=(
-                MediableType.ASSIGNMENT.value,
-                MediaStatus.UPLOADED.value,
+                MediableType.ASSIGNMENT,
+                MediaStatus.UPLOADED,
                 assignment_id
             )
         )
@@ -223,84 +274,101 @@ class TrainerAssignmentContentQueryRepository(BaseQueryRepository):
         return await self.db.execute(executable, fetch_returns="one")
 
 
-    @map_to_dto(dto=TrainerSubmissionDetail, dto_mode="list")
     async def submissions(
         self, 
         assignment_id: int,
         filters: AssignmentSubmissionFilters,
         page_meta: PageMeta
-    ):
+    ) -> Paginated[TrainerSubmissionDetail]:
         
-        sql = """
-            SELECT
-                asub.id AS id,
-                u.username AS username,
-                u.email AS email,
-                asub.attempt AS attempt,
-                a.number_of_attempts AS max_attempt,
-                asub.status AS status,
-                asub.score AS score,
-                a.max_score AS max_score,
-                asub.created_at AS submitted_at
-            FROM
-                assignment_submissions AS asub
-            JOIN
-                media_assets AS me
-            ON
-                me.mediable_id = asub.id AND
-                me.mediable_type = $1 AND
-                me.status = $2
-            JOIN
-                assignments AS a
-            ON
-                a.id = asub.assignment_id
-            JOIN
-                users AS u
-            ON
-                u.id = asub.created_by
-        """
-                
-        fs = {
-            "asub.assignment_id": assignment_id, 
-            "asub.status": filters.status,
-        }
+        sql = PostgreSQLQuery\
+            .from_(assignment_submission_table)\
+            .join(media_asset_table)\
+            .on(
+                Criterion.all(
+                    terms=[
+                        media_asset_table.mediable_id == assignment_submission_table.id,
+                        media_asset_table.mediable_type == Parameter("$1"),
+                        media_asset_table.status == Parameter("$2")
+                    ]
+                )
+            ).join(user_table)\
+            .on(user_table.id == assignment_submission_table.created_by)\
+            .join(assignment_table)\
+            .on(assignment_submission_table.assignment_id == assignment_table.id)\
+            .select(
+                assignment_submission_table.id,
+                user_table.username,
+                user_table.email,
+                assignment_submission_table.attempt,
+                assignment_table.number_of_attempts.as_("max_attempt"),
+                assignment_submission_table.status,
+                assignment_submission_table.score,
+                assignment_table.max_score,
+                assignment_submission_table.created_at.as_("submitted_at")
+            ).where(
+                Criterion.all(
+                    terms=[
+                        assignment_table.id == Parameter("$3"),
+                        assignment_table.deleted_at.isnull(),
+                        media_asset_table.deleted_at.isnull(),
+                        assignment_submission_table.deleted_at.isnull()
+                    ]
+                )
+            )
+            
+        # Add filter for the date range.
+        if filters.from_date:
+            sql = sql.where(fn.Cast(assignment_submission_table.created_at, SqlTypes.DATE).between(lower=filters.from_date, upper=filters.to_date))
+        else:
+            sql = sql.where(fn.Cast(assignment_submission_table.created_at, SqlTypes.DATE) <= filters.to_date)
+
+        # Sort by grading
+        if filters.sort_by_grade:
+            sql = sql.orderby(assignment_submission_table.score, order=filters.order)
+         
         
+        count_sql = PostgreSQLQuery\
+            .from_(sql)\
+            .select(fn.Count("*").as_("total"))
+        
+
+        # Add a limit and offset to main sql.
+        sql= sql.offset(page_meta.offset).limit(page_meta.limit)
+
         executable = self.db.query_builder.build_executable(
-            sql=sql, 
+            sql=sql.get_sql(), 
             values=(
                 MediableType.ASSIGNMENT_SUBMISSION, 
-                MediaStatus.UPLOADED
+                MediaStatus.UPLOADED,
+                assignment_id
             )
-        ).where(filters=filters)
+        )
         
-        if filters.sort_by_grade:
-            order = "asub.score" if filters.sort_by_grade == "ASC" else "-asub.score"
-            executable = executable.order_by(by=order)
+        count_executable = self.db.query_builder.build_executable(
+            sql=count_sql.get_sql(),
+            values=(
+                MediableType.ASSIGNMENT_SUBMISSION, 
+                MediaStatus.UPLOADED,
+                assignment_id
+            )
+        )
         
-        # Final limit offset.
-        executable = executable.offset(page_meta.offset).limit(page_meta.limit)
+        assignment_submissions, count_of_assignment_submissions = await asyncio.gather(
+            self.db.execute(executable, fetch_returns="all"),
+            self.db.execute(count_executable, fetch_returns="one")
+        )
         
-        return await self.db.execute(executable, fetch_returns="all")
-    
+        assignment_submissions = [
+            TrainerSubmissionDetail.model_validate(
+                dict(assignment_submission)
+            ) 
+            for assignment_submission in assignment_submissions
+        ]
         
-import asyncio
-async def main() -> None:
-    from src.dependencies import db
-    
-    await db.init_pool()
-    
-    r = TrainerAssignmentContentQueryRepository(db)
-    
-    res = await r.submissions(assignment_id=18)
-    for r in res:
-        print(r.model_dump_json(indent=4, by_alias=True))
-
-    await db.close_pool()
-    
-
-if __name__ == "__main__":
-    asyncio.run(main())
-        
-        
-        
-        
+        return Paginated[TrainerSubmissionDetail](
+            data=assignment_submissions,
+            page=page_meta.page,
+            limit=page_meta.limit,
+            total_items=count_of_assignment_submissions["total"]
+        )

@@ -1,4 +1,7 @@
-from pydantic import BaseModel, ConfigDict
+from math import ceil
+from typing import Annotated, Literal, TypeVar
+
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -93,3 +96,25 @@ class BaseDTO(BaseModel):
 
 
 
+
+class PageMeta(BaseDTO):
+    page: Annotated[int, Field(ge=1)]
+    limit: Literal[10, 15, 20, 25] = 10
+    
+    @property
+    def offset(self) -> int:
+        return (self.page - 1) * self.limit
+
+
+T = TypeVar("T", bound=BaseDTO)
+
+class Paginated[T](BaseDTO):
+    data: list[T]
+    page: int
+    limit: int
+    total_items: int
+    
+    @computed_field
+    @property
+    def total_pages(self) -> int:
+        return ceil(self.total_items / self.limit) if self.total_items > 0 else 0 
