@@ -64,45 +64,62 @@ class AuthService:
         entity = Entity(entity)
         action = Action(action)
         
-        if action != Action.CREATE and entity_id is None:
-            raise ValueError("Requires an entity_id to verify relationship.")
+        if action in [Action.UPDATE, Action.DELETE] and entity_id is None:
+            raise ValueError(f"`{action.value}` requires `entity_id`")
+    
+        if action == Action.VIEW and entity_id is None and parent_id is None:
+            raise ValueError("`VIEW` requires `entity_id` or `parent_id`")
         
+        # ===== Tier 1: RBAC (Role-Based Access Control) =====
         user = await self.user_repo.get(UserGetByID(id=user_id))
         if user is None:
-            raise UnauthorizedError(
-                message=f"No user found with this id '{user_id}' to perform this action."
-            )
-
+            raise UnauthorizedError(message=f"User {user_id} not found")
+        
         policy = get_policy(user.role, entity)
         if not policy.allows(action):
             raise UnauthorizedError(
-                message="Policy does not allow performing this action on this entity."
+                message=f"Role '{user.role.value}' cannot {action.value} {entity.value}"
             )
-            
         
-        if policy.scope == "contextual":
-            # Check for the relationship.
-            spec_type = get_spec_type(entity)
-            # Validate with access spec.
-            if action == Action.CREATE:
-                if spec_type.parent is None:
-                    #NOTE: No contextual checks required.
-                    return
-
-                if spec_type.parent is not None and parent_id is None:
-                    raise ValueError("`CREATE` action requires `parent_id` to verify relationship") 
+        # ===== Tier 2: ReBAC (Relationship-Based Access Control) =====
+        if policy.scope != "contextual":
+            # No relationship checks needed
+            return
+        
+        spec_type = get_spec_type(entity)
+        access_spec = None
+        
+        # Determine which access spec to use based on action and provided IDs
+        if action == Action.CREATE:
+            # Root entities have no parent
+            if spec_type.parent is None:
+                return
             
+            # Nested entities require parent_id
+            if parent_id is None:
+                raise ValueError("`CREATE` requires `parent_id` for nested entity")
+            
+            access_spec = spec_type.parent(user_id, parent_id, self.db)
+        
+        elif action == Action.VIEW:
+            # LIST query (parent_id provided)
+            if parent_id is not None:
                 access_spec = spec_type.parent(user_id, parent_id, self.db)
+            # Single item query (entity_id provided)
             else:
                 access_spec = spec_type.type(user_id, entity_id, self.db)
-            
-            
-            if not await access_spec.has_access(connection):
-                raise UnauthorizedError(
-                    message="No contextual relationship found with this `user_id` and `entity_id`."
-                )
-            
-            
+        
+        else:  # UPDATE, DELETE
+            # Single item operations always use entity_id
+            access_spec = spec_type.type(user_id, entity_id, self.db)
+        
+        # Validate relationship exists
+        if not await access_spec.has_access(connection):
+            raise UnauthorizedError(
+                message="No relationship between user and requested resource"
+            )    
+                
+
 P = ParamSpec("P")
 R = TypeVar("R")
     

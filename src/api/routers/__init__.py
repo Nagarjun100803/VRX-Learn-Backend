@@ -8,6 +8,22 @@ from src.api.routers.media import router as MediaAPIRouter
 from src.api.routers.assignments import router as AssignmentAPIRouter
 from src.api.routers.assignment_submissions import router as AssignmentSubmissionAPIRouter
 
+from src.api.routers.dashboards import (
+    trainee_router as TraineeDashboardAPIRouter,
+    trainer_router as TrainerDashboardAPIRouter
+)
+from src.api.routers.course_contents import (
+    trainee_router as TraineeCourseContentAPIRouter,
+    trainer_router as TrainerCourseContentAPIRouter
+)
+from src.api.routers.entity_list import (
+    trainee_router as TraineeEntityListAPIRouter,
+    trainer_router as TrainerEntityListAPIRouter
+)
+from src.api.routers.assignment_contents import (
+    trainee_router as TraineeAssignmentContentAPIRouter, 
+    trainer_router as TrainerAssignmentContentAPIRouter
+)
 
 ROUTERS: list[APIRouter] = [
     UserAPIRouter,
@@ -17,7 +33,15 @@ ROUTERS: list[APIRouter] = [
     LessonAPIRouter,
     MediaAPIRouter,
     AssignmentAPIRouter,
-    AssignmentSubmissionAPIRouter
+    AssignmentSubmissionAPIRouter,
+    TraineeDashboardAPIRouter,
+    TrainerDashboardAPIRouter,
+    TraineeCourseContentAPIRouter,
+    TrainerCourseContentAPIRouter,
+    TraineeEntityListAPIRouter,
+    TrainerEntityListAPIRouter,
+    TraineeAssignmentContentAPIRouter,
+    TrainerAssignmentContentAPIRouter
 ]
 
 __all__ = [
@@ -28,5 +52,13 @@ __all__ = [
     "LessonAPIRouter",
     "MediaAPIRouter",
     "AssignmentAPIRouter",
-    "AssignmentSubmissionAPIRouter"
+    "AssignmentSubmissionAPIRouter",
+    "TraineeDashboardAPIRouter",
+    "TrainerDashboardAPIRouter",
+    "TraineeCourseContentAPIRouter",
+    "TrainerCourseContentAPIRouter",
+    "TraineeEntityListAPIRouter",
+    "TrainerEntityListAPIRouter",
+    "TraineeAssignmentContentAPIRouter",
+    "TrainerAssignmentContentAPIRouter"
 ]

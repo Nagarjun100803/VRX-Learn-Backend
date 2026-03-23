@@ -55,7 +55,7 @@ async def create_assignment_submission(
     )
 
     
-@router.patch("/{assignment_submission_id}/-verify", response_model=AssignmentSubmissionVerify)
+@router.patch("/{assignment_submission_id}/verify", response_model=AssignmentSubmissionVerify)
 async def verify_assignment_submission(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_verify_payload: AssignmentSubmissionVerifySchema,

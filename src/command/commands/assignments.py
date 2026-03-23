@@ -9,6 +9,7 @@ from src.command.commands.validator import UpdateValidatorMixin
 AssignmentTitle = Annotated[str, StringConstraints(min_length=5, max_length=250, to_upper=True)]
 AssignmentInstruction = Annotated[str, Field(min_length=5, max_length=2000)]
 NumberOfAttempts = Annotated[int, Field(le=3, gt=0)]
+MaxScore = Annotated[int, Field(ge=5, le=100)]
 
 class AllowedAssignmentFileType(StrEnum):
     PDF = "application/pdf"
@@ -21,7 +22,7 @@ class AssignmentCreateCore(BaseModel):
     instructions: Optional[AssignmentInstruction] = None
     course_id: CourseID
     due_date: Optional[datetime] = None
-    max_score: Annotated[int, Field(ge=5, le=100)]
+    max_score: MaxScore
     number_of_attempts: NumberOfAttempts = 1
 
 

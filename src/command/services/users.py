@@ -126,3 +126,8 @@ class UserService(BaseService[User]):
             raise UnAuthenticated("Invalid email or password.")
         return user
     
+if __name__ == "__main__":
+    password_handler = PasswordHandler()
+    hash = "$argon2id$v=19$m=65536,t=3,p=4$PWfM+b+3tjZGKOUcwxgDwA$ElbUpsAGrjxIRjdx/ECUdnTJUxUH7xbsYuAtPAcxVK0"
+    print(password_handler.verify_password("123",  hash))
+    

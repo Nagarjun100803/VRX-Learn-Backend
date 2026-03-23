@@ -2,13 +2,13 @@ from typing import Annotated, Optional
 from pydantic import BaseModel, Field
 from enum import StrEnum
 from src.command.commands.base import AssignmentBase, AssignmentID, AssignmentSubmissionBase, AuditFields, UserID
-from src.command.commands.assignments import Assignment
+from src.command.commands.assignments import Assignment, MaxScore, NumberOfAttempts
 from src.command.commands.media import Media
 
 
 Feedback = Annotated[str, Field(max_length=2000)]
-Score = Annotated[int, Field(ge=0)]
-
+Score = int # Temporary Fix
+Attempt = NumberOfAttempts
 
 class AllowedAssignmentSubmissionFileType(StrEnum):
     PDF = "application/pdf"
@@ -31,11 +31,11 @@ class AssignmentSubmissionCreate(AssignmentSubmissionCreateCore):
 class AssignmentSubmissionCreateWithAttemptAndStatus(AssignmentSubmissionCreate):
     # We change the status with `done_late` if late submission.
     status: AssignmentSubmissionStatus = AssignmentSubmissionStatus.SUBMITTED
-    attempt: Annotated[int, Field(gt=0, le=3)]
+    attempt: Attempt
 
 
 class AssignmentSubmissionVerifyCore(BaseModel):
-    score: Score
+    score: MaxScore
     feedback: Optional[Feedback] = None
 
 

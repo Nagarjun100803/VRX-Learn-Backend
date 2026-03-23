@@ -16,4 +16,4 @@ aws_demo
 redis_learning
 tests
 cache.py
-query/
+qb

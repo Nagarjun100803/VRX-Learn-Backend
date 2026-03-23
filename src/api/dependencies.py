@@ -1,5 +1,7 @@
 from typing import Annotated, Optional
+
 from fastapi import Depends, Cookie
+
 from src.api.auth import AuthenticationService, UserContext
 from src.api.jwt import JWTHandler
 from src.command.commands.base import UserID
@@ -15,7 +17,34 @@ from src.dependencies import (
     EnrollmentService, AssignmentSubmissionService
     
 )
-from src.exceptions import UnAuthenticated, UnauthorizedError
+from src.exceptions import UnauthorizedError
+
+# Query Dependencies.
+from src.dependencies import (
+    trainee_dashboard_query_service, 
+    trainer_dashboard_query_service,
+    
+    trainee_course_content_query_service,
+    trainer_course_content_query_service,
+    
+    trainee_entity_list_query_service,
+    trainer_entity_list_query_service,
+    
+    trainee_assignment_content_query_service,
+    trainer_assignment_content_query_service
+)
+from src.dependencies import (
+    TraineeDashboardQueryService,
+    TrainerDashboardQueryService,
+    TraineeCourseContentQueryService,
+    TrainerCourseContentQueryService,
+    
+    TraineeEntityListQueryService,
+    TrainerEntityListQueryService,
+    
+    TraineeAssignmentContentQueryService,
+    TrainerAssignmentContentQueryService
+)
 
 
 # # Helper functions to build a Services used for Depedency Injection.
@@ -50,6 +79,38 @@ def get_assignment_submission_service() -> AssignmentSubmissionService:
     return assignment_submission_service
 
 
+
+def get_trainee_dashboard_query_service() -> TraineeDashboardQueryService:
+    return trainee_dashboard_query_service
+
+def get_trainer_dashboard_query_service() -> TrainerDashboardQueryService:
+    return trainer_dashboard_query_service
+
+
+def get_trainee_course_content_query_service() -> TraineeCourseContentQueryService:
+    return trainee_course_content_query_service
+
+
+def get_trainer_course_content_query_service() -> TrainerCourseContentQueryService:
+    return trainer_course_content_query_service
+
+
+def get_trainee_entity_list_query_service() -> TraineeEntityListQueryService:
+    return trainee_entity_list_query_service
+
+
+def get_trainer_entity_list_query_service() -> TrainerEntityListQueryService:
+    return trainer_entity_list_query_service
+
+
+def get_trainee_assignment_content_query_service() -> TraineeAssignmentContentQueryService:
+    return trainee_assignment_content_query_service
+
+
+def get_trainer_assignment_content_query_service() -> TrainerAssignmentContentQueryService:
+    return trainer_assignment_content_query_service
+
+
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]
@@ -73,7 +134,19 @@ async def get_current_user_context(
     ) -> UserContext:
     user_context = await authentication_service.authenticate(token=access_token)
     return user_context
+
+
+TraineeDashboardQueryServiceDependency = Annotated[TraineeDashboardQueryService, Depends(get_trainee_dashboard_query_service)]
+TrainerDashboardQueryServiceDependency = Annotated[TrainerDashboardQueryService, Depends(get_trainer_dashboard_query_service)]
+
+TraineeCourseContentQueryServiceDependency = Annotated[TraineeCourseContentQueryService, Depends(get_trainee_course_content_query_service)]
+TrainerCourseContentQueryServiceDependency = Annotated[TrainerCourseContentQueryService, Depends(get_trainer_course_content_query_service)]
+
+TraineeEntityListQueryServiceDependency = Annotated[TraineeEntityListQueryService, Depends(get_trainee_entity_list_query_service)]
+TrainerEntityListQueryServiceDependency = Annotated[TrainerEntityListQueryService, Depends(get_trainer_entity_list_query_service)]
     
+TraineeAssignmentContentQueryServiceDependency = Annotated[TraineeAssignmentContentQueryService, Depends(get_trainee_assignment_content_query_service)]
+TrainerAssignmentContentQueryServiceDependency = Annotated[TrainerAssignmentContentQueryService, Depends(get_trainer_assignment_content_query_service)]
 
 UserContextDependency = Annotated[UserContext, Depends(get_current_user_context)]
 
@@ -94,9 +167,15 @@ async def get_current_admin_or_trainer(user_context: UserContextDependency) -> U
         raise UnauthorizedError(message=f"Permission Denied: {UserRole.ADMIN.value} or {UserRole.TRAINER.value} required.")
     return user_context.user_id
 
+async def get_current_trainee_or_trainer(user_context: UserContextDependency) -> UserID:
+    if not (user_context.role == UserRole.TRAINEE.value or user_context.role == UserRole.TRAINER.value):
+        raise UnauthorizedError(message=f"Permission Denied: {UserRole.TRAINEE.value} or {UserRole.TRAINER.value} required.")
+    return user_context.user_id
+
+
 CurrentUser = Annotated[UserID, Depends(get_current_user)]
 CurrentTrainee = Annotated[UserID, Depends(get_current_trainee)]
 CurrentTrainer = Annotated[UserID, Depends(get_current_trainer)]
 CurrentAdmin = Annotated[UserID, Depends(get_current_admin)]
 CurrentAdminOrTrainer = Annotated[UserID, Depends(get_current_admin_or_trainer)]
-
+CurrentTraineeOrTrainer = Annotated[UserID, Depends(get_current_trainee_or_trainer)]
