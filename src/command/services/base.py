@@ -2,7 +2,7 @@ from typing import Any, Literal, Optional, Type, ClassVar, TypeAlias, TypeVar, U
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
 from src.exceptions import EntityNotFoundError, ValidationError
-from src.command.repositories.base import BaseRepository, ReorderParicipants
+from src.command.repositories.base import ReorderParicipants
 from src.command.commands.base import ReArrangeBase
 from src.command.services.fractional_index import fractional_index
 from src.command.commands.users import UserRole

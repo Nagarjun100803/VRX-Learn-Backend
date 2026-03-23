@@ -1,7 +1,6 @@
-import stat
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from src.api.dependencies import CurrentTraineeOrTrainer, TraineeAssignmentContentQueryServiceDependency, TrainerAssignmentContentQueryServiceDependency
 from src.command.commands.base import AssignmentID, CourseID

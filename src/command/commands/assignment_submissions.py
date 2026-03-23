@@ -35,7 +35,7 @@ class AssignmentSubmissionCreateWithAttemptAndStatus(AssignmentSubmissionCreate)
 
 
 class AssignmentSubmissionVerifyCore(BaseModel):
-    score: MaxScore
+    score: Score
     feedback: Optional[Feedback] = None
 
 
