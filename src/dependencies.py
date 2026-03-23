@@ -1,6 +1,8 @@
 # Database initalization.
 from src.api.jwt import JWTHandler
 from src.database import AsyncPgDBManager
+from src.query.repositories.assignment_contents import TraineeAssignmentContentQueryRepository, TrainerAssignmentContentQueryRepository
+from src.query.services.assignment_contents import TraineeAssignmentContentQueryService, TrainerAssignmentContentQueryService
 from src.query_builder.asyncpg import AsyncPgQueryBuilder
 
 # Repository Imports.
@@ -63,6 +65,10 @@ trainee_course_content_query_repository = TraineeCourseContentQueryRepository(db
 trainer_course_content_query_repository = TrainerCourseContentQueryRepository(db=db)
 
 entity_list_query_repository = EntityListQueryRepository(db=db)
+
+trainee_assignment_content_query_repository = TraineeAssignmentContentQueryRepository(db=db)
+trainer_assignment_content_query_repository = TrainerAssignmentContentQueryRepository(db=db)
+
 
 # Helper classes.
 password_handler = PasswordHandler()
@@ -160,3 +166,12 @@ trainer_entity_list_query_service = TrainerEntityListQueryService(
 )
 
 
+trainee_assignment_content_query_service = TraineeAssignmentContentQueryService(
+    trainee_assignment_query_repo=trainee_assignment_content_query_repository,
+    auth_service=auth_service
+)
+
+trainer_assignment_content_query_service = TrainerAssignmentContentQueryService(
+    trainer_assignment_content_repo=trainer_assignment_content_query_repository,
+    auth_service=auth_service
+)

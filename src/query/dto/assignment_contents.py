@@ -1,7 +1,7 @@
 from datetime import date, datetime
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
-
+from pydantic import Field
 
 from src.command.commands.assignment_submissions import AssignmentSubmissionStatus, Attempt, Score
 from src.command.commands.assignments import AssignmentInstruction, AssignmentTitle, MaxScore, NumberOfAttempts
@@ -9,7 +9,7 @@ from src.command.commands.base import AssignmentID, AssignmentSubmissionID, Medi
 from src.command.commands.users import Email
 from src.exceptions import ValidationError
 from src.pypika_query_builder import CutsomOrder
-from src.query.dto.base import BaseDTO
+from src.query.dto.base import BaseDTO, PageMeta
 
 
 class TraineeAssignmentCore(BaseDTO):
@@ -75,7 +75,7 @@ class TrainerSubmissionDetail(BaseDTO):
 
 class AssignmentSubmissionFilters(BaseDTO):
     from_date: Optional[date] = None
-    to_date: date
+    to_date: Annotated[date, Field(default=date(2026, 3, 23))]
     status: Optional[AssignmentSubmissionStatus] = None
     sort_by_grade: Optional[Literal["asc", "desc"]] = None
     
@@ -94,3 +94,7 @@ class AssignmentSubmissionFilters(BaseDTO):
                 Invalid date range: 'from_date' cannot be later than 'to_date'.
             """
         )
+
+class AssignmentSubmissionQuerySchema(AssignmentSubmissionFilters, PageMeta):
+    # assignment_id: AssignmentID
+    ...

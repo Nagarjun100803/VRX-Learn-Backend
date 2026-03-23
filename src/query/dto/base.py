@@ -1,7 +1,7 @@
 from math import ceil
 from typing import Annotated, Literal, TypeVar
 
-from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, computed_field, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -99,7 +99,7 @@ class BaseDTO(BaseModel):
 
 class PageMeta(BaseDTO):
     page: Annotated[int, Field(ge=1)]
-    limit: Literal[10, 15, 20, 25] = 10
+    limit: Annotated[Literal[10, 15, 20, 25], BeforeValidator(int)] = 10
     
     @property
     def offset(self) -> int:

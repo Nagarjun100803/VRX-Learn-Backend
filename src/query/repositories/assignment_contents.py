@@ -323,6 +323,9 @@ class TrainerAssignmentContentQueryRepository(BaseQueryRepository):
         else:
             sql = sql.where(fn.Cast(assignment_submission_table.created_at, SqlTypes.DATE) <= filters.to_date)
 
+        if filters.status:
+            sql = sql.where(assignment_submission_table.status == filters.status)
+        
         # Sort by grading
         if filters.sort_by_grade:
             sql = sql.orderby(assignment_submission_table.score, order=filters.order)

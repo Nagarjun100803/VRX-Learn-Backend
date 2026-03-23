@@ -28,7 +28,10 @@ from src.dependencies import (
     trainer_course_content_query_service,
     
     trainee_entity_list_query_service,
-    trainer_entity_list_query_service
+    trainer_entity_list_query_service,
+    
+    trainee_assignment_content_query_service,
+    trainer_assignment_content_query_service
 )
 from src.dependencies import (
     TraineeDashboardQueryService,
@@ -37,7 +40,10 @@ from src.dependencies import (
     TrainerCourseContentQueryService,
     
     TraineeEntityListQueryService,
-    TrainerEntityListQueryService
+    TrainerEntityListQueryService,
+    
+    TraineeAssignmentContentQueryService,
+    TrainerAssignmentContentQueryService
 )
 
 
@@ -97,6 +103,13 @@ def get_trainer_entity_list_query_service() -> TrainerEntityListQueryService:
     return trainer_entity_list_query_service
 
 
+def get_trainee_assignment_content_query_service() -> TraineeAssignmentContentQueryService:
+    return trainee_assignment_content_query_service
+
+
+def get_trainer_assignment_content_query_service() -> TrainerAssignmentContentQueryService:
+    return trainer_assignment_content_query_service
+
 
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]  
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
@@ -132,6 +145,8 @@ TrainerCourseContentQueryServiceDependency = Annotated[TrainerCourseContentQuery
 TraineeEntityListQueryServiceDependency = Annotated[TraineeEntityListQueryService, Depends(get_trainee_entity_list_query_service)]
 TrainerEntityListQueryServiceDependency = Annotated[TrainerEntityListQueryService, Depends(get_trainer_entity_list_query_service)]
     
+TraineeAssignmentContentQueryServiceDependency = Annotated[TraineeAssignmentContentQueryService, Depends(get_trainee_assignment_content_query_service)]
+TrainerAssignmentContentQueryServiceDependency = Annotated[TrainerAssignmentContentQueryService, Depends(get_trainer_assignment_content_query_service)]
 
 UserContextDependency = Annotated[UserContext, Depends(get_current_user_context)]
 
