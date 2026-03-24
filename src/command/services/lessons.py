@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 from typing import ClassVar, Type, Optional
 from asyncpg import Connection
-from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonTitleUpdate, LessonDelete, LessonGetQuery, LessonReArrange, LessonUpload
+from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonTitleUpdate, LessonDelete, LessonGetQuery, LessonReArrange, LessonUploadUrl
 from src.command.commands.media import MediaCreate, MediaStatus, MediableType
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
 from src.command.repositories.modules import ModuleRepository
@@ -137,7 +137,7 @@ class LessonService(BaseService[Lesson]):
         self, 
         cmd: LessonCreate,
         file_cmd: FileMetadata
-    ) -> LessonUpload:
+    ) -> LessonUploadUrl:
         
         async with self.repo.db.transaction() as connection:
             lesson = await self.create(cmd, connection=connection)
@@ -158,7 +158,7 @@ class LessonService(BaseService[Lesson]):
                 status=MediaStatus.PENDING
             )
             
-            upload_url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=connection)
+            media_id, upload_url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=connection)
         
-        return LessonUpload(lesson_id=lesson.id, upload_url=upload_url)
+        return LessonUploadUrl(media_id=media_id, lesson_id=lesson.id, upload_url=upload_url)
   

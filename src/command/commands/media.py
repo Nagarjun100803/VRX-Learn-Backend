@@ -1,8 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import Annotated, Union
 from enum import StrEnum
-from src.command.commands.base import UserID, MediaBase, AuditFields
+from typing import Annotated, Union
 from pathlib import Path
+
+from pydantic import Field
+
+from src.command.commands.base import BaseCmd, UserID, MediaBase, AuditFields
 
 
 class AllowedContentTypes(StrEnum):
@@ -30,7 +32,7 @@ class MediaStatus(StrEnum):
     UPLOADED = "uploaded"
 
 
-class MediaCreateCore(BaseModel):
+class MediaCreateCore(BaseCmd):
     filename: Union[str, Path]
     mime_type: AllowedContentTypes
     file_size: Annotated[int, Field(gt=0, examples=[1024])]
@@ -44,7 +46,7 @@ class MediaCreate(MediaCreateCore):
     created_by: UserID
     
 
-class MediaStatusUpdateCore(BaseModel):
+class MediaStatusUpdateCore(BaseCmd):
     status: MediaStatus
     
 

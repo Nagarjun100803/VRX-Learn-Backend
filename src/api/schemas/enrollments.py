@@ -1,5 +1,6 @@
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
 from src.command.commands.enrollments import (
     EnrollmentBase, EnrollmentCore, 
     EnrollmentUpdateCore, EnrollmentCreateCore

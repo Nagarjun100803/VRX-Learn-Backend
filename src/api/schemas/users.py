@@ -1,11 +1,13 @@
-from pydantic import BaseModel, ConfigDict, StringConstraints
 from typing import Annotated
+
+from pydantic import ConfigDict, StringConstraints
+
+from src.command.commands.base import BaseCmd, UserID
 from src.command.commands.users import UserRole, Email
-from src.command.commands.base import UserID
 
 
 
-class UserCreateSchema(BaseModel):
+class UserCreateSchema(BaseCmd):
     username: Annotated[str, StringConstraints(min_length=5)]
     email: Email
     password: str
@@ -15,13 +17,13 @@ class UserCreateSchema(BaseModel):
     
 
  
-class UserOutSchema(BaseModel):
+class UserOutSchema(BaseCmd):
     id: UserID
     email: Email
     role: UserRole
     
 
-class LoginSchema(BaseModel):
+class LoginSchema(BaseCmd):
     email: Email
     password: str
     

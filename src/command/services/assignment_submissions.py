@@ -580,10 +580,11 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
                     status=MediaStatus.PENDING,
                     created_by=cmd.created_by
                 )
-            url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=conn)    
+            media_id, url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=conn)    
         
         return AssignmentSubmissionUploadURL(
             id=submission.id,
+            media_id=media_id,
             upload_url=url
         )
 

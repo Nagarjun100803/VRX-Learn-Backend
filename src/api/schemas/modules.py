@@ -1,9 +1,8 @@
-from pydantic import BaseModel
-from src.command.commands.base import CourseID, ModuleID
+from src.command.commands.base import BaseCmd, CourseID, ModuleID
 from src.command.commands.modules import ModuleCreateCore, ModuleUpdateCore, ModuleTitile, ReArrangeModuleCore
 
 
-class ModuleOutSchema(BaseModel):
+class ModuleOutSchema(BaseCmd):
     id: ModuleID
     title: ModuleTitile
     course_id: CourseID

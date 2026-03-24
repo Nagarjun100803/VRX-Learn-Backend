@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from src.api.dependencies import LessonServiceDependency, CurrentUser
 from src.command.commands.base import LessonID
-from src.command.commands.lessons import LessonDelete, LessonGetQuery, LessonReArrange, LessonTitleUpdate, LessonUpload, LessonCreate
+from src.command.commands.lessons import LessonDelete, LessonGetQuery, LessonReArrange, LessonTitleUpdate, LessonUploadUrl, LessonCreate
 from src.api.schemas.lessons import LessonCreateSchema, LessonOutSchema, LessonReArrangeSchema, LessonTitleUpdateSchema
 from src.command.services.files import FileMetadata
 
@@ -23,7 +23,7 @@ async def get_lesson(
     )
     
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=LessonUpload)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=LessonUploadUrl)
 async def create_lesson(
     lesson: LessonCreateSchema,
     lesson_service: LessonServiceDependency,

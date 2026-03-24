@@ -1,7 +1,9 @@
 from datetime import datetime
 from functools import partial
-from pydantic import BaseModel, Field, model_validator, BeforeValidator, TypeAdapter, PlainSerializer, field_serializer
+from pydantic import BaseModel, ConfigDict, Field, model_validator, BeforeValidator, TypeAdapter, PlainSerializer, field_serializer
 from typing import ClassVar, Self, Type, Union, Optional, Annotated
+
+from pydantic.alias_generators import to_camel
 
 
 ID = Union[int, str]
@@ -33,7 +35,113 @@ def to_external_id(
     return f"{cls.PREFIX}-{obj.id}"
 
 
-class EntityBase(BaseModel):
+class BaseCmd(BaseModel):
+    """
+    Base Command Model for API requests and command payloads on the write side.
+
+    This model provides a centralized configuration for all Commands used in
+    the application's write layer (CQRS command side). It standardizes naming
+    conventions and validation behavior across all derived Command classes.
+
+    Key behaviors:
+    - Accepts both Python `snake_case` and `camelCase` field names during
+      validation. This allows flexibility for API clients sending write
+      operation payloads.
+    - Allows models to be constructed directly from objects using attribute
+      access (useful for internal command creation).
+    - Ignores extra fields that may appear in request payloads to provide
+      forward compatibility with client versions.
+    - Does NOT convert field names in API responses (responses use snake_case
+      internally for write operations).
+
+    Configuration:
+    - `validate_by_name=True`
+        Allows validation using the original snake_case field names.
+
+    - `validate_by_alias=True`
+        Allows validation using camelCase aliases (auto-generated).
+
+    - `alias_generator=to_camel`
+        Automatically generates camelCase aliases for all fields, enabling
+        camelCase input without explicit alias definitions.
+
+    - `from_attributes=True`
+        Enables model creation from objects with attributes (e.g. for internal
+        command construction or data transfer objects).
+
+    - `extra="ignore"`
+        Ignores unknown fields instead of raising validation errors. This
+        provides forward compatibility when API clients send additional fields.
+
+    Example
+    -------
+```python
+    class CreateCourseCmd(BaseCmd):
+        title: str
+        description: str
+        trainer_id: int
+        is_active: bool = True
+```
+
+    Input payloads accepted:
+
+    snake_case:
+```json
+    {
+        "title": "Advanced FastAPI",
+        "description": "Build production APIs",
+        "trainer_id": 5,
+        "is_active": true
+    }
+```
+
+    camelCase:
+```json
+    {
+        "title": "Advanced FastAPI",
+        "description": "Build production APIs",
+        "trainerId": 5,
+        "isActive": true
+    }
+```
+
+    Both payloads create identical command objects:
+```python
+    CreateCourseCmd(
+        title="Advanced FastAPI",
+        description="Build production APIs",
+        trainer_id=5,
+        is_active=True
+    )
+```
+
+    Usage in API write operations:
+```python
+    @router.post("/courses")
+    async def create_course(cmd: CreateCourseCmd):
+        # cmd accepts both snake_case and camelCase from request body
+        # Internally uses snake_case field names
+        return await course_service.create(cmd)
+```
+
+    Notes
+    -----
+    All Commands in the write layer should inherit from this class to ensure
+    consistent validation behavior and support both naming conventions for API
+    requests. Commands represent write operations (CREATE, UPDATE, DELETE) and
+    focus on input validation rather than response serialization.
+    """
+
+    model_config = ConfigDict(
+        validate_by_alias=True,
+        validate_by_name=True,
+        alias_generator=to_camel,
+        from_attributes=True,
+        extra="ignore"
+    )
+
+
+class EntityBase(BaseCmd):
     PREFIX: ClassVar[str] = "B"
     id: ID
     
@@ -181,15 +289,15 @@ any_id_adaptor = TypeAdapter(AnyID)
 
 
 
-class CreateAuditFields(BaseModel):
+class CreateAuditFields(BaseCmd):
     created_at: Optional[datetime] = None
     created_by: Optional[UserID] = None
 
-class UpdateAuditFields(BaseModel):
+class UpdateAuditFields(BaseCmd):
     updated_at: Optional[datetime] = None
     updated_by: Optional[UserID] = None
     
-class DeleteAuditField(BaseModel):
+class DeleteAuditField(BaseCmd):
     deleted_at: Optional[datetime] = None
     deleted_by: Optional[UserID] = None
     

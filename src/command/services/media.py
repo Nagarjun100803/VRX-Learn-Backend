@@ -9,6 +9,7 @@ from typing import Optional
 from dataclasses import dataclass
 
 from asyncpg import Connection
+from src.command.commands.base import ID
 from src.command.services.files import S3, FileMetadata
 from src.command.repositories.media import MediaRepository
 from src.command.commands.media import Media, MediaCreate, MediaStatusUpdate, MediaDelete, MediaGet
@@ -79,12 +80,12 @@ class MediaService:
         cmd: MediaCreate, 
         expire_mins: int = 120,
         connection: Optional[Connection] = None
-    ) -> str:
+    ) -> tuple[ID, str]:
         # Create a table record with a pending.
         media = await self.create(cmd, connection=connection)
 
         # Generate presigned url for upload/
-        return await self.file_service.generate_presigned_url(
+        url = await self.file_service.generate_presigned_url(
             file_metadata=FileMetadata(
                 filename=media.filename,
                 content_type=media.mime_type,
@@ -92,6 +93,8 @@ class MediaService:
             ),
             expire_mins=expire_mins
         )
+        
+        return (media.id, url)
     
     async def get_view_url(
         self, 

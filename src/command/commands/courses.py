@@ -1,7 +1,9 @@
-from typing import Annotated, Literal, Optional, Union
-from pydantic import Field, StringConstraints, BaseModel
 from enum import Enum
-from src.command.commands.base import CourseBase, UserID, AuditFields, NullField
+from typing import Annotated, Literal, Optional, Union
+
+from pydantic import Field, StringConstraints
+
+from src.command.commands.base import BaseCmd, CourseBase, UserID, AuditFields, NullField
 from src.command.commands.validator import UpdateValidatorMixin
 
 
@@ -11,7 +13,7 @@ class CourseType(str, Enum):
     LIVE = "live"
 
 
-class LiveCourseDetails(BaseModel):
+class LiveCourseDetails(BaseCmd):
     type: Literal[CourseType.LIVE] = CourseType.LIVE
     # We can add more fields, if we want.
     
@@ -23,13 +25,13 @@ CourseLongDescription = Annotated[str, StringConstraints(min_length=50, max_leng
 Price = Annotated[float, Field(gt=1000)]
 
 
-class RecordedCourseDetails(BaseModel):
+class RecordedCourseDetails(BaseCmd):
     type: Literal[CourseType.PRE_RECORDED] = CourseType.PRE_RECORDED
     total_hours: Annotated[float, Field(gt=0)]
     price: Price
 
 
-class CourseCreateCore(BaseModel): # Will act as mixin. used by Presentation layer [Fastapi]
+class CourseCreateCore(BaseCmd): # Will act as mixin. used by Presentation layer [Fastapi]
     title: CourseTitle
     short_description: Optional[CourseShortDescription] = None
     long_description: Optional[CourseLongDescription] = None
@@ -54,7 +56,7 @@ class CourseDelete(CourseBase):
     
   
 
-class CourseInfoUpdateCore(UpdateValidatorMixin, BaseModel):
+class CourseInfoUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[CourseTitle], NullField]
     short_description: Annotated[Optional[CourseShortDescription], NullField]
     long_description: Annotated[Optional[CourseLongDescription], NullField]
@@ -66,7 +68,7 @@ class CourseInfoUpdateCore(UpdateValidatorMixin, BaseModel):
 class CourseInfoUpdate(CourseInfoUpdateCore, CourseBase):
     updated_by: UserID
 
-class RecordedCourseDetailsUpdateCore(UpdateValidatorMixin, BaseModel):
+class RecordedCourseDetailsUpdateCore(UpdateValidatorMixin, BaseCmd):
     total_hours: Annotated[Optional[float], NullField]
     price: Annotated[Optional[Price], NullField]
     

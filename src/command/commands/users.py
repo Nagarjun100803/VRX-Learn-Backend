@@ -1,7 +1,9 @@
-from pydantic import EmailStr, BaseModel, StringConstraints
-from typing import Annotated
-from src.command.commands.base import UserBase, UserID, AuditFields
 from enum import StrEnum
+from typing import Annotated
+
+from pydantic import EmailStr, StringConstraints
+
+from src.command.commands.base import BaseCmd, UserBase, UserID, AuditFields
 
 
 class UserRole(StrEnum):
@@ -13,7 +15,7 @@ class UserRole(StrEnum):
 
 Email = Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]    
     
-class UserCreate(BaseModel):
+class UserCreate(BaseCmd):
     username: Annotated[str, StringConstraints(min_length=5)]
     email: Email
     password: str
@@ -26,7 +28,7 @@ class UserCreateWithConfirmPassword(UserCreate):
     confirm_password: str
     
 
-class PasswordUpdate(BaseModel):
+class PasswordUpdate(BaseCmd):
     email: EmailStr
     new_password: str
     
@@ -39,7 +41,7 @@ class UserGetByIDQuery(UserBase):
     viewer_id: UserID
     
     
-class UserGetByEmail(BaseModel): 
+class UserGetByEmail(BaseCmd): 
     email: EmailStr
 
 
@@ -47,7 +49,7 @@ class UserDelete(UserBase):
     deleted_by: UserID
     
 
-class UserAuth(BaseModel):
+class UserAuth(BaseCmd):
     email: EmailStr
     password: str
     

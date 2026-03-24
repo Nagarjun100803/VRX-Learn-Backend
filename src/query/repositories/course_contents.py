@@ -177,7 +177,8 @@ class TrainerCourseContentQueryRepository(BaseQueryRepository):
                         ) 
                     ).filter(
                         assignment_table.id.isnotnull()
-                    ).orderby(assignment_table.due_date) 
+                    ).orderby(assignment_table.due_date),
+                    ValueWrapper("[]") 
                 ).as_("assignments")
             )
             

@@ -1,7 +1,9 @@
 from datetime import datetime
-from pydantic import BaseModel, StringConstraints, ConfigDict
 from typing import Annotated, Optional
-from src.command.commands.base import ModuleBase, CourseID, UserID, NullField, ModuleID
+
+from pydantic import StringConstraints, ConfigDict
+
+from src.command.commands.base import BaseCmd, ModuleBase, CourseID, UserID, NullField, ModuleID
 from src.command.commands.validator import UpdateValidatorMixin
 
 
@@ -11,7 +13,7 @@ ModuleDescription = Annotated[str, StringConstraints(min_length=20)]
 
 
 
-class ModuleCreateCore(BaseModel):
+class ModuleCreateCore(BaseCmd):
     title: ModuleTitile
     description: Optional[ModuleDescription] = None
     course_id: CourseID
@@ -26,7 +28,7 @@ class ModuleCreate(ModuleCreateCore):
 class ModuleCreateWithPosition(ModuleCreate):
     position_string: str
 
-class ModuleUpdateCore(UpdateValidatorMixin, BaseModel):
+class ModuleUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[ModuleTitile], NullField]
     description: Annotated[Optional[ModuleDescription], NullField]
     
@@ -54,7 +56,7 @@ class Module(ModuleBase, ModuleCreate):
     deleted_at: Optional[datetime] = None
     
 
-class ReArrangeModuleCore(UpdateValidatorMixin, BaseModel):
+class ReArrangeModuleCore(UpdateValidatorMixin, BaseCmd):
     preceding_id: Annotated[Optional[ModuleID], NullField]
     succeeding_id: Annotated[Optional[ModuleID], NullField]
 

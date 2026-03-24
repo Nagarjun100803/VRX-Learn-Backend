@@ -1,8 +1,6 @@
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel
-
 from src.command.commands.assignment_submissions import (
     AssignmentSubmissionCreateCore,
     AssignmentSubmissionStatus, 
@@ -11,7 +9,7 @@ from src.command.commands.assignment_submissions import (
     Score,
 )
 from src.command.commands.assignment_submissions import AssignmentSubmissionBase
-from src.command.commands.base import AssignmentID, UserID
+from src.command.commands.base import AssignmentID, BaseCmd, UserID
 from src.command.services.files import FileMetadata
 
 
@@ -23,7 +21,7 @@ class AssignmentSubmissionOut(AssignmentSubmissionBase):
     created_at: datetime
     
 
-class AssignmentSubmissionCreateSchema(BaseModel):
+class AssignmentSubmissionCreateSchema(BaseCmd):
     assignment_submission: AssignmentSubmissionCreateCore
     file_metadata: FileMetadata
      

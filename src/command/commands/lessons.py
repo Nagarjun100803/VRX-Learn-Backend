@@ -1,13 +1,15 @@
-from pydantic import BaseModel, StringConstraints
 from typing import Annotated, Optional
-from src.command.commands.base import AuditFields, LessonBase, LessonID,  ModuleID, NullField, UserID
+
+from pydantic import StringConstraints
+
+from src.command.commands.base import AuditFields, BaseCmd, LessonBase, LessonID, MediaID,  ModuleID, NullField, UserID
 from src.command.commands.validator import UpdateValidatorMixin
 
 
 LessonTitle = Annotated[str, StringConstraints(min_length=5,  max_length=256, strip_whitespace=True, to_upper=True)]
 
 
-class LessonCreateCore(BaseModel):
+class LessonCreateCore(BaseCmd):
     title: LessonTitle
     module_id: ModuleID
     
@@ -20,7 +22,7 @@ class LessonCreateWithPosition(LessonCreate):
     position_string: str
 
 
-class LessonTitleUpdateCore(BaseModel):
+class LessonTitleUpdateCore(BaseCmd):
     title: LessonTitle
     
 class LessonTitleUpdate(LessonTitleUpdateCore, LessonBase):
@@ -37,7 +39,7 @@ class LessonGetQuery(LessonGet):
 class Lesson(AuditFields, LessonCreateCore, LessonBase): ...
 
 
-class LessonReArrangeCore(UpdateValidatorMixin, BaseModel):
+class LessonReArrangeCore(UpdateValidatorMixin, BaseCmd):
     preceding_id: Annotated[Optional[LessonID], NullField]
     succeeding_id: Annotated[Optional[LessonID], NullField]
 
@@ -46,7 +48,8 @@ class LessonReArrange(LessonReArrangeCore):
     updated_by: UserID
     
 
-class LessonUpload(BaseModel):
+class LessonUploadUrl(BaseCmd):
+    media_id: MediaID
     lesson_id: LessonID
     upload_url: str
     

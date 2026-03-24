@@ -193,10 +193,11 @@ class AssignmentService(BaseService[Assignment]):
             )
             
             # presigned url.
-            url = await self.media_service.prepare_upload_url(media, connection=connection)
+            media_id, url = await self.media_service.prepare_upload_url(media, connection=connection)
             
         return AssignmentUploadUrl(
             id=assignment.id,
+            media_id=media_id,
             upload_url=url
         )
 

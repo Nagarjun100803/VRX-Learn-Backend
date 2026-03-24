@@ -1,8 +1,10 @@
 from datetime import datetime
-from pydantic import BaseModel, Field, StringConstraints
-from typing import Annotated, Optional
 from enum import StrEnum
-from src.command.commands.base import AssignmentBase, AssignmentID, AuditFields, CourseID, UserID, NullField
+from typing import Annotated, Optional
+
+from pydantic import Field, StringConstraints
+
+from src.command.commands.base import AssignmentBase, AssignmentID, AuditFields, BaseCmd, CourseID, MediaID, UserID, NullField
 from src.command.commands.validator import UpdateValidatorMixin
 
 
@@ -17,7 +19,7 @@ class AllowedAssignmentFileType(StrEnum):
     DOC = "application/msword"
     
 
-class AssignmentCreateCore(BaseModel):
+class AssignmentCreateCore(BaseCmd):
     title: AssignmentTitle
     instructions: Optional[AssignmentInstruction] = None
     course_id: CourseID
@@ -34,7 +36,7 @@ class AssignmentCreateWithPosition(AssignmentCreate):
     position_string: str
     
     
-class AssignmentUpdateCore(UpdateValidatorMixin, BaseModel):
+class AssignmentUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[AssignmentTitle], NullField]
     instructions: Annotated[Optional[AssignmentInstruction], NullField]
     number_of_attempts: Annotated[Optional[NumberOfAttempts], NullField]
@@ -54,7 +56,7 @@ class AssignmentGetQuery(AssignmentGet):
     viewer_id: UserID
     
 
-class AssignmentReArrangeCore(UpdateValidatorMixin, BaseModel):
+class AssignmentReArrangeCore(UpdateValidatorMixin, BaseCmd):
     preceding_id: Annotated[Optional[AssignmentID], NullField]
     succeeding_id: Annotated[Optional[AssignmentID], NullField]
 
@@ -64,6 +66,7 @@ class AssignmentReArrange(AssignmentReArrangeCore):
     
 
 class AssignmentUploadUrl(AssignmentBase):
+    media_id: MediaID
     upload_url: str
 
 

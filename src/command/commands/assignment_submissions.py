@@ -1,8 +1,10 @@
-from typing import Annotated, Optional
-from pydantic import BaseModel, Field
 from enum import StrEnum
-from src.command.commands.base import AssignmentBase, AssignmentID, AssignmentSubmissionBase, AuditFields, UserID
-from src.command.commands.assignments import Assignment, MaxScore, NumberOfAttempts
+from typing import Annotated, Optional
+
+from pydantic import Field
+
+from src.command.commands.base import AssignmentBase, AssignmentID, AssignmentSubmissionBase, AuditFields, BaseCmd, MediaID, UserID
+from src.command.commands.assignments import Assignment, NumberOfAttempts
 from src.command.commands.media import Media
 
 
@@ -20,7 +22,7 @@ class AssignmentSubmissionStatus(StrEnum):
     GRADED = "graded"
     
 
-class AssignmentSubmissionCreateCore(BaseModel):
+class AssignmentSubmissionCreateCore(BaseCmd):
     assignment_id: AssignmentID
     
 
@@ -34,7 +36,7 @@ class AssignmentSubmissionCreateWithAttemptAndStatus(AssignmentSubmissionCreate)
     attempt: Attempt
 
 
-class AssignmentSubmissionVerifyCore(BaseModel):
+class AssignmentSubmissionVerifyCore(BaseCmd):
     score: Score
     feedback: Optional[Feedback] = None
 
@@ -46,7 +48,7 @@ class AssignmentSubmissionVerifyWithStatus(AssignmentSubmissionVerify):
     status: AssignmentSubmissionStatus = AssignmentSubmissionStatus.GRADED
     
 
-class AssignmentSubmissionFeedbackUpdateCore(BaseModel):
+class AssignmentSubmissionFeedbackUpdateCore(BaseCmd):
     feedback: Feedback
     
 
@@ -69,12 +71,13 @@ class AssignmentSubmission(AuditFields, AssignmentSubmissionCreateCore, Assignme
 
 
 class AssignmentSubmissionUploadURL(AssignmentSubmissionBase):
+    media_id: MediaID
     upload_url: str
 
 
 # NOTE: Delete is not in scope. Will implement later if required.
 
-class AssignmentSubmissionContext(BaseModel):
+class AssignmentSubmissionContext(BaseCmd):
     assignment: Assignment
     submission: AssignmentSubmission
     media: Optional[Media] = None

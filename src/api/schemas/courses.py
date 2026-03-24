@@ -1,6 +1,4 @@
-from typing import Annotated, Optional, Union
-from pydantic import BaseModel, StringConstraints, Field
-from src.command.commands.base import CourseID, UserID
+from src.command.commands.base import BaseCmd, CourseID, UserID
 from src.command.commands.courses import CourseCreateCore, RecordedCourseDetailsUpdateCore, CourseInfoUpdateCore  
 
 
@@ -8,7 +6,7 @@ from src.command.commands.courses import CourseCreateCore, RecordedCourseDetails
 class CourseCreateSchema(CourseCreateCore): ...
     
 
-class CourseOutSchema(BaseModel):
+class CourseOutSchema(BaseCmd):
     id: CourseID
     title: str
     slug: str
