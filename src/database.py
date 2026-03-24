@@ -26,8 +26,8 @@ class AsyncPgDBManager:
                 user=settings.database.user.get_secret_value(), password=settings.database.password.get_secret_value(), 
                 host=settings.database.host.get_secret_value(), database=settings.database.name.get_secret_value(),
                 port=settings.database.port,
-                min_size=10,
-                max_size=100,
+                min_size=1,
+                max_size=3,
                 # Senior Tip: Retire connections before they "rot"
                 max_inactive_connection_lifetime=300.0, # 5 minutes
                 max_queries=1000, # Recycle after 1000 uses
