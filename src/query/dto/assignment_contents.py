@@ -8,8 +8,9 @@ from src.command.commands.assignments import AssignmentInstruction, AssignmentTi
 from src.command.commands.base import AssignmentID, AssignmentSubmissionID, MediaID
 from src.command.commands.users import Email
 from src.exceptions import ValidationError
-from src.pypika_query_builder import CutsomOrder
+from src.pypika_query_builder import CustomOrder
 from src.query.dto.base import BaseDTO, PageMeta
+from src.query.dto.entity_list import AssignmentSubmissionDetail, AssignmentSubmissionFilters
 
 
 class TraineeAssignmentCore(BaseDTO):
@@ -61,40 +62,8 @@ class TraineeAssignmentContent(TrainerAssignmentContent):
 
 
 
-class TrainerSubmissionDetail(BaseDTO):
-    id: AssignmentSubmissionID
-    username: str
-    email: Email
-    attempt: Attempt
-    max_attempt: NumberOfAttempts
-    status: AssignmentSubmissionStatus
-    score: Optional[Score] = None
-    max_score: MaxScore
-    submitted_at: datetime
+class TrainerSubmissionDetail(AssignmentSubmissionDetail): ...
     
-
-class AssignmentSubmissionFilters(BaseDTO):
-    from_date: Optional[date] = None
-    to_date: Annotated[date, Field(default=date(2026, 3, 23))]
-    status: Optional[AssignmentSubmissionStatus] = None
-    sort_by_grade: Optional[Literal["asc", "desc"]] = None
-    
-    
-    @property
-    def order(self) -> Optional[CutsomOrder]:
-        if self.sort_by_grade == "asc":
-            return CutsomOrder.asc_nulls_last
-        elif self.sort_by_grade == "desc":
-            return CutsomOrder.desc_nulls_last
-        return None
-    
-    if from_date and (from_date > to_date):
-        raise ValidationError(
-            message="""
-                Invalid date range: 'from_date' cannot be later than 'to_date'.
-            """
-        )
 
 class AssignmentSubmissionQuerySchema(AssignmentSubmissionFilters, PageMeta):
-    # assignment_id: AssignmentID
     ...

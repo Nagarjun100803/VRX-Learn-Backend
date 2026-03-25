@@ -3,6 +3,7 @@ from src.query.dto.assignment_contents import AssignmentSubmissionFilters, Train
 from src.query.dto.base import PageMeta, Paginated
 from src.query.dto.request_schemas import AssignmentViewRequestSchema, CourseViewRequestSchema
 from src.query.repositories.assignment_contents import TraineeAssignmentContentQueryRepository, TrainerAssignmentContentQueryRepository
+from src.query.repositories.entity_list import EntityListQueryRepository
 
 
 class TraineeAssignmentContentQueryService:
@@ -12,6 +13,7 @@ class TraineeAssignmentContentQueryService:
         trainee_assignment_query_repo: TraineeAssignmentContentQueryRepository,
         auth_service: AuthService
     ) -> None:
+        
         self.trainee_assignment_query_repo = trainee_assignment_query_repo
         self.auth_service = auth_service
         
@@ -43,9 +45,12 @@ class TrainerAssignmentContentQueryService:
     def __init__(
         self,
         trainer_assignment_content_repo: TrainerAssignmentContentQueryRepository,
+        entity_list_query_repo: EntityListQueryRepository,
         auth_service: AuthService
     ) -> None:
+        
         self.trainer_assignment_content_repo = trainer_assignment_content_repo
+        self.entity_list_query_repo = entity_list_query_repo
         self.auth_service = auth_service
         
 
@@ -84,7 +89,11 @@ class TrainerAssignmentContentQueryService:
         page_meta: PageMeta 
     ) -> Paginated[TrainerSubmissionDetail]:
         
-        return await self.trainer_assignment_content_repo.submissions(
+        # NOTE: assignment_submission() returns Paginated[AssignmentSubmissionDetail]
+        # But we Annotate the return type as Paginated[TrainerSubmissionDetail]
+        # Because `class TrainerSubmissionDetail(AssignmentSubmissionDetail): ...` 
+        
+        return await self.entity_list_query_repo.assignment_submissions(
             assignment_id=query.assignment_id,
             filters=filters,
             page_meta=page_meta

@@ -173,5 +173,6 @@ trainee_assignment_content_query_service = TraineeAssignmentContentQueryService(
 
 trainer_assignment_content_query_service = TrainerAssignmentContentQueryService(
     trainer_assignment_content_repo=trainer_assignment_content_query_repository,
+    entity_list_query_repo=entity_list_query_repository,
     auth_service=auth_service
 )

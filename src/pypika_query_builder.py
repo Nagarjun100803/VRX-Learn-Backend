@@ -47,7 +47,7 @@ class PGJoinType(Enum):
     inner_lateral = "JOIN LATERAL"
 
 
-class CutsomOrder(Enum):
+class CustomOrder(Enum):
     """ 
     Enum for ordering in queries. 
     Mimics pypika.enums.Order but adds NULLS FIRST and NULLS LAST options. 
