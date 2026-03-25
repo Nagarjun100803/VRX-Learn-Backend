@@ -1,9 +1,10 @@
 from typing import Optional
 
-from pypika import Criterion, Order, PostgreSQLQuery, Parameter, functions
+from pypika import Criterion, Order, PostgreSQLQuery, Parameter, Table, functions as fn
+from pypika.terms import ValueWrapper
 
-from src.pypika_query_builder import course_table, enrollment_table, user_table
-from src.query.dto.dashboards import CourseCard, TrainerKPI, AssignedCourse
+from src.pypika_query_builder import CustomOrder, course_table, enrollment_table, user_table
+from src.query.dto.dashboards import AdminCourseCard, AdminKPI, CourseCard, TrainerKPI, AssignedCourse
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
@@ -119,8 +120,8 @@ class TrainerDashboardQueryRepository(BaseQueryRepository):
                     ]
                 )
             ).select(
-                functions.Count(course_table.id).distinct().as_("assigned_courses"),
-                functions.Count(enrollment_table.user_id).distinct().as_("total_learners")
+                fn.Count(course_table.id).distinct().as_("assigned_courses"),
+                fn.Count(enrollment_table.user_id).distinct().as_("total_learners")
             ).get_sql()
         
         executable = self.db.query_builder.build_executable(
@@ -155,7 +156,7 @@ class TrainerDashboardQueryRepository(BaseQueryRepository):
                 course_table.id.as_("course_id"),
                 course_table.title.as_("course_name"),
                 course_table.thumbnail.as_("thumbnail_url"),
-                functions.Count(enrollment_table.user_id).as_("total_trainees")
+                fn.Count(enrollment_table.user_id).as_("total_trainees")
             ).get_sql()
         
         executable = self.db.query_builder.build_executable(
@@ -164,3 +165,79 @@ class TrainerDashboardQueryRepository(BaseQueryRepository):
         
         return await self.db.execute(executable, fetch_returns="all")
 
+
+
+class AdminDashboardQueryRepository(BaseQueryRepository):
+    
+    @map_to_dto(dto=AdminKPI, dto_mode="single")
+    async def kpis(self) -> AdminKPI:
+
+        sql = PostgreSQLQuery\
+            .select(
+                PostgreSQLQuery\
+                    .from_(user_table)\
+                    .where(user_table.deleted_at.isnull())
+                    .select(
+                        fn.Count(user_table.id).as_("total_users")
+                    ),
+                    
+                PostgreSQLQuery\
+                    .from_(course_table)\
+                    .where(course_table.deleted_at.isnull())\
+                    .select(
+                        fn.Count(course_table.id).as_("total_courses")
+                    ),
+                    
+                PostgreSQLQuery\
+                    .from_(enrollment_table)\
+                    .where(enrollment_table.deleted_at.isnull())\
+                    .select(
+                        fn.Count(enrollment_table.id).as_("total_enrollments")
+                    )
+            ).get_sql()
+        
+        executable = self.db.query_builder.build_executable(
+            sql=sql, values=tuple()
+        )
+        
+        return await self.db.execute(executable, fetch_returns="one")
+    
+    
+    @map_to_dto(dto=AdminCourseCard, dto_mode="list")
+    async def top_enrolled_courses(self, n: int) -> list[AdminCourseCard]:
+        
+        enrollment_subquery = PostgreSQLQuery\
+            .from_(enrollment_table)\
+            .where(enrollment_table.deleted_at.isnull())\
+            .groupby(enrollment_table.course_id)\
+            .select(
+                enrollment_table.course_id,
+                fn.Count(enrollment_table.user_id).as_("total_trainees")
+            )
+        
+        enrollment_cte = Table("enrollment_cte") # reference table.
+        
+        sql = PostgreSQLQuery\
+            .with_(enrollment_subquery, enrollment_cte._table_name)\
+            .from_(course_table)\
+            .join(user_table)\
+            .on(course_table.trainer_id == user_table.id)\
+            .left_join(enrollment_cte)\
+            .on(course_table.id == enrollment_cte.course_id)\
+            .orderby(enrollment_cte.total_trainees, order=CustomOrder.desc_nulls_last)\
+            .limit(n)\
+            .select(
+                course_table.id,
+                course_table.title.as_("course_name"),
+                user_table.username.as_("trainer_name"),
+                fn.Coalesce(
+                    enrollment_cte.total_trainees,
+                    ValueWrapper(0)
+                ).as_("total_trainees")
+            ).get_sql()
+        
+        executable = self.db.query_builder.build_executable(
+            sql=sql, values=tuple()
+        )
+        
+        return await self.db.execute(executable, fetch_returns="all")

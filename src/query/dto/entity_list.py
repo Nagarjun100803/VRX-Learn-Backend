@@ -13,7 +13,7 @@ from src.command.commands.lessons import LessonTitle
 from src.command.commands.media import AllowedContentTypes
 from src.command.commands.modules import ModuleTitile
 from src.command.commands.users import Email, UserRole
-from src.query.dto.base import BaseDTO
+from src.query.dto.base import BaseDTO, PageMeta
 
 
 
@@ -125,8 +125,13 @@ class AssignmentSubmissionDetail(BaseDTO):
 
 class AssignmentSubmissionFilters(BaseDTO):
     from_date: Optional[date] = None
-    to_date: Annotated[date, Field(default_factory=datetime.now)]
+    to_date: date
     status: Optional[AssignmentSubmissionStatus] = None
     sort_by_grade: Optional[Literal["asc", "desc"]] = None
     
 
+class CourseQueryParams(CourseFilters, PageMeta): ...
+class EnrollmentQueryParams(EnrollmentFilters, PageMeta): ...
+class AssignmentSubmissionQueryParams(AssignmentSubmissionFilters, PageMeta): ...
+class UserQueryParams(UserFilters, PageMeta): ...
+class TraineeQueryParams(TraineeFilters, PageMeta): ...

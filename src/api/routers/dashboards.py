@@ -1,11 +1,40 @@
+from typing import Annotated
+
 from fastapi import APIRouter
+from pydantic import Field
+
 from src.api.dependencies import(
+    AdminDashboardQueryServiceDependency,
+    CurrentAdmin,
     CurrentTraineeOrTrainer,
     CurrentTrainer,
     TraineeDashboardQueryServiceDependency,
     TrainerDashboardQueryServiceDependency,
 )
-from src.query.dto.dashboards import AssignedCourse, CourseCard, TrainerKPI
+from src.query.dto.dashboards import AdminKPI, AssignedCourse, CourseCard, TrainerKPI
+
+
+admin_router = APIRouter(
+    prefix="/dashboard/admin",
+    tags=["Dashboard", "Admin Dashboard"]
+)
+
+@admin_router.get("/kpis", response_model=AdminKPI)
+async def get_kpis(
+    query_service: AdminDashboardQueryServiceDependency,
+    current_user: CurrentAdmin
+):
+    return await query_service.get_kpis()
+
+
+@admin_router.get("/top-enrolled-courses")
+async def list_top_enrolled_courses(
+    n: Annotated[int, Field(gt=0)],
+    query_service: AdminDashboardQueryServiceDependency,
+    current_user: CurrentAdmin
+):
+    return await query_service.list_top_enrolled_courses(n=n)
+
 
 
 trainee_router = APIRouter(

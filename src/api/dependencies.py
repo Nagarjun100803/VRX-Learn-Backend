@@ -21,29 +21,16 @@ from src.exceptions import UnauthorizedError
 
 # Query Dependencies.
 from src.dependencies import (
-    trainee_dashboard_query_service, 
-    trainer_dashboard_query_service,
-    
-    trainee_course_content_query_service,
-    trainer_course_content_query_service,
-    
-    trainee_entity_list_query_service,
-    trainer_entity_list_query_service,
-    
-    trainee_assignment_content_query_service,
-    trainer_assignment_content_query_service
+    admin_dashboard_query_service, trainee_dashboard_query_service, trainer_dashboard_query_service,
+    trainee_course_content_query_service, trainer_course_content_query_service,
+    admin_entity_list_query_service, trainee_entity_list_query_service, trainer_entity_list_query_service,
+    trainee_assignment_content_query_service, trainer_assignment_content_query_service
 )
 from src.dependencies import (
-    TraineeDashboardQueryService,
-    TrainerDashboardQueryService,
-    TraineeCourseContentQueryService,
-    TrainerCourseContentQueryService,
-    
-    TraineeEntityListQueryService,
-    TrainerEntityListQueryService,
-    
-    TraineeAssignmentContentQueryService,
-    TrainerAssignmentContentQueryService
+    AdminDashboardQueryService, TraineeDashboardQueryService, TrainerDashboardQueryService,
+    TraineeCourseContentQueryService, TrainerCourseContentQueryService,
+    AdminEntityListQueryService, TraineeEntityListQueryService, TrainerEntityListQueryService,
+    TraineeAssignmentContentQueryService, TrainerAssignmentContentQueryService
 )
 
 
@@ -79,6 +66,8 @@ def get_assignment_submission_service() -> AssignmentSubmissionService:
     return assignment_submission_service
 
 
+def get_admin_dashboard_query_service() -> AdminDashboardQueryService:
+    return admin_dashboard_query_service
 
 def get_trainee_dashboard_query_service() -> TraineeDashboardQueryService:
     return trainee_dashboard_query_service
@@ -98,6 +87,9 @@ def get_trainer_course_content_query_service() -> TrainerCourseContentQueryServi
 def get_trainee_entity_list_query_service() -> TraineeEntityListQueryService:
     return trainee_entity_list_query_service
 
+
+def get_admin_entity_list_query_service() -> AdminEntityListQueryService:
+    return admin_entity_list_query_service
 
 def get_trainer_entity_list_query_service() -> TrainerEntityListQueryService:
     return trainer_entity_list_query_service
@@ -136,12 +128,14 @@ async def get_current_user_context(
     return user_context
 
 
+AdminDashboardQueryServiceDependency = Annotated[AdminDashboardQueryService, Depends(get_admin_dashboard_query_service)]
 TraineeDashboardQueryServiceDependency = Annotated[TraineeDashboardQueryService, Depends(get_trainee_dashboard_query_service)]
 TrainerDashboardQueryServiceDependency = Annotated[TrainerDashboardQueryService, Depends(get_trainer_dashboard_query_service)]
 
 TraineeCourseContentQueryServiceDependency = Annotated[TraineeCourseContentQueryService, Depends(get_trainee_course_content_query_service)]
 TrainerCourseContentQueryServiceDependency = Annotated[TrainerCourseContentQueryService, Depends(get_trainer_course_content_query_service)]
 
+AdminEntityListQueryServiceDependency = Annotated[AdminEntityListQueryService, Depends(get_admin_entity_list_query_service)]
 TraineeEntityListQueryServiceDependency = Annotated[TraineeEntityListQueryService, Depends(get_trainee_entity_list_query_service)]
 TrainerEntityListQueryServiceDependency = Annotated[TrainerEntityListQueryService, Depends(get_trainer_entity_list_query_service)]
     

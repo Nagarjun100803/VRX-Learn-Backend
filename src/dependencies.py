@@ -1,8 +1,6 @@
 # Database initalization.
 from src.api.jwt import JWTHandler
 from src.database import AsyncPgDBManager
-from src.query.repositories.assignment_contents import TraineeAssignmentContentQueryRepository, TrainerAssignmentContentQueryRepository
-from src.query.services.assignment_contents import TraineeAssignmentContentQueryService, TrainerAssignmentContentQueryService
 from src.query_builder.asyncpg import AsyncPgQueryBuilder
 
 # Repository Imports.
@@ -26,9 +24,10 @@ from src.auth.auth import AuthService
 
 # Query Repository imports.
 from src.query.repositories import (
-    TraineeDashboardQueryRepository, TrainerDashboardQueryRepository,
-    TraineeCourseContentQueryRepository, TrainerCourseContentQueryRepository,
-    EntityListQueryRepository
+    AdminDashboardQueryRepository, TraineeDashboardQueryRepository, 
+    TrainerDashboardQueryRepository, TraineeCourseContentQueryRepository, 
+    TrainerCourseContentQueryRepository, EntityListQueryRepository,
+    TraineeAssignmentContentQueryRepository, TrainerAssignmentContentQueryRepository
 )
 
 
@@ -36,9 +35,10 @@ from src.query.repositories import (
 
 # Query Service imports.
 from src.query.services import (
-    TraineeDashboardQueryService, TrainerDashboardQueryService,
+    AdminDashboardQueryService, TraineeDashboardQueryService, TrainerDashboardQueryService,
     TraineeCourseContentQueryService, TrainerCourseContentQueryService,
-    TraineeEntityListQueryService, TrainerEntityListQueryService
+    AdminEntityListQueryService, TraineeEntityListQueryService, TrainerEntityListQueryService,
+    TraineeAssignmentContentQueryService, TrainerAssignmentContentQueryService
 )
 
 query_builder = AsyncPgQueryBuilder()
@@ -58,6 +58,7 @@ assignment_submission_repository = AssignmentSubmissionRepository(db=db)
 
 
 # Query Repositories.
+admin_dashboard_query_repository = AdminDashboardQueryRepository(db=db)
 trainee_dashboard_query_repository = TraineeDashboardQueryRepository(db=db)
 trainer_dashboard_query_repository = TrainerDashboardQueryRepository(db=db)
 
@@ -137,6 +138,10 @@ assignment_submission_service = AssignmentSubmissionService(
 
 
 # Query services.
+admin_dashboard_query_service = AdminDashboardQueryService(
+    admin_dashboard_query_repo=admin_dashboard_query_repository
+)
+
 trainee_dashboard_query_service = TraineeDashboardQueryService(
     trainee_dashboard_query_repo=trainee_dashboard_query_repository
 )
@@ -153,6 +158,10 @@ trainee_course_content_query_service = TraineeCourseContentQueryService(
 trainer_course_content_query_service = TrainerCourseContentQueryService(
     trainer_course_content_repo=trainer_course_content_query_repository,
     auth_service=auth_service
+)
+
+admin_entity_list_query_service = AdminEntityListQueryService(
+    entity_list_query_repo=entity_list_query_repository
 )
 
 trainee_entity_list_query_service = TraineeEntityListQueryService(

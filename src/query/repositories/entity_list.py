@@ -140,7 +140,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                     ]
                 )
             ).select(
-                user_table.id.as_("trainer_id"),
+                user_table.id.as_("trainee_id"),
                 user_table.username.as_("name"),
                 user_table.email.as_("email"),
                 user_table.role.as_("role"),
@@ -318,7 +318,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                     terms=[
                         # Course title is stored in Upper case letters.
                         course_table.title.ilike(f"{filters.course_name_or_trainer_name}%"),
-                        user_table.username.like(f"{filters.course_name_or_trainer_name}%")
+                        user_table.username.ilike(f"{filters.course_name_or_trainer_name}%")
                     ]
                 )
             )

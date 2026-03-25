@@ -25,3 +25,16 @@ class AssignedCourse(BaseDTO):
     total_trainees: int
     thumbnail_url: Optional[str] = None
     
+
+class AdminKPI(BaseDTO):
+    total_users: int
+    total_courses: int
+    total_enrollments: int
+
+
+class AdminCourseCard(BaseDTO):
+    id: CourseID
+    course_name: CourseTitle
+    trainer_name: str
+    total_trainees: int
+    

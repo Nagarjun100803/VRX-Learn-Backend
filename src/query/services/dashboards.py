@@ -1,9 +1,10 @@
 from typing import Optional
 
-from src.query.dto.dashboards import AssignedCourse, CourseCard, TrainerKPI
+from src.query.dto.dashboards import AdminCourseCard, AdminKPI, AssignedCourse, CourseCard, TrainerKPI
 from src.query.repositories import (
     TraineeDashboardQueryRepository, TrainerDashboardQueryRepository
 )
+from src.query.repositories.dashboards import AdminDashboardQueryRepository
 
 
 class TraineeDashboardQueryService:
@@ -36,9 +37,28 @@ class TrainerDashboardQueryService:
     ) -> None:
         self.trainer_dashboard_query_repo = trainer_dashboard_query_repo
         
-    async def get_kpis(self, trainer_id: int) -> Optional[TrainerKPI]:
+    async def get_kpis(self, trainer_id: int) -> TrainerKPI:
         return await self.trainer_dashboard_query_repo.kpis(trainer_id)
     
 
     async def list_assigned_courses(self, trainer_id: int) -> list[AssignedCourse]:
         return await self.trainer_dashboard_query_repo.assigned_courses(trainer_id)
+
+
+
+class AdminDashboardQueryService:
+    
+    def __init__(
+        self, 
+        admin_dashboard_query_repo: AdminDashboardQueryRepository
+    ) -> None:
+        self.admin_dashboard_query_repo = admin_dashboard_query_repo
+        
+    
+    async def get_kpis(self) -> AdminKPI:
+        return await self.admin_dashboard_query_repo.kpis()
+        
+        
+    async def list_top_enrolled_courses(self, n: int) -> list[AdminCourseCard]:
+        return await self.admin_dashboard_query_repo.top_enrolled_courses(n)
+    
