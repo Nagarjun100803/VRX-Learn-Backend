@@ -2,7 +2,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 from src.command.commands.base import UserID
 from src.command.commands.users import UserGetByIDQuery, UserCreateWithConfirmPassword, UserDelete, UserAuth
-from src.api.dependencies import UserServiceDependency, CurrentUser, JWTServiceDependency
+from src.api.dependencies import UserContextDependency, UserServiceDependency, CurrentUser, JWTServiceDependency
 from src.api.schemas.users import UserCreateSchema, UserOutSchema, LoginSchema
 from src.api.jwt import JWTPayloadCreate
 
@@ -53,6 +53,10 @@ async def logout():
     )
     return response
 
+
+@router.get("/me")
+async def me(user_context: UserContextDependency):
+    return user_context
 
 
 @router.get("/{user_id}", response_model=UserOutSchema)

@@ -13,6 +13,7 @@ from src.exceptions import UnAuthenticated, UnauthorizedError
 class UserContext:
     user_id: UserID
     role: UserRole
+    username: str
     
     def validate_role(self, role: UserRole) -> Self:
         if self.role != UserRole(role).value:
@@ -42,5 +43,5 @@ class AuthenticationService:
         if user is None:
             raise UnAuthenticated(message=f"No user found with this user id: {jwt_payload.user_id}")
         
-        return UserContext(user_id=jwt_payload.user_id, role=jwt_payload.role)
+        return UserContext(user_id=f"U-{user.id}", role=user.role, username=user.username)
  
