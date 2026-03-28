@@ -3,7 +3,8 @@ from typing import Type, ClassVar
 from src.command.services.base import BaseService
 from src.command.repositories.modules import ModuleRepository
 from src.command.repositories.courses import CourseRepository
-from src.command.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleUpdate, ModuleDelete, ReArrangeModule
+from src.command.commands.modules import Module, ModuleCreate, ModuleCreateWithPosition, ModuleGetQuery, ModuleReorderParticipants, ModuleUpdate, ModuleDelete
+from src.command.services.positioning import ReorderParticipants, PositioningService
 from src.exceptions import EntityNotFoundError, CourseModuleNotFoundError, CourseNotFoundError, CourseModuleAlreadyExistsError
 from src.auth import AuthService, Entity, Action, require_authorization
 
@@ -17,13 +18,14 @@ class ModuleService(BaseService[Module]):
         self,
         repo: ModuleRepository,
         course_repo: CourseRepository,
-        auth_service: AuthService
+        auth_service: AuthService,
+        positioning_service: PositioningService
     ) -> None:
         
         self.repo = repo
         self.course_repo = course_repo
         self.auth_service = auth_service
-
+        self.positioning_service = positioning_service
             
      
     @require_authorization(
@@ -49,8 +51,12 @@ class ModuleService(BaseService[Module]):
             raise CourseModuleAlreadyExistsError(cmd.title, identifier="title")
                  
         
-        position_string = await self.generate_position_string(course_id=cmd.course_id)
-                 
+        position_string = await self.positioning_service.generate_position(
+            tablename=self.repo.tablename,
+            scope="course_id",
+            scope_id=cmd.course_id
+        )
+
         module = await self.repo.add(
             ModuleCreateWithPosition(
                 **cmd.model_dump(),
@@ -120,9 +126,13 @@ class ModuleService(BaseService[Module]):
         user_id_field="updated_by",
         entity_id_field="target_id"
     )
-    async def rearrange_sequence(
-        self, cmd: ReArrangeModule, 
-        scope: str = "course_id"
-    ) -> Module: 
-                
-        return await super().rearrange_sequence(cmd, scope)
+    async def reorder(self, cmd: ModuleReorderParticipants) -> str:      
+        return await self.positioning_service.reorder(
+            participants=ReorderParticipants(
+                preceding_id=cmd.preceding_id,
+                target_id=cmd.target_id,
+                succeeding_id=cmd.succeeding_id
+            ),
+            tablename="modules",
+            scope="course_id"
+        )

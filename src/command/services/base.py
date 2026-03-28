@@ -1,10 +1,9 @@
-from typing import Any, Literal, Optional, Type, ClassVar, TypeAlias, TypeVar, Union
 from abc import ABC, abstractmethod
+from typing import ClassVar, Literal, Optional, Type, TypeAlias, TypeVar, Union
+
 from pydantic import BaseModel
-from src.exceptions import EntityNotFoundError, ValidationError
-from src.command.repositories.base import ReorderParicipants
-from src.command.commands.base import ReArrangeBase
-from src.command.services.fractional_index import fractional_index
+
+from src.exceptions import EntityNotFoundError
 from src.command.commands.users import UserRole
 from src.auth import Entity
 
@@ -34,48 +33,6 @@ class BaseService[T](ABC):
             raise self._not_found_exc(**error_kwargs)
         return entity
           
-           
-    # TODO: Need to refactor this into Rearrange Service.
-    async def generate_position_string(self, **scope_kwargs: dict[str, Any]) -> str:
-        current_max = await self.repo.get_max_position_string(**scope_kwargs)
-        new_key = fractional_index.generate_key(current_max, None)
-        print(f"Current key : {current_max} and new key is {new_key}")
-        return new_key
-    
-    
-    async def rearrange_sequence(
-        self, 
-        cmd: ReArrangeBase, 
-        scope: str
-        ) -> T:
-        
-        # Get the participants data.
-        participants_data: ReorderParicipants = await self.repo.get_reorder_participants(
-            participants=cmd, scope=scope
-        )
-        
-        if not participants_data.target:  # TODO: Need to check for absence preceding or succeeding if required.
-            raise EntityNotFoundError(f"{self._entity} is not found to perform reorder.")
-
-        target_scope = participants_data.target.scope
-        for participant in [participants_data.preceding, participants_data.succeeding]:
-            if participant and participant.scope != target_scope:
-                raise ValidationError(f"All participants should belongs to same {scope} = '{target_scope}'")
-
-        # Generate the new position string.
-        position_string = fractional_index.generate_key(*participants_data.position_string_pairs())
-        
-        # Update this to DB by calling a repo.
-        updated_entity = await self.repo.update_position(
-            target_id=cmd.target_id,
-            position_string=position_string
-        )
-        
-        if not updated_entity:
-            raise EntityNotFoundError(f"{self._entity} is not found to update position string.")
-
-        return updated_entity
-    
 
     @abstractmethod
     async def create(self, cmd: BaseModel) -> T:

@@ -1,7 +1,7 @@
 from asyncpg import Record, Connection
 from typing import ClassVar, Optional, override
 from src.command.repositories.base import BaseRepository
-from src.command.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate, ReArrangeModule
+from src.command.commands.modules import Module, ModuleCreateWithPosition, ModuleDelete, ModuleGetQuery, ModuleUpdate
 from src.command.commands.media import MediableType
 
 

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, status
 from src.api.dependencies import LessonServiceDependency, CurrentUser
 from src.command.commands.base import LessonID
-from src.command.commands.lessons import LessonDelete, LessonGetQuery, LessonReArrange, LessonTitleUpdate, LessonUploadUrl, LessonCreate
-from src.api.schemas.lessons import LessonCreateSchema, LessonOutSchema, LessonReArrangeSchema, LessonTitleUpdateSchema
+from src.command.commands.lessons import LessonDelete, LessonGetQuery, LessonReorderParticipants, LessonReorderParticipantsCore, LessonTitleUpdate, LessonUploadUrl, LessonCreate
+from src.api.schemas.lessons import LessonCreateSchema, LessonOutSchema, LessonTitleUpdateSchema
 from src.command.services.files import FileMetadata
 
 
@@ -75,18 +75,19 @@ async def lesson_title_update(
     )
     
 
-@router.patch("/{lesson_id}/update-position", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{lesson_id}/update-position", response_model=str)
 async def update_lesson_position(
     lesson_id: LessonID,
-    rearrange_schema: LessonReArrangeSchema,
+    participants: LessonReorderParticipantsCore,
     lesson_service: LessonServiceDependency,
     current_user: CurrentUser
 ):
     
-    return await lesson_service.rearrange_sequence(
-        LessonReArrange(
-            **rearrange_schema.model_dump(),
+    return await lesson_service.reorder(
+        LessonReorderParticipants(
+            preceding_id=participants.preceding_id,
             target_id=lesson_id,
+            succeeding_id=participants.succeeding_id,
             updated_by=current_user
         )
     )

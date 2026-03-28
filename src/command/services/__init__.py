@@ -6,6 +6,7 @@ from src.command.services.lessons import LessonService
 from src.command.services.media import MediaService
 from src.command.services.assignments import AssignmentService
 from src.command.services.assignment_submissions import AssignmentSubmissionService
+from src.command.services.positioning import PositioningService
 
 from src.command.services.files import S3
 
@@ -19,5 +20,6 @@ __all__ = [
     "MediaService",
     "S3",
     "AssignmentService",
-    "AssignmentSubmissionService"
+    "AssignmentSubmissionService",
+    "PositioningService"
 ]

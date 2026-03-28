@@ -1,13 +1,37 @@
+from enum import Enum
 from pypika import Table, Order
 from pypika.queries import Selectable
 from pypika.terms import Function, AggregateFunction
-from enum import Enum
+from pypika.utils import format_quotes
 
 
 
 class JsonbBuildObject(Function):
     def __init__(self, *args):
         super().__init__("JSONB_BUILD_OBJECT", *args)
+
+
+class RowToJson(Function):
+    """
+    ROW_TO_JSON(table_alias)
+    
+    Converts a whole row to JSON.
+    Accepts a Table object and renders only the alias, not "table_name" "alias".
+    
+    Usage:
+        RowToJson(user)          → ROW_TO_JSON("u")
+        RowToJson(user_table)    → ROW_TO_JSON("u")
+    """
+    def __init__(self, table):
+        super().__init__("ROW_TO_JSON", table)
+        self.table = table
+
+    def get_function_sql(self, **kwargs) -> str:
+        # Extract just the alias (or table name if no alias)
+        quote_char = kwargs.get("quote_char", '"')
+        alias = getattr(self.table, "alias", None) or getattr(self.table, "_table_name", None)
+        table_sql = format_quotes(alias, quote_char)
+        return f"ROW_TO_JSON({table_sql})"
 
 
 class JsonbAgg(AggregateFunction):
@@ -45,6 +69,10 @@ class PGJoinType(Enum):
     """
     left_lateral  = "LEFT JOIN LATERAL"
     inner_lateral = "JOIN LATERAL"
+
+
+class PGSqlTypes:
+    JSONB = "jsonb"
 
 
 class CustomOrder(Enum):

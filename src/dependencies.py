@@ -14,7 +14,8 @@ from src.command.repositories import (
 from src.command.services import (
     UserService, CourseService, ModuleService, 
     LessonService, EnrollmentService, AssignmentService,
-    MediaService, S3, AssignmentSubmissionService
+    MediaService, S3, AssignmentSubmissionService,
+    PositioningService
 )
 from src.command.services.files import get_session
 from src.command.services.users import PasswordHandler
@@ -82,6 +83,8 @@ auth_service = AuthService(
     db=db
 )
 
+positioning_service = PositioningService(db=db)
+
 user_service = UserService(
     repo=user_repository,
     password_handler=password_handler,
@@ -97,7 +100,8 @@ course_service = CourseService(
 module_service = ModuleService(
     course_repo=course_repository,
     repo=module_repository,
-    auth_service=auth_service
+    auth_service=auth_service,
+    positioning_service=positioning_service
 )
 
 session = get_session()
@@ -112,7 +116,8 @@ lesson_service = LessonService(
     repo=lesson_repository,
     module_repo=module_repository,
     media_service=media_service,
-    auth_service=auth_service
+    auth_service=auth_service,
+    positioning_service=positioning_service
 )
 
 assignment_service = AssignmentService(
