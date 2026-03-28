@@ -39,17 +39,17 @@ class LessonGetQuery(LessonGet):
 class Lesson(AuditFields, LessonCreateCore, LessonBase): ...
 
 
-class LessonReArrangeCore(UpdateValidatorMixin, BaseCmd):
-    preceding_id: Annotated[Optional[LessonID], NullField]
-    succeeding_id: Annotated[Optional[LessonID], NullField]
-
-class LessonReArrange(LessonReArrangeCore):
-    target_id: LessonID
-    updated_by: UserID
-    
-
 class LessonUploadUrl(BaseCmd):
     media_id: MediaID
     lesson_id: LessonID
     upload_url: str
     
+
+class LessonReorderParticipantsCore(UpdateValidatorMixin, BaseCmd):
+    preceding_id: Annotated[Optional[LessonID], NullField]
+    succeeding_id: Annotated[Optional[LessonID], NullField]
+    
+
+class LessonReorderParticipants(LessonReorderParticipantsCore):
+    target_id: LessonID
+    updated_by: UserID

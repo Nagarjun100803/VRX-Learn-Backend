@@ -56,10 +56,11 @@ class Module(ModuleBase, ModuleCreate):
     deleted_at: Optional[datetime] = None
     
 
-class ReArrangeModuleCore(UpdateValidatorMixin, BaseCmd):
+class ModuleReorderParticipantsCore(UpdateValidatorMixin, BaseCmd):
     preceding_id: Annotated[Optional[ModuleID], NullField]
     succeeding_id: Annotated[Optional[ModuleID], NullField]
+    
 
-class ReArrangeModule(ReArrangeModuleCore):
+class ModuleReorderParticipants(ModuleReorderParticipantsCore):
     target_id: ModuleID
     updated_by: UserID

@@ -4,7 +4,7 @@ from typing import Annotated, Union
 from pydantic import Field
 
 from src.command.commands.base import LessonID
-from src.command.commands.lessons import LessonCreateCore, LessonTitleUpdateCore, LessonReArrangeCore
+from src.command.commands.lessons import LessonCreateCore, LessonTitleUpdateCore
 from src.command.commands.media import AllowedContentTypes
 
 
@@ -18,6 +18,4 @@ class LessonOutSchema(LessonCreateCore):
     id: LessonID    
 
 class LessonTitleUpdateSchema(LessonTitleUpdateCore): ...
-
-class LessonReArrangeSchema(LessonReArrangeCore): ...
 

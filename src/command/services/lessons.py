@@ -2,8 +2,9 @@ import asyncio
 from pathlib import Path
 from typing import ClassVar, Type, Optional
 from asyncpg import Connection
-from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonTitleUpdate, LessonDelete, LessonGetQuery, LessonReArrange, LessonUploadUrl
+from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonReorderParticipants, LessonReorderParticipantsCore, LessonTitleUpdate, LessonDelete, LessonGetQuery, LessonUploadUrl
 from src.command.commands.media import MediaCreate, MediaStatus, MediableType
+from src.command.services.positioning import ReorderParticipants, PositioningService
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
 from src.command.repositories.modules import ModuleRepository
 from src.command.services.base import BaseService
@@ -23,13 +24,15 @@ class LessonService(BaseService[Lesson]):
         repo: LessonRepository,
         module_repo: ModuleRepository,
         media_service: MediaService,
-        auth_service: AuthService
+        auth_service: AuthService,
+        positioning_service: PositioningService 
     ) -> None:
         
         self.repo = repo
         self.module_repo = module_repo
         self.media_service = media_service
         self.auth_service = auth_service
+        self.positioning_service = positioning_service
     
 
     @require_authorization(
@@ -52,7 +55,11 @@ class LessonService(BaseService[Lesson]):
         if duplicate_title_flag: 
             raise LessonAlreadyExistsError(value=cmd.title, identifier="title")
                 
-        position_string = await self.generate_position_string(module_id=cmd.module_id)
+        position_string = await self.positioning_service.generate_position(
+            tablename=self.repo.tablename,
+            scope="module_id",
+            scope_id=cmd.module_id
+        )
         
         return await self.repo.add(
             LessonCreateWithPosition(
@@ -125,12 +132,16 @@ class LessonService(BaseService[Lesson]):
         entity_id_field="target_id",
         object_name="cmd"
     )
-    async def rearrange_sequence(
-        self, 
-        cmd: LessonReArrange, 
-        scope: str = "module_id"
-    ) -> Lesson:
-        return await super().rearrange_sequence(cmd, scope)
+    async def reorder(self, cmd: LessonReorderParticipants) -> str:
+        return await self.positioning_service.reorder(
+            participants=ReorderParticipants(
+                preceding_id=cmd.preceding_id,
+                target_id=cmd.target_id,
+                succeeding_id=cmd.succeeding_id
+            ),
+            tablename="lessons",
+            scope="module_id"
+        )
     
     
     async def init_lesson_create(

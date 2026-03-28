@@ -2,31 +2,12 @@ from abc import abstractmethod, ABC
 from datetime import UTC, datetime
 from asyncpg.protocol.record import Record
 from asyncpg import Connection
-from pydantic import AliasChoices, BaseModel, Field
-from typing import Annotated, Any, ClassVar, Literal, Optional, Sequence
+from pydantic import BaseModel
+from typing import Any, ClassVar, Literal, Optional, Sequence
 from src.database import AsyncPgDBManager
-from src.command.commands.base import ReArrangeBase
 from src.query_builder.base import BaseWhere
-import json
 
 
-
-class ParticipantMeta(BaseModel):
-    id: int
-    position_string: str
-    scope: Annotated[int, Field(validation_alias=AliasChoices("course_id", "module_id"))]
-
-    
-class ReorderParicipants(BaseModel):
-    target: Optional[ParticipantMeta]
-    preceding: Optional[ParticipantMeta]
-    succeeding: Optional[ParticipantMeta]
-    
-    def position_string_pairs(self) -> tuple[Optional[str], Optional[str]]:
-        return (
-            self.preceding.position_string if self.preceding else None,
-            self.succeeding.position_string if self.succeeding else None
-        )
 
 class BaseRepository[T](ABC):
     
@@ -36,14 +17,9 @@ class BaseRepository[T](ABC):
     """
     tablename: ClassVar[str] = "Sample"
     
-    def __init__(
-        self,
-        db: AsyncPgDBManager
-    ) -> None:
-        
+    def __init__(self, db: AsyncPgDBManager) -> None:
         self.db = db
     
-        
 
     @abstractmethod
     def _to_domain(self, row: Optional[Record]) -> Optional[T]:
@@ -166,80 +142,8 @@ class BaseRepository[T](ABC):
         result = await self.db.execute(executable, fetch_returns="one", connection=connection)
         return result["exists"]
         
-        
+
     
-    
-        
-    async def get_max_position_string(self, connection: Optional[Connection] = None, **scope_kwargs: dict[str, Any]) -> Optional[str]:
-        
-        position_string = await self.pick(
-            columns=("""Max(position_string) as max_position_string""",), 
-            connection=connection,
-            **scope_kwargs
-        )
-        return position_string.get("max_position_string", None)
-    
-    
-    
-    async def get_reorder_participants(
-        self,
-        participants: ReArrangeBase,
-        scope: str,
-        connection: Optional[Connection] = None
-    ):
-        
-        sql = """
-            select
-                (array_agg(row_to_json(t)) filter (where id = $4))[1] as target,
-                (array_agg(row_to_json(t)) filter (where id = $5))[1] as preceding,
-                (array_agg(row_to_json(t)) filter (where id = $6))[1] as succeeding
-            from(
-                select
-                    id, {scope}, position_string
-                from
-                    {tablename}
-                where
-                    id in ($1, $2, $3)
-            ) as t
-        """
-        sql = sql.format(scope=scope, tablename=self.tablename)
-        executable = self.db.query_builder.build_executable(
-            sql, values=(
-                participants.target_id, participants.preceding_id, participants.succeeding_id,
-                participants.target_id, participants.preceding_id, participants.succeeding_id
-            )
-        )
-        
-        participants_data: Record = await self.db.execute(executable, fetch_returns="one", connection=connection)
-        
-        # Postgres will return the result as json str not dict.
-        data = {
-            key: json.loads(val) if val is not None else val 
-            for key, val in participants_data.items() 
-        }    
- 
-        return ReorderParicipants(**data)
-    
-    
-    async def update_position(
-        self,
-        target_id: int,
-        position_string: str,
-        connection: Optional[Connection] = None
-    ) -> T:
-        
-        executable = self.db.query_builder.build_update(
-            self.tablename,
-            {"position_string": position_string},
-            where_clause=self.db.query_builder.build_where_pk(target_id)
-        )
-        
-        return self._to_domain(
-            await self.db.execute(
-                executable, fetch_returns="one",
-                connection=connection
-            )
-        )
         
 
 

@@ -1,5 +1,5 @@
 from src.command.commands.base import BaseCmd, CourseID, ModuleID
-from src.command.commands.modules import ModuleCreateCore, ModuleUpdateCore, ModuleTitile, ReArrangeModuleCore
+from src.command.commands.modules import ModuleCreateCore, ModuleUpdateCore, ModuleTitile
 
 
 class ModuleOutSchema(BaseCmd):
@@ -9,5 +9,4 @@ class ModuleOutSchema(BaseCmd):
 
 class ModuleCreateSchema(ModuleCreateCore): ...
 class ModuleUpdateSchema(ModuleUpdateCore): ...
-class ReArrangeModuleSchema(ReArrangeModuleCore): ...
 
