@@ -40,8 +40,9 @@ class MediaCreateCore(BaseCmd):
     mediable_type: MediableType
     is_private: bool = True
     status: MediaStatus = MediaStatus.PENDING # Initally it's pending.
-        
- 
+    key: str # Storage key.
+    
+
 class MediaCreate(MediaCreateCore):
     created_by: UserID
     

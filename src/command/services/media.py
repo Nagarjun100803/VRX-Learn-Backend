@@ -50,8 +50,8 @@ class MediaService:
 
     
     async def create(self, cmd: MediaCreate, connection: Optional[Connection] = None) -> Media:
-        if await self.repo.exists_by(filename=cmd.filename):
-            raise MediaAlreadyExistsError(cmd.filename, identifier="filename/key")
+        if await self.repo.exists_by(key=cmd.key):
+            raise MediaAlreadyExistsError(cmd.key, identifier="key")
         return await self.repo.add(cmd, connection=connection)
         
     # NOTE: No Authorization logic implemented.
@@ -96,12 +96,14 @@ class MediaService:
         
         return (media.id, url)
     
+    
     async def get_view_url(
         self, 
         media_id: int, 
         expire_mins: int = 60,
         connection: Optional[Connection] = None
     ) -> str:
+        
         media = self._require_entity(
             await self.repo.get(
                 MediaGet(id=media_id),
@@ -110,8 +112,10 @@ class MediaService:
             value=media_id
         )
         return await self.file_service.get_presigned_url(
-            media.filename,
-            expire_mins=expire_mins
+            media.key,
+            expire_mins=expire_mins,
+            filename=media.filename,
+            mime_type=media.mime_type
         )
    
 

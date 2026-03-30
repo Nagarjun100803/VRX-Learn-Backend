@@ -1,6 +1,6 @@
 from asyncpg import Record, Connection
 from typing import Optional, ClassVar
-from src.command.commands.assignments import Assignment, AssignmentCreateWithPosition, AssignmentUpdate, AssignmentDelete, AssignmentGet
+from src.command.commands.assignments import Assignment, AssignmentCreate, AssignmentUpdate, AssignmentDelete, AssignmentGet
 from src.command.repositories.base import BaseRepository
 
 
@@ -15,7 +15,7 @@ class AssignmentRepository(BaseRepository[Assignment]):
         return Assignment(**row)
     
         
-    async def add(self, cmd: AssignmentCreateWithPosition, connection: Optional[Connection] = None) -> Assignment:
+    async def add(self, cmd: AssignmentCreate, connection: Optional[Connection] = None) -> Assignment:
         return await super().add(cmd, connection=connection)
     
     async def update(self, cmd: AssignmentUpdate, connection: Optional[Connection] = None) -> Optional[Assignment]:

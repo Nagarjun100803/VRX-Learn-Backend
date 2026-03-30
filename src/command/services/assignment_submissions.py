@@ -1,8 +1,12 @@
 import asyncio
 from pathlib import Path
+from uuid import uuid4
 from asyncpg import Connection
 from datetime import UTC, datetime
 from typing import ClassVar, Optional, Type, Union
+
+from click.core import V
+from slugify import slugify
 from src.command.commands.assignments import AssignmentGet
 from src.command.repositories.assignments import AssignmentRepository
 from src.command.commands.media import MediaCreate, MediaStatus, MediableType
@@ -568,17 +572,26 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         async with self.repo.db.transaction() as conn:
             # Create the assignment record.
             submission = await self.create(cmd, conn)
+                    
+            assignment = await self.assignment_repo.get(AssignmentGet(id=cmd.assignment_id))
+            
+            if assignment is None:
+                raise AssignmentNotFoundError(value=cmd.assignment_id)
+            
+            slugged_filename = slugify(file_cmd.filename)
+            
+            key = f"courses/C-{assignment.course_id}/assignments/A-{assignment.id}/submissions/{str(uuid4())}/{slugged_filename}"
             
             media = MediaCreate(
-                    # TODO: Need to add a proper file path.
-                    filename=f"/Submissions/{Path(file_cmd.filename).name.strip().replace(" ", "_")}",
+                    filename=file_cmd.filename,
                     mime_type=file_cmd.content_type,
                     file_size=file_cmd.size,
                     mediable_id=submission.id,
                     mediable_type=MediableType.ASSIGNMENT_SUBMISSION,
                     is_private=True,
                     status=MediaStatus.PENDING,
-                    created_by=cmd.created_by
+                    created_by=cmd.created_by,
+                    key=key,
                 )
             media_id, url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=conn)    
         

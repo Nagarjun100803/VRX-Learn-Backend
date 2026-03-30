@@ -1,9 +1,14 @@
 import asyncio
 from pathlib import Path
 from typing import ClassVar, Type, Optional
+from uuid import uuid4
+
 from asyncpg import Connection
+from slugify import slugify
+
 from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonReorderParticipants, LessonUpdate, LessonDelete, LessonGetQuery, LessonUploadUrl
 from src.command.commands.media import MediaCreate, MediaStatus, MediableType
+from src.command.commands.modules import Module, ModuleGet
 from src.command.services.positioning import ReorderParticipants, PositioningService
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
 from src.command.repositories.modules import ModuleRepository
@@ -34,7 +39,37 @@ class LessonService(BaseService[Lesson]):
         self.auth_service = auth_service
         self.positioning_service = positioning_service
     
+    
+    async def _validate_module(
+        self,
+        module_id: int,
+    ) -> Module:
+        
+        module = await self.module_repo.get(ModuleGet(id=module_id))
+        
+        if module is None:
+            raise CourseModuleNotFoundError(value=module_id)
+        
+        return module
+            
+    
+    async def _check_duplicate_lesson_title(
+        self,
+        title: str,
+        module_id: int,
+    ) -> None:
+        
+        duplicate_title_flag = await self.repo.exists_by(
+            title=title,
+            module_id=module_id
+        )
 
+        if duplicate_title_flag:
+            raise LessonAlreadyExistsError(value=title, identifier="title")
+
+        return None
+        
+    
     @require_authorization(
         action=Action.CREATE,
         entity=Entity.LESSON,
@@ -43,17 +78,6 @@ class LessonService(BaseService[Lesson]):
         object_name="cmd"
     )
     async def create(self, cmd: LessonCreate, connection: Optional[Connection] = None) -> Lesson:
-        
-        module_exist_flag, duplicate_title_flag = await asyncio.gather(
-            self.module_repo.exists_by(id=cmd.module_id),
-            self.repo.exists_by(title=cmd.title, module_id=cmd.module_id)
-        )
-        
-        if not module_exist_flag: 
-            raise CourseModuleNotFoundError(value=cmd.module_id)
-        
-        if duplicate_title_flag: 
-            raise LessonAlreadyExistsError(value=cmd.title, identifier="title")
                 
         position_string = await self.positioning_service.generate_position(
             tablename=self.repo.tablename,
@@ -151,22 +175,28 @@ class LessonService(BaseService[Lesson]):
     ) -> LessonUploadUrl:
         
         async with self.repo.db.transaction() as connection:
+            
+            module, _ = await asyncio.gather(
+                self._validate_module(module_id=cmd.module_id),
+                self._check_duplicate_lesson_title(title=cmd.title, module_id=cmd.module_id)
+            ) 
+            
             lesson = await self.create(cmd, connection=connection)
             
-            # Get the Id and create a record in media
-            # TODO: Need to add the course details in the Key.
-            key = f"modules/{lesson.module_id}/lessons/{lesson.id}/{Path(file_cmd.filename).name.strip().replace(" ", "_")}"
-            file_cmd.filename = key
+            slugged_filename = slugify(file_cmd.filename) 
+            
+            key = f"courses/C-{module.course_id}/modules/{module.id}/lessons/{str(uuid4())}/{slugged_filename}"
             
             media = MediaCreate(
-                filename=key,
+                filename=file_cmd.filename,
                 mime_type=file_cmd.content_type,
                 file_size=file_cmd.size,
                 mediable_id=lesson.id,
                 mediable_type=MediableType.LESSON,
                 created_by=lesson.created_by,
                 is_private=True,
-                status=MediaStatus.PENDING
+                status=MediaStatus.PENDING,
+                key=key,
             )
             
             media_id, upload_url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=connection)

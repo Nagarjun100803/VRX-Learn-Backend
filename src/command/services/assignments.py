@@ -1,7 +1,10 @@
 import asyncio
+from uuid import uuid4
 from asyncpg import Connection
-from pathlib import Path
 from typing import Type, ClassVar, Optional
+
+from slugify import slugify
+
 from src.command.services.base import BaseService
 from src.command.repositories.assignments import AssignmentRepository
 from src.command.repositories.courses import CourseRepository
@@ -66,16 +69,8 @@ class AssignmentService(BaseService[Assignment]):
         
         if not course_id_exist_flag:
             raise CourseNotFoundError(value=cmd.course_id)
-    
-        position_string = await self.generate_position_string(course_id=cmd.course_id)
-        
-        return await self.repo.add(
-            AssignmentCreateWithPosition(
-                **cmd.model_dump(),
-                position_string=position_string
-            ),
-            connection=connection
-        )
+            
+        return await self.repo.add(cmd,connection=connection)
     
     
     @require_authorization(
@@ -130,25 +125,7 @@ class AssignmentService(BaseService[Assignment]):
             value=query.id
         )
         
-    
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="updated_by",
-        entity_id_field="target_id",
-        object_name="cmd"
-    )
-    async def rearrange_sequence(
-        self, 
-        cmd: AssignmentReArrange, 
-        scope: str = "course_id"
-    ) -> Assignment:
-        
-        # NOTE: But in-practice, We don't need to rearrange based on position string.
-        # We sort with due date and created_at. But for the sake of demonstration, I am implementing this method.
-        
-        return await super().rearrange_sequence(cmd, scope)
-        
+
 
     async def init_assignment_create(
         self,
@@ -168,16 +145,13 @@ class AssignmentService(BaseService[Assignment]):
         # So if any of the operation fails, the transaction will be rolled back and 
         # we won't have an orphan media or assignment.
         async with self.repo.db.transaction() as connection:
-    
-            assignment, course_details, = await asyncio.gather(
-                self.create(cmd, connection=connection),
-                # Get a course title and id of this course
-                self.course_repo.pick(columns=("id", "title"), id=cmd.course_id)
-            )
+            
+            assignment = await self.create(cmd, connection=connection)
             
             # Generate a s3 key for this assignment.
-            key = f"C-{course_details["id"]}:{course_details["title"]}/Assignments/A-{assignment.id}:{Path(assignment.title).name.strip().replace(" ", "")}"
-            file_cmd.filename = key
+            slugged_filename = slugify(file_cmd.filename)
+            
+            key = f"courses/C-{cmd.course_id}/assignments/{str(uuid4())}/{slugged_filename}"
             
             # Create a media with Assignment Mediable Type and 
             # Pass mediable_id = new assignment id.
@@ -189,7 +163,8 @@ class AssignmentService(BaseService[Assignment]):
                 mediable_type=MediableType.ASSIGNMENT,
                 is_private=True,
                 status=MediaStatus.PENDING,
-                created_by=cmd.created_by
+                created_by=cmd.created_by,
+                key=key
             )
             
             # presigned url.

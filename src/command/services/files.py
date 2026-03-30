@@ -1,12 +1,12 @@
-import os
 import asyncio
-from typing import Annotated, Any, List, Union, BinaryIO
+from typing import Annotated, Any, List, Self, Union, BinaryIO
 from pathlib import Path
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from functools import lru_cache
+from urllib.parse import quote
 from src.settings import settings
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 # AWS SDK
 import aioboto3
@@ -22,6 +22,11 @@ class FileMetadata(BaseModel):
     content_type: AllowedContentTypes
     size: Annotated[int, Field(gt=0, examples=[1024])]
     
+    @model_validator(mode="after")
+    def validate_filename(self) -> Self:
+        self.filename = Path(self.filename).name
+        return self
+
     def to_dict(self) -> dict:
         # NOTE: Implement this helper not to break previous 
         # dataclass version of this class.
@@ -78,7 +83,9 @@ class S3(BaseObjectStorageService):
     
     async def get_presigned_url(
         self,
+        key: str,
         filename: str,
+        mime_type: str,
         expire_mins: int = PRESIGNED_URL_EXPIRE_MINS
     ) -> str:
         
@@ -87,9 +94,10 @@ class S3(BaseObjectStorageService):
             return await s3.generate_presigned_url(
                 ClientMethod="get_object",
                 Params={
-                    "Key": filename,
+                    "Key": key,
                     "Bucket": self.bucket,
-                    "ResponseContentDisposition": "inline"
+                    "ResponseContentDisposition": f"inline; filename={quote(filename)}",
+                    "ResponseContentType": mime_type,
                 },
                 ExpiresIn=(expire_mins * 60) 
             )

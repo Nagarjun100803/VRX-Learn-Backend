@@ -22,6 +22,7 @@ dependencies = [
     "asgi-lifespan>=2.1.0",
     "redis>=7.1.1",
     "pypika>=0.51.1",
+    "python-slugify>=8.0.4",
 ]
 
 [tool.pogo]
