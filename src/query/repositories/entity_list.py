@@ -184,6 +184,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 user_table.email,
                 user_table.role,
                 user_table.last_login,
+                user_table.created_at,
                 # Need to add user status here.
             )
         

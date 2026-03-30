@@ -1,6 +1,8 @@
+from datetime import UTC, datetime
 from typing import ClassVar, Optional, Union, override
 from asyncpg import Connection
 from asyncpg.protocol.record import Record
+from src.command.commands.base import ID
 from src.command.commands.users import UserCreate, UserDelete, UserGetByEmail, UserGetByID, PasswordUpdate, User
 from src.command.repositories.base import BaseRepository
 
@@ -96,3 +98,19 @@ class UserRespository(BaseRepository[User]):
 
         return self._to_domain(user)
     
+
+    async def update_last_login(self, user_id: ID) -> Optional[User]:
+        
+        data = {"last_login": datetime.now(tz=UTC), "updated_by": user_id}
+        
+        update_payload = self._add_audit_field(data, action="update")
+        
+        executable = self.db.query_builder.build_update(
+            tablename=self.tablename,
+            data=update_payload,
+            where_clause=self.db.query_builder.build_where_pk(user_id)
+        )
+        
+        result = await self.db.execute(executable, fetch_returns="one")
+        
+        return result

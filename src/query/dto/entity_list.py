@@ -65,7 +65,8 @@ class UserDetail(BaseDTO):
     name: str
     email: Email
     role: UserRole
-    last_login: Optional[date] = None
+    last_login: Optional[datetime] = None
+    created_at: datetime
     # TODO: Need to implement the status in users.
     status: str = "active"
     

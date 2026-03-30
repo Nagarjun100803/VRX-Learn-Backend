@@ -2,7 +2,7 @@ import asyncio
 from pathlib import Path
 from typing import ClassVar, Type, Optional
 from asyncpg import Connection
-from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonReorderParticipants, LessonReorderParticipantsCore, LessonTitleUpdate, LessonDelete, LessonGetQuery, LessonUploadUrl
+from src.command.commands.lessons import Lesson, LessonCreate, LessonCreateWithPosition, LessonReorderParticipants, LessonUpdate, LessonDelete, LessonGetQuery, LessonUploadUrl
 from src.command.commands.media import MediaCreate, MediaStatus, MediableType
 from src.command.services.positioning import ReorderParticipants, PositioningService
 from src.exceptions import EntityNotFoundError, LessonNotFoundError, LessonAlreadyExistsError, CourseModuleNotFoundError
@@ -77,7 +77,7 @@ class LessonService(BaseService[Lesson]):
         entity_id_field="id",
         object_name="cmd"   
     )
-    async def update(self, cmd: LessonTitleUpdate) -> Lesson:
+    async def update(self, cmd: LessonUpdate) -> Lesson:
         
         lesson = await self.repo.pick(columns=("id", "module_id"), id=cmd.id)
         if not lesson: 

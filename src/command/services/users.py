@@ -124,4 +124,7 @@ class UserService(BaseService[User]):
                 auth.password, user.password
             ):
             raise UnAuthenticated("Invalid email or password.")
+        
+        await self.repo.update_last_login(user_id=user.id)
+
         return user

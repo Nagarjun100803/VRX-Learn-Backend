@@ -11,7 +11,6 @@ class CourseOutSchema(BaseCmd):
     title: str
     slug: str
     trainer_id: UserID
-    manager_id: UserID
     created_by: UserID
     
 

@@ -1,16 +1,14 @@
-from dataclasses import dataclass
 from typing import Self
 
 from src.api.jwt import JWTHandler
-from src.command.commands.base import UserID
+from src.command.commands.base import BaseCmd, UserID
 from src.command.commands.users import UserGetByID, UserRole
 from src.command.repositories.users import UserRespository
 from src.exceptions import UnAuthenticated, UnauthorizedError
 
 
 
-@dataclass
-class UserContext:
+class UserContext(BaseCmd):
     user_id: UserID
     role: UserRole
     username: str
@@ -43,5 +41,5 @@ class AuthenticationService:
         if user is None:
             raise UnAuthenticated(message=f"No user found with this user id: {jwt_payload.user_id}")
         
-        return UserContext(user_id=f"U-{user.id}", role=user.role, username=user.username)
+        return UserContext(user_id=user.id, role=user.role, username=user.username)
  

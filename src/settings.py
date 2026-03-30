@@ -1,6 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import BaseModel, SecretStr, Field
-from typing import Annotated, Literal
+from typing import Annotated
 
 
 
@@ -10,6 +10,9 @@ class DatabaseSettings(BaseSettings):
     port: int 
     password: SecretStr
     user: SecretStr
+    
+    min_conn: int
+    max_conn: int
 
     model_config = SettingsConfigDict(
         env_file="src/.env",
@@ -38,6 +41,19 @@ class AWSS3Settings(BaseSettings):
         extra="ignore",
         env_prefix="AWS_"
     )
+    
+
+class JWTSettings(BaseSettings):
+    secret_key: SecretStr
+    algorithm: str = "HS256"
+    expire_mins: int = 4320 # 3 days.
+    
+    model_config = SettingsConfigDict(
+        env_file="src/.env",
+        extra="ignore",
+        env_prefix="JWT_"
+    ) 
+
 
 class CORSSettings(BaseSettings):
     allowed_origins: list[str]
@@ -50,6 +66,7 @@ class CORSSettings(BaseSettings):
 
 class Settings(BaseModel):
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]
+    jwt: Annotated[JWTSettings, Field(default_factory=JWTSettings)]
     aws: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]
     cors: Annotated[CORSSettings, Field(default_factory=CORSSettings)]
     

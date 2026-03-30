@@ -1,7 +1,7 @@
 from asyncpg import Connection, Record
 from typing import ClassVar, Optional
 from src.command.repositories.base import BaseRepository
-from src.command.commands.lessons import Lesson, LessonCreateWithPosition, LessonDelete, LessonGet, LessonTitleUpdate
+from src.command.commands.lessons import Lesson, LessonCreateWithPosition, LessonDelete, LessonGet, LessonUpdate
 from src.command.commands.media import MediableType
 
 
@@ -18,7 +18,7 @@ class LessonRepository(BaseRepository[Lesson]):
         return await super().add(cmd, connection=connection)
     
     
-    async def update(self, cmd: LessonTitleUpdate, connection: Optional[Connection] = None) -> Optional[Lesson]:
+    async def update(self, cmd: LessonUpdate, connection: Optional[Connection] = None) -> Optional[Lesson]:
         return await super().update(cmd, connection=connection)
     
     

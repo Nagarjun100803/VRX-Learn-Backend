@@ -38,7 +38,6 @@ class CourseCreateCore(BaseCmd): # Will act as mixin. used by Presentation layer
     thumbnail: Optional[str] = None
     details: Union[RecordedCourseDetails, LiveCourseDetails] = Field(discriminator="type")
     trainer_id: UserID
-    manager_id: UserID
     
 
 
@@ -62,7 +61,6 @@ class CourseInfoUpdateCore(UpdateValidatorMixin, BaseCmd):
     long_description: Annotated[Optional[CourseLongDescription], NullField]
     thumbnail: Annotated[Optional[str], NullField]
     trainer_id: Annotated[Optional[UserID], NullField]
-    manager_id: Annotated[Optional[UserID], NullField]
     
     
 class CourseInfoUpdate(CourseInfoUpdateCore, CourseBase):

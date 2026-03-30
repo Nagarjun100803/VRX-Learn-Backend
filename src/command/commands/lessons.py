@@ -7,12 +7,13 @@ from src.command.commands.validator import UpdateValidatorMixin
 
 
 LessonTitle = Annotated[str, StringConstraints(min_length=5,  max_length=256, strip_whitespace=True, to_upper=True)]
+LessonDescription = Annotated[str, StringConstraints(min_length=5, max_length=5000)]
 
 
 class LessonCreateCore(BaseCmd):
     title: LessonTitle
+    description: Optional[LessonDescription] = None
     module_id: ModuleID
-    
 
 class LessonCreate(LessonCreateCore):
     created_by: UserID
@@ -22,10 +23,12 @@ class LessonCreateWithPosition(LessonCreate):
     position_string: str
 
 
-class LessonTitleUpdateCore(BaseCmd):
-    title: LessonTitle
+class LessonUpdateCore(UpdateValidatorMixin, BaseCmd):
+    title: Annotated[Optional[LessonTitle], NullField]
+    description: Annotated[Optional[LessonDescription], NullField]
     
-class LessonTitleUpdate(LessonTitleUpdateCore, LessonBase):
+
+class LessonUpdate(LessonUpdateCore, LessonBase):
     updated_by: UserID
     
 class LessonDelete(LessonBase):

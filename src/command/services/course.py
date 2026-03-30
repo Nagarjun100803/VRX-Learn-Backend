@@ -26,26 +26,18 @@ class CourseService(BaseService[Course]):
         self.auth_service = auth_service
     
     
-    async def _validate_course_participants(
-        self,
-        trainer_id: int,
-        manager_id: int,
-    ) -> None:
+    
+    async def _validate_trainer(self, trainer_id: int) -> None:
         
-        trainer, manager = await asyncio.gather(
-            self.user_repo.get(UserGetByID(id=trainer_id)),
-            self.user_repo.get(UserGetByID(id=manager_id))
-        )
+        user = await self.user_repo.get(UserGetByID(id=trainer_id))
         
-        if trainer is None: raise UserNotFoundError(value=trainer_id, identifier="trainer")
+        if user is None:
+            raise UserNotFoundError(value=trainer_id, alias="Trainer")
         
-        if manager is None: raise UserNotFoundError(value=manager_id, identifier="manager")
-        
-        if trainer.role != UserRole.TRAINER: raise InvalidRoleError(role=UserRole.TRAINER.value)
-        
-        if not manager.is_manager(): raise InvalidRoleError(role="manager")
-        
-        
+        if user.role != UserRole.TRAINER:
+            raise InvalidRoleError(role=UserRole.TRAINER)
+    
+
     @require_authorization(
         action=Action.CREATE,
         entity=Entity.COURSE,
@@ -59,15 +51,12 @@ class CourseService(BaseService[Course]):
         if await self.repo.exists_by(title=cmd.title): 
             raise CourseAlreadyExistsError(value=cmd.title, identifier="title")
         
-        await self._validate_course_participants(
-            trainer_id=cmd.trainer_id,
-            manager_id=cmd.manager_id
-        )
+        user = await self.user_repo.get(UserGetByID(id=cmd.trainer_id))
         
-        course = await self.repo.add(cmd)
+        await self._validate_trainer(trainer_id=cmd.trainer_id)
         
-        return course    
-    
+        return await self.repo.add(cmd)
+        
 
     @require_authorization(
         action=Action.UPDATE,
@@ -86,19 +75,14 @@ class CourseService(BaseService[Course]):
     ) -> Course:
         
         if isinstance(cmd, CourseInfoUpdate):
-            tasks = []
-            if cmd.trainer_id is not None:
-                tasks.append(self.validate_role("trainer",  cmd.trainer_id))
-            if cmd.manager_id is not None:
-                tasks.append(self.validate_role("manager", cmd.manager_id))
+            
+            await self._validate_trainer(trainer_id=cmd.trainer_id)
+            course = await self.repo.update(cmd)
+            return self._require_entity(course, value=cmd.id)
         
-            # First execute the tasks to check for RoleError.
-            await asyncio.gather(*tasks)
-    
-            return self._require_entity(await self.repo.update(cmd), value=cmd.id)
-        
-        course = await self.repo.update(cmd)
-        return self._require_entity(course, value=cmd.id)
+        else:
+            course = await self.repo.update(cmd)
+            return self._require_entity(course, value=cmd.id)
     
     
     @require_authorization(
