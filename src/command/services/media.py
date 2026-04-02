@@ -18,7 +18,7 @@ from src.command.commands.media import (
     MediaStatusUpdate,
 )
 from src.command.repositories.media import MediaRepository
-from src.command.services.files import S3, FileMetadata
+from src.command.services.files import S3, StorageMetadata
 from src.exceptions import MediaAlreadyExistsError, MediaNotFoundError
 
 # NOTE: Media Assests table allows more than one file for a mediable_type, Eg. LESSON, ASSIGNMENT etc.
@@ -92,13 +92,12 @@ class MediaService:
         media = await self.create(cmd, connection=connection)
 
         # Generate presigned url for upload/
+        file_metadata = StorageMetadata(
+            key=cmd.key, content_type=media.mime_type, size=media.file_size
+        )
+
         url = await self.file_service.generate_presigned_url(
-            file_metadata=FileMetadata(
-                filename=media.filename,
-                content_type=media.mime_type,
-                size=media.file_size,
-            ),
-            expire_mins=expire_mins,
+            file_metadata=file_metadata, expire_mins=expire_mins
         )
 
         return (media.id, url)

@@ -32,6 +32,12 @@ class FileMetadata(BaseModel):
         return self.model_dump()
 
 
+class StorageMetadata(BaseModel):
+    key: str
+    content_type: AllowedContentTypes
+    size: Annotated[int, Field(gt=0, examples=[1024])]
+
+
 @dataclass
 class BaseObjectStorageService(ABC):
     @abstractmethod
@@ -100,7 +106,9 @@ class S3(BaseObjectStorageService):
             )
 
     async def generate_presigned_url(
-        self, file_metadata: FileMetadata, expire_mins: int = PRESIGNED_URL_EXPIRE_MINS
+        self,
+        file_metadata: StorageMetadata,
+        expire_mins: int = PRESIGNED_URL_EXPIRE_MINS,
     ) -> str:
 
         async with self.session.client("s3") as s3:  # type: ignore
@@ -109,7 +117,7 @@ class S3(BaseObjectStorageService):
                 ClientMethod="put_object",
                 Params={
                     "Bucket": self.bucket,
-                    "Key": file_metadata.filename,
+                    "Key": file_metadata.key,
                     "ContentType": file_metadata.content_type,
                 },
                 ExpiresIn=(expire_mins * 60),
@@ -117,7 +125,7 @@ class S3(BaseObjectStorageService):
 
     async def generate_presigned_urls(
         self,
-        files_metadata: List[FileMetadata],
+        files_metadata: List[StorageMetadata],
         expire_mins: int = PRESIGNED_URL_EXPIRE_MINS,
     ) -> List[str]:
 

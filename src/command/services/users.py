@@ -14,7 +14,7 @@ from src.command.commands.users import (
     UserGetByID,
     UserGetByIDQuery,
 )
-from src.command.repositories.users import UserRespository
+from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
 from src.exceptions import (
     EntityNotFoundError,
@@ -41,7 +41,7 @@ class UserService(BaseService[User]):
 
     def __init__(
         self,
-        repo: UserRespository,
+        repo: UserRepository,
         password_handler: PasswordHandler,
         auth_service: AuthService,
     ) -> None:

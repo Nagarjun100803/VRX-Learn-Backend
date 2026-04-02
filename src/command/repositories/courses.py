@@ -2,7 +2,7 @@ from typing import Any, ClassVar, Optional, cast, override
 
 from asyncpg import Connection, Record
 from pydantic import BaseModel
-from pypika import Field, Parameter, Table
+from pypika import Parameter, Table
 from pypika.dialects import PostgreSQLQuery
 
 from src.command.commands.courses import (
@@ -30,6 +30,7 @@ class CourseRepository(BaseRepository[Course]):
             return None
 
         course = dict(row)
+        print(course)
 
         if course["type"] == CourseType.PRE_RECORDED:
             detail_columns = ["type", "price", "total_hours"]
@@ -57,7 +58,7 @@ class CourseRepository(BaseRepository[Course]):
             *[Parameter(f"${idx}") for idx, _ in enumerate(data.values(), start=1)]
         )
 
-        insert_query: Any = insert_query.returning(Field("*"))
+        insert_query: Any = insert_query.returning("*")
         sql: str = insert_query.get_sql()
 
         executable = ExecutableSQL(sql, tuple(data.values()))

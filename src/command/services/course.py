@@ -12,7 +12,7 @@ from src.command.commands.courses import (
 )
 from src.command.commands.users import UserGetByID, UserRole
 from src.command.repositories.courses import CourseRepository
-from src.command.repositories.users import UserRespository
+from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
 from src.exceptions import (
     CourseAlreadyExistsError,
@@ -30,7 +30,7 @@ class CourseService(BaseService[Course]):
     def __init__(
         self,
         repo: CourseRepository,
-        user_repo: UserRespository,
+        user_repo: UserRepository,
         auth_service: AuthService,
     ) -> None:
 

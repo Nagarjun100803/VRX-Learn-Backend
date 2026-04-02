@@ -7,13 +7,13 @@ from asyncpg import Connection
 from src.auth.access_spec import SpecType, get_spec_type
 from src.auth.permission_policy import Action, Entity, get_policy
 from src.command.commands.users import UserGetByID
-from src.command.repositories.users import UserRespository
+from src.command.repositories.users import UserRepository
 from src.database import AsyncPgDBManager
 from src.exceptions import UnauthorizedError
 
 
 class AuthService:
-    def __init__(self, user_repo: UserRespository, db: AsyncPgDBManager) -> None:
+    def __init__(self, user_repo: UserRepository, db: AsyncPgDBManager) -> None:
         """
         Initializes the AuthService with required repositories and database managers.
 

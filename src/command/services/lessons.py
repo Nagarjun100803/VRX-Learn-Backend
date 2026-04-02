@@ -183,7 +183,7 @@ class LessonService(BaseService[Lesson]):
                 file_size=file_cmd.size,
                 mediable_id=lesson.id,
                 mediable_type=MediableType.LESSON,
-                created_by=lesson.created_by,
+                created_by=lesson.created_by,  # type: ignore[arg-type]
                 is_private=True,
                 status=MediaStatus.PENDING,
                 key=key,

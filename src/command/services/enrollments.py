@@ -12,7 +12,7 @@ from src.command.commands.enrollments import (
 from src.command.commands.users import UserGetByID, UserRole
 from src.command.repositories.courses import CourseRepository
 from src.command.repositories.enrollments import EnrollmentRepository
-from src.command.repositories.users import UserRespository
+from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
 from src.exceptions import (
     CourseNotFoundError,
@@ -28,7 +28,7 @@ class EnrollmentService(BaseService[Enrollment]):
     def __init__(
         self,
         repo: EnrollmentRepository,
-        user_repo: UserRespository,
+        user_repo: UserRepository,
         course_repo: CourseRepository,
         auth_service: AuthService,
     ) -> None:

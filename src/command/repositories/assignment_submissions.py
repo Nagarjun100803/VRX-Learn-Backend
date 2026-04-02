@@ -103,8 +103,8 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
             (
                 user_id,
                 assignment_id,
-                MediableType.ASSIGNMENT_SUBMISSION,
                 MediaStatus.UPLOADED,
+                MediableType.ASSIGNMENT_SUBMISSION,
             ),
         )
 

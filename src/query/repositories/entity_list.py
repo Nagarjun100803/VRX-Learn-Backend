@@ -244,6 +244,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 user_table.role,
                 course_table.title.as_("course_name"),
                 enrollment_table.status.as_("status"),
+                fn.Cast(enrollment_table.expire_at, SqlTypes.DATE).as_("expire_at"),
                 fn.Cast(enrollment_table.created_at, SqlTypes.DATE).as_(
                     "enrollment_date"
                 ),

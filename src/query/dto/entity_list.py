@@ -92,6 +92,7 @@ class EnrollmentDetail(BaseDTO):
     role: UserRole
     course_name: CourseTitle
     enrollment_date: date
+    expire_at: Optional[date] = None
     status: EnrollmentStatus
 
 

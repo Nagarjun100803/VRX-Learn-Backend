@@ -3,7 +3,7 @@ from typing import Self
 from src.api.jwt import JWTHandler
 from src.command.commands.base import BaseCmd, UserID
 from src.command.commands.users import UserGetByID, UserRole
-from src.command.repositories.users import UserRespository
+from src.command.repositories.users import UserRepository
 from src.exceptions import UnAuthenticated, UnauthorizedError
 
 
@@ -19,7 +19,7 @@ class UserContext(BaseCmd):
 
 
 class AuthenticationService:
-    def __init__(self, user_repo: UserRespository, jwt_handler: JWTHandler) -> None:
+    def __init__(self, user_repo: UserRepository, jwt_handler: JWTHandler) -> None:
 
         self.user_repo = user_repo
         self.jwt_handler = jwt_handler
