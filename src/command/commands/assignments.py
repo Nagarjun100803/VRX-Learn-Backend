@@ -4,20 +4,31 @@ from typing import Annotated, Optional
 
 from pydantic import Field, StringConstraints
 
-from src.command.commands.base import AssignmentBase, AssignmentID, AuditFields, BaseCmd, CourseID, MediaID, UserID, NullField
+from src.command.commands.base import (
+    AssignmentBase,
+    AssignmentID,
+    AuditFields,
+    BaseCmd,
+    CourseID,
+    MediaID,
+    NullField,
+    UserID,
+)
 from src.command.commands.validator import UpdateValidatorMixin
 
-
-AssignmentTitle = Annotated[str, StringConstraints(min_length=5, max_length=250, to_upper=True)]
+AssignmentTitle = Annotated[
+    str, StringConstraints(min_length=5, max_length=250, to_upper=True)
+]
 AssignmentInstruction = Annotated[str, Field(min_length=5, max_length=2000)]
 NumberOfAttempts = Annotated[int, Field(le=3, gt=0)]
 MaxScore = Annotated[int, Field(ge=5, le=100)]
+
 
 class AllowedAssignmentFileType(StrEnum):
     PDF = "application/pdf"
     DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     DOC = "application/msword"
-    
+
 
 class AssignmentCreateCore(BaseCmd):
     title: AssignmentTitle
@@ -30,44 +41,46 @@ class AssignmentCreateCore(BaseCmd):
 
 class AssignmentCreate(AssignmentCreateCore):
     created_by: UserID
-    
-    
+
+
 class AssignmentCreateWithPosition(AssignmentCreate):
     position_string: str
-    
-    
+
+
 class AssignmentUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[AssignmentTitle], NullField]
     instructions: Annotated[Optional[AssignmentInstruction], NullField]
     number_of_attempts: Annotated[Optional[NumberOfAttempts], NullField]
-    
+
 
 class AssignmentUpdate(AssignmentUpdateCore, AssignmentBase):
     updated_by: UserID
-    
+
 
 class AssignmentDelete(AssignmentBase):
     deleted_by: UserID
-    
+
 
 class AssignmentGet(AssignmentBase): ...
 
+
 class AssignmentGetQuery(AssignmentGet):
     viewer_id: UserID
-    
+
 
 class AssignmentReArrangeCore(UpdateValidatorMixin, BaseCmd):
     preceding_id: Annotated[Optional[AssignmentID], NullField]
     succeeding_id: Annotated[Optional[AssignmentID], NullField]
 
+
 class AssignmentReArrange(AssignmentReArrangeCore):
     target_id: AssignmentID
-    updated_by: UserID 
-    
+    updated_by: UserID
+
 
 class AssignmentUploadUrl(AssignmentBase):
     media_id: MediaID
     upload_url: str
 
 
-class Assignment(AuditFields, AssignmentCreate, AssignmentBase): ...
+class Assignment(AuditFields, AssignmentCreateCore, AssignmentBase): ...

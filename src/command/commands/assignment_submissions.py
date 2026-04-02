@@ -3,14 +3,22 @@ from typing import Annotated, Optional
 
 from pydantic import Field
 
-from src.command.commands.base import AssignmentBase, AssignmentID, AssignmentSubmissionBase, AuditFields, BaseCmd, MediaID, UserID
 from src.command.commands.assignments import Assignment, NumberOfAttempts
+from src.command.commands.base import (
+    AssignmentBase,
+    AssignmentID,
+    AssignmentSubmissionBase,
+    AuditFields,
+    BaseCmd,
+    MediaID,
+    UserID,
+)
 from src.command.commands.media import Media
 
-
 Feedback = Annotated[str, Field(max_length=2000)]
-Score = int # Temporary Fix
+Score = int  # Temporary Fix
 Attempt = NumberOfAttempts
+
 
 class AllowedAssignmentSubmissionFileType(StrEnum):
     PDF = "application/pdf"
@@ -20,15 +28,15 @@ class AssignmentSubmissionStatus(StrEnum):
     SUBMITTED = "submitted"
     DONE_LATE = "done-late"
     GRADED = "graded"
-    
+
 
 class AssignmentSubmissionCreateCore(BaseCmd):
     assignment_id: AssignmentID
-    
+
 
 class AssignmentSubmissionCreate(AssignmentSubmissionCreateCore):
     created_by: UserID
-    
+
 
 class AssignmentSubmissionCreateWithAttemptAndStatus(AssignmentSubmissionCreate):
     # We change the status with `done_late` if late submission.
@@ -43,18 +51,21 @@ class AssignmentSubmissionVerifyCore(BaseCmd):
 
 class AssignmentSubmissionVerify(AssignmentSubmissionVerifyCore, AssignmentBase):
     updated_by: UserID
-    
+
+
 class AssignmentSubmissionVerifyWithStatus(AssignmentSubmissionVerify):
     status: AssignmentSubmissionStatus = AssignmentSubmissionStatus.GRADED
-    
+
 
 class AssignmentSubmissionFeedbackUpdateCore(BaseCmd):
     feedback: Feedback
-    
 
-class AssignmentSubmissionFeedbackUpdate(AssignmentSubmissionFeedbackUpdateCore, AssignmentSubmissionBase):
+
+class AssignmentSubmissionFeedbackUpdate(
+    AssignmentSubmissionFeedbackUpdateCore, AssignmentSubmissionBase
+):
     updated_by: UserID
-    
+
 
 class AssignmentSubmissionGetCore(AssignmentSubmissionBase): ...
 
@@ -63,11 +74,12 @@ class AssignmentSubmissionGet(AssignmentSubmissionGetCore):
     viewer_id: UserID
 
 
-class AssignmentSubmission(AuditFields, AssignmentSubmissionCreateCore, AssignmentSubmissionBase):
+class AssignmentSubmission(
+    AuditFields, AssignmentSubmissionCreateCore, AssignmentSubmissionBase
+):
     score: Optional[Score]
     feedback: Optional[Feedback]
     status: AssignmentSubmissionStatus
-
 
 
 class AssignmentSubmissionUploadURL(AssignmentSubmissionBase):
@@ -76,6 +88,7 @@ class AssignmentSubmissionUploadURL(AssignmentSubmissionBase):
 
 
 # NOTE: Delete is not in scope. Will implement later if required.
+
 
 class AssignmentSubmissionContext(BaseCmd):
     assignment: Assignment

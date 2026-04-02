@@ -1,64 +1,85 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends
+from pydantic import StringConstraints
 
-from src.api.dependencies import AdminEntityListQueryServiceDependency, CurrentAdmin, CurrentTraineeOrTrainer, CurrentTrainer, TraineeEntityListQueryServiceDependency, TrainerEntityListQueryServiceDependency
+from src.api.dependencies import (
+    AdminEntityListQueryServiceDependency,
+    CurrentAdmin,
+    CurrentTraineeOrTrainer,
+    CurrentTrainer,
+    TraineeEntityListQueryServiceDependency,
+    TrainerEntityListQueryServiceDependency,
+)
 from src.command.commands.base import CourseID, ModuleID
 from src.query.dto.base import PageMeta, Paginated
-from src.query.dto.entity_list import AssignmentDetail, AssignmentDetailWithDue, CourseDetail, CourseFilters, CourseQueryParams, EnrollmentDetail, EnrollmentFilters, EnrollmentQueryParams, LessonDetail, ModuleDetail, TraineeDetail, TraineeFilters, TraineeQueryParams, UserDetail, UserFilters, UserQueryParams
-from src.query.dto.request_schemas import CourseViewRequestSchema, ModuleViewRequestSchema
-
-
-admin_router = APIRouter(
-    prefix="/list/admin",
-    tags=["List View", "Admin List View"]
+from src.query.dto.entity_list import (
+    AssignmentDetail,
+    AssignmentDetailWithDue,
+    CourseDetail,
+    CourseFilters,
+    CourseQueryParams,
+    CourseSearchDetail,
+    EnrollmentDetail,
+    EnrollmentFilters,
+    EnrollmentQueryParams,
+    LessonDetail,
+    ModuleDetail,
+    TraineeDetail,
+    TraineeFilters,
+    TraineeQueryParams,
+    UserDetail,
+    UserFilters,
+    UserQueryParams,
+    UserSearchDetail,
 )
+from src.query.dto.request_schemas import (
+    CourseViewRequestSchema,
+    ModuleViewRequestSchema,
+)
+
+admin_router = APIRouter(prefix="/list/admin", tags=["List View", "Admin List View"])
 
 
 @admin_router.get("/users", response_model=Paginated[UserDetail])
 async def list_users(
     filters: Annotated[UserQueryParams, Depends()],
     query_service: AdminEntityListQueryServiceDependency,
-    current_user: CurrentAdmin
+    current_user: CurrentAdmin,
 ):
     return await query_service.list_users(
         filters=UserFilters(
             name_or_email=filters.name_or_email,
             role=filters.role,
             sort_by_username=filters.sort_by_username,
-            sort_by_created_at=filters.sort_by_created_at
+            sort_by_created_at=filters.sort_by_created_at,
         ),
-        page_meta=PageMeta(
-            page=filters.page,
-            limit=filters.limit
-        )
+        page_meta=PageMeta(page=filters.page, limit=filters.limit),
     )
-    
+
+
 @admin_router.get("/courses", response_model=Paginated[CourseDetail])
 async def list_courses(
     filters: Annotated[CourseQueryParams, Depends()],
     query_service: AdminEntityListQueryServiceDependency,
-    current_user: CurrentAdmin
+    current_user: CurrentAdmin,
 ):
     return await query_service.list_courses(
         filters=CourseFilters(
             course_name_or_trainer_name=filters.course_name_or_trainer_name,
             sort_by_course_name=filters.sort_by_course_name,
             sort_by_no_of_trainees=filters.sort_by_no_of_trainees,
-            sort_by_created_at=filters.sort_by_created_at
+            sort_by_created_at=filters.sort_by_created_at,
         ),
-        page_meta=PageMeta(
-            page=filters.page,
-            limit=filters.limit
-        )
+        page_meta=PageMeta(page=filters.page, limit=filters.limit),
     )
-    
+
 
 @admin_router.get("/enrollments", response_model=Paginated[EnrollmentDetail])
 async def list_enrollments(
     filters: Annotated[EnrollmentQueryParams, Depends()],
     query_service: AdminEntityListQueryServiceDependency,
-    current_user: CurrentAdmin
+    current_user: CurrentAdmin,
 ):
     return await query_service.list_enrollments(
         filters=EnrollmentFilters(
@@ -66,129 +87,131 @@ async def list_enrollments(
             status=filters.status,
             role=filters.role,
             sort_by_course_name=filters.sort_by_course_name,
-            sort_by_enrollment_date=filters.sort_by_enrollment_date
+            sort_by_enrollment_date=filters.sort_by_enrollment_date,
         ),
-        page_meta=PageMeta(
-            page=filters.page,
-            limit=filters.limit
-        )
+        page_meta=PageMeta(page=filters.page, limit=filters.limit),
     )
-    
-    
+
+
 @admin_router.get("/trainees/{course_id}", response_model=Paginated[TraineeDetail])
-async def list_trainees(
+async def list_trainees_for_admin(
     course_id: CourseID,
     filters: Annotated[TraineeQueryParams, Depends()],
     query_service: AdminEntityListQueryServiceDependency,
-    current_user: CurrentAdmin
+    current_user: CurrentAdmin,
 ):
-    
+
     return await query_service.list_trainees(
         course_id=course_id,
         filters=TraineeFilters(
             name=filters.name,
             role=filters.role,
             sort_by_enrollment_date=filters.sort_by_enrollment_date,
-            sort_by_username=filters.sort_by_username
+            sort_by_username=filters.sort_by_username,
         ),
-        page_meta=PageMeta(
-            page=filters.page,
-            limit=filters.limit
-        )
+        page_meta=PageMeta(page=filters.page, limit=filters.limit),
     )
+
+
+admin_search_router = APIRouter(
+    prefix="/admin/search", tags=["Admin Search", "Admin List View"]
+)
+
+
+@admin_search_router.get("/users", response_model=list[UserSearchDetail])
+async def search_users(
+    username_or_email: Annotated[str, StringConstraints(to_lower=True)],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+    return await query_service.search_users(username_or_email=username_or_email)
+
+
+@admin_search_router.get("/courses", response_model=list[CourseSearchDetail])
+async def search_courses(
+    course_name: Annotated[str, StringConstraints(to_upper=True)],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+
+    return await query_service.search_course(course_name=course_name)
 
 
 trainee_router = APIRouter(
-    prefix="/list/trainee",
-    tags=["List View", "Trainee List View"]
+    prefix="/list/trainee", tags=["List View", "Trainee List View"]
 )
 
 
-@trainee_router.get("/assignments/{course_id}", response_model=list[AssignmentDetail], deprecated=True)
-async def list_assignments(
+@trainee_router.get(
+    "/assignments/{course_id}", response_model=list[AssignmentDetail], deprecated=True
+)
+async def list_assignments_for_trainee(
     course_id: CourseID,
     query_service: TraineeEntityListQueryServiceDependency,
-    current_user: CurrentTraineeOrTrainer
+    current_user: CurrentTraineeOrTrainer,
 ):
     return await query_service.list_assignments(
-        CourseViewRequestSchema(
-            course_id=course_id,
-            viewer_id=current_user
-        )
+        CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
     )
-    
-    
+
 
 trainer_router = APIRouter(
-    prefix="/list/trainer",
-    tags=["List View", "Trainer List View"]
+    prefix="/list/trainer", tags=["List View", "Trainer List View"]
 )
 
 
-@trainer_router.get("/assignments/{course_id}", response_model=list[AssignmentDetailWithDue], deprecated=True)
-async def list_assignments(
+@trainer_router.get(
+    "/assignments/{course_id}",
+    response_model=list[AssignmentDetailWithDue],
+    deprecated=True,
+)
+async def list_assignments_for_trainer(
     course_id: CourseID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer
+    current_user: CurrentTrainer,
 ):
     return await query_service.list_assignments(
-        CourseViewRequestSchema(
-            course_id=course_id,
-            viewer_id=current_user
-        )
+        CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
     )
-    
-    
+
+
 @trainer_router.get("/modules/{course_id}", response_model=list[ModuleDetail])
 async def list_modules(
     course_id: CourseID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer
+    current_user: CurrentTrainer,
 ):
     return await query_service.list_modules(
-        CourseViewRequestSchema(
-            course_id=course_id,
-            viewer_id=current_user
-        )
+        CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
     )
-    
-    
+
 
 @trainer_router.get("/lessons/{module_id}", response_model=list[LessonDetail])
 async def list_lessons(
     module_id: ModuleID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer
+    current_user: CurrentTrainer,
 ):
     return await query_service.list_lessons(
-        ModuleViewRequestSchema(
-            module_id=module_id,
-            viewer_id=current_user
-        )
+        ModuleViewRequestSchema(module_id=module_id, viewer_id=current_user)
     )
 
 
 @trainer_router.get("/trainees/{course_id}", response_model=Paginated[TraineeDetail])
-async def list_trainees(
+async def list_trainees_for_trainer(
     course_id: CourseID,
     filters: Annotated[TraineeQueryParams, Depends()],
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer
+    current_user: CurrentTrainer,
 ):
-    
+
     return await query_service.list_trainees(
-        query=CourseViewRequestSchema(
-            course_id=course_id,
-            viewer_id=current_user
-        ),
+        query=CourseViewRequestSchema(course_id=course_id, viewer_id=current_user),
         filters=TraineeFilters(
             name=filters.name,
             role=filters.role,
             sort_by_enrollment_date=filters.sort_by_enrollment_date,
-            sort_by_username=filters.sort_by_username
+            sort_by_username=filters.sort_by_username,
         ),
-        page_meta=PageMeta(
-            page=filters.page,
-            limit=filters.limit
-        )
+        page_meta=PageMeta(page=filters.page, limit=filters.limit),
     )

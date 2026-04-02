@@ -1,16 +1,23 @@
-from datetime import date, datetime
-from typing import Annotated, Literal, Optional
+from datetime import datetime
+from typing import Optional
 
-from pydantic import Field
-
-from src.command.commands.assignment_submissions import AssignmentSubmissionStatus, Attempt, Score
-from src.command.commands.assignments import AssignmentInstruction, AssignmentTitle, MaxScore, NumberOfAttempts
+from src.command.commands.assignment_submissions import (
+    AssignmentSubmissionStatus,
+    Attempt,
+    Score,
+)
+from src.command.commands.assignments import (
+    AssignmentInstruction,
+    AssignmentTitle,
+    MaxScore,
+    NumberOfAttempts,
+)
 from src.command.commands.base import AssignmentID, AssignmentSubmissionID, MediaID
-from src.command.commands.users import Email
-from src.exceptions import ValidationError
-from src.pypika_query_builder import CustomOrder
 from src.query.dto.base import BaseDTO, PageMeta
-from src.query.dto.entity_list import AssignmentSubmissionDetail, AssignmentSubmissionFilters
+from src.query.dto.entity_list import (
+    AssignmentSubmissionDetail,
+    AssignmentSubmissionFilters,
+)
 
 
 class TraineeAssignmentCore(BaseDTO):
@@ -57,13 +64,11 @@ class TrainerAssignmentContent(BaseDTO):
     attachment: Optional[AssignmentAttachment] = None
 
 
-class TraineeAssignmentContent(TrainerAssignmentContent):    
-    submissions: list[TraineeSubmissionDetail] # His own works.
-
+class TraineeAssignmentContent(TrainerAssignmentContent):
+    submissions: list[TraineeSubmissionDetail]  # His own works.
 
 
 class TrainerSubmissionDetail(AssignmentSubmissionDetail): ...
-    
 
-class AssignmentSubmissionQuerySchema(AssignmentSubmissionFilters, PageMeta):
-    ...
+
+class AssignmentSubmissionQuerySchema(AssignmentSubmissionFilters, PageMeta): ...

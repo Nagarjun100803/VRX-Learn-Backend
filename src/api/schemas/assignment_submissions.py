@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import Optional
 
 from src.command.commands.assignment_submissions import (
+    AssignmentSubmissionBase,
     AssignmentSubmissionCreateCore,
-    AssignmentSubmissionStatus, 
-    AssignmentSubmissionVerifyCore,
     AssignmentSubmissionFeedbackUpdateCore,
+    AssignmentSubmissionStatus,
+    AssignmentSubmissionVerifyCore,
     Score,
 )
-from src.command.commands.assignment_submissions import AssignmentSubmissionBase
 from src.command.commands.base import AssignmentID, BaseCmd, UserID
 from src.command.services.files import FileMetadata
 
@@ -19,16 +19,16 @@ class AssignmentSubmissionOut(AssignmentSubmissionBase):
     score: Optional[Score] = None
     created_by: UserID
     created_at: datetime
-    
+
 
 class AssignmentSubmissionCreateSchema(BaseCmd):
     assignment_submission: AssignmentSubmissionCreateCore
     file_metadata: FileMetadata
-     
+
 
 class AssignmentSubmissionVerifySchema(AssignmentSubmissionVerifyCore): ...
-class AssignmentSubmissionFeedbackUpdateSchema(AssignmentSubmissionFeedbackUpdateCore): ...
 
 
-
-    
+class AssignmentSubmissionFeedbackUpdateSchema(
+    AssignmentSubmissionFeedbackUpdateCore
+): ...

@@ -7,39 +7,31 @@ from src.command.repositories.users import UserRespository
 from src.exceptions import UnAuthenticated, UnauthorizedError
 
 
-
 class UserContext(BaseCmd):
     user_id: UserID
     role: UserRole
     username: str
-    
+
     def validate_role(self, role: UserRole) -> Self:
         if self.role != UserRole(role).value:
-            raise UnauthorizedError(
-                message=f"Permission Denied: '{role.value}' only."
-            )
+            raise UnauthorizedError(message=f"Permission Denied: '{role.value}' only.")
         return self
 
 
 class AuthenticationService:
-    
-    def __init__(
-        self,
-        user_repo: UserRespository,
-        jwt_handler: JWTHandler
-    ) -> None:
-        
+    def __init__(self, user_repo: UserRespository, jwt_handler: JWTHandler) -> None:
+
         self.user_repo = user_repo
         self.jwt_handler = jwt_handler
 
-    
     async def authenticate(self, token: str) -> UserContext:
         jwt_payload = self.jwt_handler.decode_jwt_token(token=token)
         # Get user from the user id.
         user = await self.user_repo.get(UserGetByID(id=jwt_payload.user_id))
-        
+
         if user is None:
-            raise UnAuthenticated(message=f"No user found with this user id: {jwt_payload.user_id}")
-        
+            raise UnAuthenticated(
+                message=f"No user found with this user id: {jwt_payload.user_id}"
+            )
+
         return UserContext(user_id=user.id, role=user.role, username=user.username)
- 

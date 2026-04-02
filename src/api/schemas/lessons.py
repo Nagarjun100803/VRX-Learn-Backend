@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Annotated, Union
+from typing import Annotated
 
 from pydantic import Field
 
@@ -9,13 +8,13 @@ from src.command.commands.media import AllowedContentTypes
 
 
 class LessonCreateSchema(LessonCreateCore):
-    filename: Union[str, Path]
+    filename: str
     content_type: AllowedContentTypes
     file_size: Annotated[int, Field(gt=0)]
-    
+
 
 class LessonOutSchema(LessonCreateCore):
-    id: LessonID    
+    id: LessonID
+
 
 class LessonUpdateSchema(LessonUpdateCore): ...
-

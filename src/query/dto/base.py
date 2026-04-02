@@ -1,7 +1,13 @@
 from math import ceil
 from typing import Annotated, Literal, TypeVar
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, computed_field, model_validator
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    computed_field,
+)
 from pydantic.alias_generators import to_camel
 
 from src.pypika_query_builder import CustomOrder
@@ -87,22 +93,21 @@ class BaseDTO(BaseModel):
     All DTOs in the API layer should inherit from this class to ensure
     consistent serialization behavior and reduce repeated configuration.
     """
-    
+
     model_config = ConfigDict(
         validate_by_alias=True,
         validate_by_name=True,
         alias_generator=to_camel,
         from_attributes=True,
-        extra="ignore"
+        extra="ignore",
     )
-
 
 
 def get_sort_order(order: Literal["asc", "desc"]) -> CustomOrder:
     """
-        Helper function to get a CustomOrder.
+    Helper function to get a CustomOrder.
     """
-    
+
     if order == "asc":
         return CustomOrder.asc_nulls_last
     return CustomOrder.desc_nulls_last
@@ -111,7 +116,7 @@ def get_sort_order(order: Literal["asc", "desc"]) -> CustomOrder:
 class PageMeta(BaseDTO):
     page: Annotated[int, Field(ge=1)] = 1
     limit: Annotated[Literal[10, 15, 20, 25], BeforeValidator(int)] = 10
-    
+
     @property
     def offset(self) -> int:
         return (self.page - 1) * self.limit
@@ -119,13 +124,14 @@ class PageMeta(BaseDTO):
 
 T = TypeVar("T", bound=BaseDTO)
 
+
 class Paginated[T](BaseDTO):
     data: list[T]
     page: int
     limit: int
     total_items: int
-    
+
     @computed_field
     @property
     def total_pages(self) -> int:
-        return ceil(self.total_items / self.limit) if self.total_items > 0 else 0 
+        return ceil(self.total_items / self.limit) if self.total_items > 0 else 0

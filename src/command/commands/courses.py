@@ -1,14 +1,19 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated, Literal, Optional, Union
 
 from pydantic import Field, StringConstraints
 
-from src.command.commands.base import BaseCmd, CourseBase, UserID, AuditFields, NullField
+from src.command.commands.base import (
+    AuditFields,
+    BaseCmd,
+    CourseBase,
+    NullField,
+    UserID,
+)
 from src.command.commands.validator import UpdateValidatorMixin
 
 
-
-class CourseType(str, Enum):
+class CourseType(StrEnum):
     PRE_RECORDED = "pre-recorded"
     LIVE = "live"
 
@@ -16,12 +21,13 @@ class CourseType(str, Enum):
 class LiveCourseDetails(BaseCmd):
     type: Literal[CourseType.LIVE] = CourseType.LIVE
     # We can add more fields, if we want.
-    
 
 
-CourseTitle = Annotated[str, StringConstraints(to_upper=True, min_length=10, strip_whitespace=True)]
+CourseTitle = Annotated[
+    str, StringConstraints(to_upper=True, min_length=10, strip_whitespace=True)
+]
 CourseShortDescription = Annotated[str, StringConstraints(min_length=50)]
-CourseLongDescription = Annotated[str, StringConstraints(min_length=50, max_length=600)] 
+CourseLongDescription = Annotated[str, StringConstraints(min_length=50, max_length=600)]
 Price = Annotated[float, Field(gt=1000)]
 
 
@@ -31,15 +37,15 @@ class RecordedCourseDetails(BaseCmd):
     price: Price
 
 
-class CourseCreateCore(BaseCmd): # Will act as mixin. used by Presentation layer [Fastapi]
+class CourseCreateCore(BaseCmd):
     title: CourseTitle
     short_description: Optional[CourseShortDescription] = None
     long_description: Optional[CourseLongDescription] = None
     thumbnail: Optional[str] = None
-    details: Union[RecordedCourseDetails, LiveCourseDetails] = Field(discriminator="type")
+    details: Union[RecordedCourseDetails, LiveCourseDetails] = Field(
+        discriminator="type"
+    )
     trainer_id: UserID
-    
-
 
 
 class CourseCreate(CourseCreateCore):
@@ -47,13 +53,11 @@ class CourseCreate(CourseCreateCore):
 
     def get_slug(self) -> str:
         return self.title.lower().strip().replace(" ", "-")
-    
-    
 
-class CourseDelete(CourseBase): 
+
+class CourseDelete(CourseBase):
     deleted_by: UserID
-    
-  
+
 
 class CourseInfoUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[CourseTitle], NullField]
@@ -61,26 +65,27 @@ class CourseInfoUpdateCore(UpdateValidatorMixin, BaseCmd):
     long_description: Annotated[Optional[CourseLongDescription], NullField]
     thumbnail: Annotated[Optional[str], NullField]
     trainer_id: Annotated[Optional[UserID], NullField]
-    
-    
+
+
 class CourseInfoUpdate(CourseInfoUpdateCore, CourseBase):
     updated_by: UserID
+
 
 class RecordedCourseDetailsUpdateCore(UpdateValidatorMixin, BaseCmd):
     total_hours: Annotated[Optional[float], NullField]
     price: Annotated[Optional[Price], NullField]
-    
 
 
 class RecordedCourseDetailsUpdate(RecordedCourseDetailsUpdateCore, CourseBase):
-    updated_by: UserID    
+    updated_by: UserID
+
 
 class CourseGet(CourseBase): ...
+
 
 class CourseGetByIDQuery(CourseGet):
     viewer_id: UserID
 
 
-class Course(AuditFields, CourseCreate, CourseBase):
+class Course(AuditFields, CourseCreateCore, CourseBase):
     slug: Annotated[Optional[str], NullField]
-    

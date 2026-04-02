@@ -1,10 +1,13 @@
 from src.command.commands.base import BaseCmd, CourseID, UserID
-from src.command.commands.courses import CourseCreateCore, RecordedCourseDetailsUpdateCore, CourseInfoUpdateCore  
-
+from src.command.commands.courses import (
+    CourseCreateCore,
+    CourseInfoUpdateCore,
+    RecordedCourseDetailsUpdateCore,
+)
 
 
 class CourseCreateSchema(CourseCreateCore): ...
-    
+
 
 class CourseOutSchema(BaseCmd):
     id: CourseID
@@ -12,11 +15,9 @@ class CourseOutSchema(BaseCmd):
     slug: str
     trainer_id: UserID
     created_by: UserID
-    
+
 
 class CourseInfoUpdateSchema(CourseInfoUpdateCore): ...
 
-class RecordedCourseDetailsUpdateSchema(RecordedCourseDetailsUpdateCore): ...
-    
-         
 
+class RecordedCourseDetailsUpdateSchema(RecordedCourseDetailsUpdateCore): ...

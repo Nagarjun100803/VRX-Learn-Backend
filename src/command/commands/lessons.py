@@ -2,11 +2,24 @@ from typing import Annotated, Optional
 
 from pydantic import StringConstraints
 
-from src.command.commands.base import AuditFields, BaseCmd, LessonBase, LessonID, MediaID,  ModuleID, NullField, UserID
+from src.command.commands.base import (
+    AuditFields,
+    BaseCmd,
+    LessonBase,
+    LessonID,
+    MediaID,
+    ModuleID,
+    NullField,
+    UserID,
+)
 from src.command.commands.validator import UpdateValidatorMixin
 
-
-LessonTitle = Annotated[str, StringConstraints(min_length=5,  max_length=256, strip_whitespace=True, to_upper=True)]
+LessonTitle = Annotated[
+    str,
+    StringConstraints(
+        min_length=5, max_length=256, strip_whitespace=True, to_upper=True
+    ),
+]
 LessonDescription = Annotated[str, StringConstraints(min_length=5, max_length=5000)]
 
 
@@ -15,9 +28,10 @@ class LessonCreateCore(BaseCmd):
     description: Optional[LessonDescription] = None
     module_id: ModuleID
 
+
 class LessonCreate(LessonCreateCore):
     created_by: UserID
-    
+
 
 class LessonCreateWithPosition(LessonCreate):
     position_string: str
@@ -26,18 +40,22 @@ class LessonCreateWithPosition(LessonCreate):
 class LessonUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[LessonTitle], NullField]
     description: Annotated[Optional[LessonDescription], NullField]
-    
+
 
 class LessonUpdate(LessonUpdateCore, LessonBase):
     updated_by: UserID
-    
+
+
 class LessonDelete(LessonBase):
     deleted_by: UserID
-    
+
+
 class LessonGet(LessonBase): ...
+
 
 class LessonGetQuery(LessonGet):
     viewer_id: UserID
+
 
 class Lesson(AuditFields, LessonCreateCore, LessonBase): ...
 
@@ -46,12 +64,12 @@ class LessonUploadUrl(BaseCmd):
     media_id: MediaID
     lesson_id: LessonID
     upload_url: str
-    
+
 
 class LessonReorderParticipantsCore(UpdateValidatorMixin, BaseCmd):
     preceding_id: Annotated[Optional[LessonID], NullField]
     succeeding_id: Annotated[Optional[LessonID], NullField]
-    
+
 
 class LessonReorderParticipants(LessonReorderParticipantsCore):
     target_id: LessonID

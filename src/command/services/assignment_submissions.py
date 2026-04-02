@@ -1,40 +1,50 @@
 import asyncio
-from pathlib import Path
-from uuid import uuid4
-from asyncpg import Connection
 from datetime import UTC, datetime
-from typing import ClassVar, Optional, Type, Union
+from typing import ClassVar, Optional, Type, Union, cast
+from uuid import uuid4
 
-from click.core import V
+from asyncpg import Connection
 from slugify import slugify
-from src.command.commands.assignments import AssignmentGet
-from src.command.repositories.assignments import AssignmentRepository
-from src.command.commands.media import MediaCreate, MediaStatus, MediableType
-from src.command.repositories.assignment_submissions import AssignmentSubmissionRepository
-from src.command.services.base import BaseService
-from src.command.services.media import MediaService
-from src.command.services.files import FileMetadata
-from src.exceptions import (
-    EntityNotFoundError, AssignmentSubmissionNotFoundError, 
-    AssignmentNotFoundError, MaxAttemptsReachedError,
-    InvalidContentTypeError, AssignmentSubmissionAlreadyVerified,
-    AssignmentSubmissionNotGraded, FileSizeExceededError,
-    AssignmentSubmissionMediaNotUploadedError, 
-    AssignmentSubmissionMediaNotFoundError, InvalidScoreError
-)
+
+from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.assignment_submissions import (
-    AssignmentSubmissionCreate, AssignmentSubmission, 
-    AssignmentSubmissionGet, AllowedAssignmentSubmissionFileType, 
-    AssignmentSubmissionStatus, AssignmentSubmissionUploadURL, 
-    AssignmentSubmissionVerify, AssignmentSubmissionGetCore, 
-    AssignmentSubmissionFeedbackUpdate,AssignmentSubmissionCreateWithAttemptAndStatus,
-    AssignmentSubmissionVerifyWithStatus, AssignmentSubmissionContext
+    AllowedAssignmentSubmissionFileType,
+    AssignmentSubmission,
+    AssignmentSubmissionContext,
+    AssignmentSubmissionCreate,
+    AssignmentSubmissionCreateWithAttemptAndStatus,
+    AssignmentSubmissionFeedbackUpdate,
+    AssignmentSubmissionGet,
+    AssignmentSubmissionGetCore,
+    AssignmentSubmissionStatus,
+    AssignmentSubmissionUploadURL,
+    AssignmentSubmissionVerify,
+    AssignmentSubmissionVerifyWithStatus,
 )
-from src.auth import Entity, Action, require_authorization, AuthService
+from src.command.commands.assignments import AssignmentGet
+from src.command.commands.media import MediableType, MediaCreate, MediaStatus
+from src.command.repositories.assignment_submissions import (
+    AssignmentSubmissionRepository,
+)
+from src.command.repositories.assignments import AssignmentRepository
+from src.command.services.base import BaseService
+from src.command.services.files import FileMetadata
+from src.command.services.media import MediaService
+from src.exceptions import (
+    AssignmentNotFoundError,
+    AssignmentSubmissionAlreadyVerified,
+    AssignmentSubmissionMediaNotFoundError,
+    AssignmentSubmissionMediaNotUploadedError,
+    AssignmentSubmissionNotFoundError,
+    AssignmentSubmissionNotGraded,
+    EntityNotFoundError,
+    FileSizeExceededError,
+    InvalidContentTypeError,
+    InvalidScoreError,
+    MaxAttemptsReachedError,
+)
 
-
-
-MAX_FILE_SIZE_FOR_ASSIGNMENT_SUBMISSION = 5 * 1024 * 1024 # 5 Mega Bytes.
+MAX_FILE_SIZE_FOR_ASSIGNMENT_SUBMISSION = 5 * 1024 * 1024  # 5 Mega Bytes.
 
 
 class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
@@ -83,18 +93,19 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
     )
     ```
     """
-    
+
     # Class varibales
-    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = AssignmentSubmissionNotFoundError
+    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = (
+        AssignmentSubmissionNotFoundError
+    )
     _entity: ClassVar[Entity] = Entity.ASSIGNMENT_SUBMISSION
-    
 
     def __init__(
         self,
         repo: AssignmentSubmissionRepository,
         assignment_repo: AssignmentRepository,
         media_service: MediaService,
-        auth_service: AuthService
+        auth_service: AuthService,
     ) -> None:
         """
         Initialize the AssignmentSubmissionService.
@@ -127,9 +138,10 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         self.assignment_repo = assignment_repo
         self.media_service = media_service
         self.auth_service = auth_service
-        
-     
-    async def _get_assignment_submission(self, id: int) -> Optional[AssignmentSubmission]:
+
+    async def _get_assignment_submission(
+        self, id: int
+    ) -> Optional[AssignmentSubmission]:
         """
         Retrieve an assignment submission by its identifier.
 
@@ -155,16 +167,10 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
             print("Submission not found")
         ```
         """
-        return await self.repo.get(
-            AssignmentSubmissionGetCore(
-                id=id
-            )
-        )
+        return await self.repo.get(AssignmentSubmissionGetCore(id=id))
 
-    
     async def _update_feedback(
-        self, 
-        cmd: AssignmentSubmissionFeedbackUpdate
+        self, cmd: AssignmentSubmissionFeedbackUpdate
     ) -> AssignmentSubmission:
         """
         Update feedback for an already graded submission.
@@ -202,24 +208,21 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         )
         ```
         """
-        
+
         submission = await self._get_assignment_submission(id=cmd.id)
         if submission is None:
             raise AssignmentSubmissionNotFoundError(value=cmd.id)
-        
+
         if submission.score is None:
             raise AssignmentSubmissionNotGraded(
                 message="Cannot update feedback for an ungraded submission."
             )
-            
-        return await self.repo.update(cmd)
-        
-        
+
+        return self._require_entity(await self.repo.update(cmd))
+
     async def _verify_submission(
-        self,
-        cmd: AssignmentSubmissionVerify
+        self, cmd: AssignmentSubmissionVerify
     ) -> AssignmentSubmission:
-        
         """
         Verify and grade a submission.
 
@@ -272,39 +275,37 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         )
         ```
         """
-        
-        submission_context: Optional[AssignmentSubmissionContext] = await self.repo.submission_context(submission_id=cmd.id)
-        
-        if submission_context is None: 
+
+        submission_context: Optional[
+            AssignmentSubmissionContext
+        ] = await self.repo.submission_context(submission_id=cmd.id)
+
+        if submission_context is None:
             raise AssignmentSubmissionNotFoundError(value=cmd.id)
-        
-        if submission_context.media is None: 
+
+        if submission_context.media is None:
             raise AssignmentSubmissionMediaNotFoundError()
-            
-        if submission_context.media.status != MediaStatus.UPLOADED: 
+
+        if submission_context.media.status != MediaStatus.UPLOADED:
             raise AssignmentSubmissionMediaNotUploadedError()
-        
-        if submission_context.submission.score is not None: 
-            raise AssignmentSubmissionAlreadyVerified()        
-        
-        if cmd.score > submission_context.assignment.max_score: 
+
+        if submission_context.submission.score is not None:
+            raise AssignmentSubmissionAlreadyVerified()
+
+        if cmd.score > submission_context.assignment.max_score:
             raise InvalidScoreError(max_score=submission_context.assignment.max_score)
-        
-        return await self.repo.update(
-            AssignmentSubmissionVerifyWithStatus(
-                **cmd.model_dump(),
-                status=AssignmentSubmissionStatus.GRADED
+
+        return self._require_entity(
+            await self.repo.update(
+                AssignmentSubmissionVerifyWithStatus(
+                    **cmd.model_dump(), status=AssignmentSubmissionStatus.GRADED
+                )
             )
         )
 
-
-
     async def create(
-        self, 
-        cmd: AssignmentSubmissionCreate, 
-        connection: Optional[Connection] = None
+        self, cmd: AssignmentSubmissionCreate, connection: Optional[Connection] = None
     ) -> AssignmentSubmission:
-        
         """
         Create a new assignment submission.
 
@@ -348,55 +349,47 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         )
         ```
         """
-        
+
         # Check if the user can submit the assignment.
         assignment, total_attempt = await asyncio.gather(
-            self.assignment_repo.get(
-                AssignmentGet(id=cmd.assignment_id)
-            ),
+            self.assignment_repo.get(AssignmentGet(id=cmd.assignment_id)),
             self.repo.count_attempts(
-                user_id=cmd.created_by, 
-                assignment_id=cmd.assignment_id
-            )
+                user_id=cmd.created_by, assignment_id=cmd.assignment_id
+            ),
         )
-        
+
         if not assignment:
             raise AssignmentNotFoundError(value=cmd.assignment_id)
-        
+
         if total_attempt >= assignment.number_of_attempts:
             raise MaxAttemptsReachedError(max_attempts=assignment.number_of_attempts)
-        
+
         due_date = assignment.due_date
         if due_date is not None and due_date < datetime.now(tz=UTC):
             status = AssignmentSubmissionStatus.DONE_LATE
         else:
             status = AssignmentSubmissionStatus.SUBMITTED
-            
-        return await self.repo.add(
-            AssignmentSubmissionCreateWithAttemptAndStatus(
-                **cmd.model_dump(),
-                attempt=total_attempt + 1,
-                status=status
+
+        return cast(
+            AssignmentSubmission,
+            await self.repo.add(
+                AssignmentSubmissionCreateWithAttemptAndStatus(
+                    **cmd.model_dump(), attempt=total_attempt + 1, status=status
+                ),
+                connection,
             ),
-            connection
         )
-    
 
     @require_authorization(
         action=Action.UPDATE,
         entity=Entity.ASSIGNMENT_SUBMISSION,
         user_id_field="updated_by",
         entity_id_field="id",
-        object_name="cmd"
-    )    
+        object_name="cmd",
+    )
     async def update(
-        self, 
-        cmd: Union[
-            AssignmentSubmissionVerify,
-            AssignmentSubmissionFeedbackUpdate
-        ]
+        self, cmd: Union[AssignmentSubmissionVerify, AssignmentSubmissionFeedbackUpdate]
     ) -> AssignmentSubmission:
-        
         """
         Update an assignment submission.
 
@@ -428,25 +421,21 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         )
         ```
         """
-        
+
         if isinstance(cmd, AssignmentSubmissionVerify):
             return await self._verify_submission(cmd)
-        return self._require_entity(
-           await self._update_feedback(cmd)
-        )
-            
+        return self._require_entity(await self._update_feedback(cmd))
 
     async def delete(self, cmd):
         # NOTE: This method is not implemented.
         return await self.repo.delete(cmd)
-    
-    
+
     @require_authorization(
         action=Action.VIEW,
         entity=Entity.ASSIGNMENT_SUBMISSION,
         user_id_field="viewer_id",
         entity_id_field="id",
-        object_name="query"
+        object_name="query",
     )
     async def get(self, query: AssignmentSubmissionGet):
         """
@@ -481,18 +470,11 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         )
         ```
         """
-        return self._require_entity(
-            await self.repo.get(query),
-            value=query.id   
-        )
-    
-    
+        return self._require_entity(await self.repo.get(query), value=query.id)
+
     async def create_with_attachment(
-        self,
-        cmd: AssignmentSubmissionCreate,
-        file_cmd: FileMetadata
+        self, cmd: AssignmentSubmissionCreate, file_cmd: FileMetadata
     ) -> AssignmentSubmissionUploadURL:
-        
         """
         Create a submission and generate an upload URL for the submission file.
 
@@ -546,58 +528,61 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         print(result.upload_url)
         ```
         """
-        
+
         # Valid file check.
         if file_cmd.size > MAX_FILE_SIZE_FOR_ASSIGNMENT_SUBMISSION:
-            raise FileSizeExceededError(max_size=MAX_FILE_SIZE_FOR_ASSIGNMENT_SUBMISSION)
-        
+            raise FileSizeExceededError(
+                max_size=MAX_FILE_SIZE_FOR_ASSIGNMENT_SUBMISSION
+            )
+
         if file_cmd.content_type not in AllowedAssignmentSubmissionFileType:
             raise InvalidContentTypeError(
                 content_type=file_cmd.content_type,
-                allowed_types=AllowedAssignmentSubmissionFileType
+                allowed_types=AllowedAssignmentSubmissionFileType,
             )
-        
+
         # Perform authorization.
         # NOTE: Used direct authorization check instead of decorator to avoid database transaction.
-        # We don't want a db to wait to create transaction until the authorization check is done. 
-        # This is because creating transaction before auth check will lead to unnecessary db locks and performance issues.  
-        
+        # We don't want a db to wait to create transaction until the authorization check is done.
+        # This is because creating transaction before auth check will lead to unnecessary db locks and performance issues.
+
         await self.auth_service.authorize(
             action=Action.CREATE,
             entity=Entity.ASSIGNMENT_SUBMISSION,
             user_id=cmd.created_by,
-            parent_id=cmd.assignment_id
+            parent_id=cmd.assignment_id,
         )
-        
+
         async with self.repo.db.transaction() as conn:
             # Create the assignment record.
             submission = await self.create(cmd, conn)
-                    
-            assignment = await self.assignment_repo.get(AssignmentGet(id=cmd.assignment_id))
-            
+
+            assignment = await self.assignment_repo.get(
+                AssignmentGet(id=cmd.assignment_id)
+            )
+
             if assignment is None:
                 raise AssignmentNotFoundError(value=cmd.assignment_id)
-            
-            slugged_filename = slugify(file_cmd.filename)
-            
-            key = f"courses/C-{assignment.course_id}/assignments/A-{assignment.id}/submissions/{str(uuid4())}/{slugged_filename}"
-            
-            media = MediaCreate(
-                    filename=file_cmd.filename,
-                    mime_type=file_cmd.content_type,
-                    file_size=file_cmd.size,
-                    mediable_id=submission.id,
-                    mediable_type=MediableType.ASSIGNMENT_SUBMISSION,
-                    is_private=True,
-                    status=MediaStatus.PENDING,
-                    created_by=cmd.created_by,
-                    key=key,
-                )
-            media_id, url = await self.media_service.prepare_upload_url(media, expire_mins=120, connection=conn)    
-        
-        return AssignmentSubmissionUploadURL(
-            id=submission.id,
-            media_id=media_id,
-            upload_url=url
-        )
 
+            slugged_filename = slugify(file_cmd.filename)
+
+            key = f"courses/C-{assignment.course_id}/assignments/A-{assignment.id}/submissions/{str(uuid4())}/{slugged_filename}"
+
+            media = MediaCreate(
+                filename=file_cmd.filename,
+                mime_type=file_cmd.content_type,
+                file_size=file_cmd.size,
+                mediable_id=submission.id,
+                mediable_type=MediableType.ASSIGNMENT_SUBMISSION,
+                is_private=True,
+                status=MediaStatus.PENDING,
+                created_by=cmd.created_by,
+                key=key,
+            )
+            media_id, url = await self.media_service.prepare_upload_url(
+                media, expire_mins=120, connection=conn
+            )
+
+        return AssignmentSubmissionUploadURL(
+            id=submission.id, media_id=media_id, upload_url=url
+        )

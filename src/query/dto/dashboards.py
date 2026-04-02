@@ -2,9 +2,9 @@ from typing import Annotated, Optional
 
 from pydantic import StringConstraints
 
-from src.query.dto.base import BaseDTO
 from src.command.commands.base import CourseID
 from src.command.commands.courses import CourseTitle
+from src.query.dto.base import BaseDTO
 
 
 class CourseCard(BaseDTO):
@@ -17,14 +17,14 @@ class CourseCard(BaseDTO):
 class TrainerKPI(BaseDTO):
     assigned_courses: int
     total_learners: int
-    
+
 
 class AssignedCourse(BaseDTO):
     course_id: CourseID
     course_name: CourseTitle
     total_trainees: int
     thumbnail_url: Optional[str] = None
-    
+
 
 class AdminKPI(BaseDTO):
     total_users: int
@@ -37,4 +37,3 @@ class AdminCourseCard(BaseDTO):
     course_name: CourseTitle
     trainer_name: str
     total_trainees: int
-    

@@ -1,52 +1,47 @@
-from asyncpg import Connection, Record
 from typing import ClassVar, Optional
+
+from asyncpg import Connection, Record
+from pydantic import BaseModel
+
+from src.command.commands.lessons import (
+    Lesson,
+    LessonCreateWithPosition,
+    LessonDelete,
+    LessonGet,
+    LessonUpdate,
+)
 from src.command.repositories.base import BaseRepository
-from src.command.commands.lessons import Lesson, LessonCreateWithPosition, LessonDelete, LessonGet, LessonUpdate
-from src.command.commands.media import MediableType
 
 
-class LessonRepository(BaseRepository[Lesson]):   
-     
+class LessonRepository(BaseRepository[Lesson]):
     tablename: ClassVar[str] = "lessons"
-    
+
     def _to_domain(self, row: Optional[Record]) -> Optional[Lesson]:
         if row is None:
             return None
-        return Lesson(**row)
-    
-    async def add(self, cmd: LessonCreateWithPosition, connection: Optional[Connection] = None) -> Lesson:
-        return await super().add(cmd, connection=connection)
-    
-    
-    async def update(self, cmd: LessonUpdate, connection: Optional[Connection] = None) -> Optional[Lesson]:
-        return await super().update(cmd, connection=connection)
-    
-    
-    async def delete(self, cmd: LessonDelete, connection: Optional[Connection] = None) -> Optional[Lesson]:
-        # Delete the media record and actual lesson.
-        data = cmd.model_dump(exclude={"id"})
-        data = self._add_audit_field(data, "delete")
-        executables = [
-            self.db.query_builder.build_update(
-                "media_assets", data, 
-                where_clause=self.db.query_builder.build_base_where(
-                    condition="Where mediable_id = ($mediable_id) and mediable_type = ($mediable_type)",
-                    values={
-                        "mediable_id": cmd.id, 
-                        "mediable_type": MediableType.LESSON
-                    }
-                )     
-            ),
-            self.db.query_builder.build_update(
-                self.tablename, data,
-                where_clause=self.db.query_builder.build_where_pk(value=cmd.id)
-            )
-        ]
-        
-        lesson = await self.db.soft_delete(executables, return_last=True, connection=connection)
-        return self._to_domain(lesson)
-    
+        return Lesson.model_validate(dict(row))
 
-    async def get(self, query: LessonGet, connection: Optional[Connection] = None) -> Optional[Lesson]:
+    async def add(
+        self, cmd: BaseModel, connection: Optional[Connection] = None
+    ) -> Lesson:
+        cmd = self._normalize(cmd, LessonCreateWithPosition)
+        return await super().add(cmd, connection=connection)
+
+    async def update(
+        self, cmd: BaseModel, connection: Optional[Connection] = None
+    ) -> Optional[Lesson]:
+        cmd = self._normalize(cmd, LessonUpdate)
+        return await super().update(cmd, connection=connection)
+
+    async def delete(
+        self, cmd: BaseModel, connection: Optional[Connection] = None
+    ) -> Optional[Lesson]:
+
+        cmd = self._normalize(cmd, LessonDelete)
+        return await super().delete(cmd, connection=connection)
+
+    async def get(
+        self, query: BaseModel, connection: Optional[Connection] = None
+    ) -> Optional[Lesson]:
+        query = self._normalize(query, LessonGet)
         return await super().get(query, connection=connection)
-    

@@ -1,9 +1,9 @@
 from enum import Enum
-from pypika import Table, Order
-from pypika.queries import Selectable
-from pypika.terms import Function, AggregateFunction
-from pypika.utils import format_quotes
 
+from pypika import Order, Table
+from pypika.queries import Selectable
+from pypika.terms import AggregateFunction, Function
+from pypika.utils import format_quotes
 
 
 class JsonbBuildObject(Function):
@@ -14,14 +14,15 @@ class JsonbBuildObject(Function):
 class RowToJson(Function):
     """
     ROW_TO_JSON(table_alias)
-    
+
     Converts a whole row to JSON.
     Accepts a Table object and renders only the alias, not "table_name" "alias".
-    
+
     Usage:
         RowToJson(user)          → ROW_TO_JSON("u")
         RowToJson(user_table)    → ROW_TO_JSON("u")
     """
+
     def __init__(self, table):
         super().__init__("ROW_TO_JSON", table)
         self.table = table
@@ -29,7 +30,9 @@ class RowToJson(Function):
     def get_function_sql(self, **kwargs) -> str:
         # Extract just the alias (or table name if no alias)
         quote_char = kwargs.get("quote_char", '"')
-        alias = getattr(self.table, "alias", None) or getattr(self.table, "_table_name", None)
+        alias = getattr(self.table, "alias", None) or getattr(
+            self.table, "_table_name", None
+        )
         table_sql = format_quotes(alias, quote_char)
         return f"ROW_TO_JSON({table_sql})"
 
@@ -38,7 +41,7 @@ class JsonbAgg(AggregateFunction):
     def __init__(self, term):
         super().__init__("JSONB_AGG", term)
         self._order_by = []
-        
+
     def orderby(self, *fields, **kwargs):
         """
         Usage:
@@ -48,7 +51,6 @@ class JsonbAgg(AggregateFunction):
         for field in fields:
             self._order_by.append((field, order))
         return self
-
 
     def get_special_params_sql(self, **kwargs):
         # Renders: ORDER BY field ASC/DESC inside the aggregate
@@ -61,13 +63,13 @@ class JsonbAgg(AggregateFunction):
         return f"ORDER BY {order_clauses}"
 
 
-
 class PGJoinType(Enum):
     """
     PostgreSQL-specific join types not supported natively by PyPika.
     Pass via the how= parameter in .join().
     """
-    left_lateral  = "LEFT JOIN LATERAL"
+
+    left_lateral = "LEFT JOIN LATERAL"
     inner_lateral = "JOIN LATERAL"
 
 
@@ -76,10 +78,11 @@ class PGSqlTypes:
 
 
 class CustomOrder(Enum):
-    """ 
-    Enum for ordering in queries. 
-    Mimics pypika.enums.Order but adds NULLS FIRST and NULLS LAST options. 
     """
+    Enum for ordering in queries.
+    Mimics pypika.enums.Order but adds NULLS FIRST and NULLS LAST options.
+    """
+
     asc = "ASC"
     desc = "DESC"
     asc_nulls_first = "ASC NULLS FIRST"
@@ -98,7 +101,6 @@ class LateralQuery(Selectable):
         kwargs.pop("with_alias", None)  # ← same issue can happen with this
         inner = self.query.get_sql(subquery=True, **kwargs)
         return f"{inner} {self.alias}"
-    
 
 
 user_table = Table("users", alias="u")

@@ -1,5 +1,9 @@
 from src.command.commands.base import BaseCmd, CourseID, ModuleID
-from src.command.commands.modules import ModuleCreateCore, ModuleUpdateCore, ModuleTitile
+from src.command.commands.modules import (
+    ModuleCreateCore,
+    ModuleTitile,
+    ModuleUpdateCore,
+)
 
 
 class ModuleOutSchema(BaseCmd):
@@ -7,6 +11,8 @@ class ModuleOutSchema(BaseCmd):
     title: ModuleTitile
     course_id: CourseID
 
-class ModuleCreateSchema(ModuleCreateCore): ...
-class ModuleUpdateSchema(ModuleUpdateCore): ...
 
+class ModuleCreateSchema(ModuleCreateCore): ...
+
+
+class ModuleUpdateSchema(ModuleUpdateCore): ...

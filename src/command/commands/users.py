@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import EmailStr, StringConstraints
 
-from src.command.commands.base import BaseCmd, UserBase, UserID, AuditFields
+from src.command.commands.base import AuditFields, BaseCmd, UserBase, UserID
 
 
 class UserRole(StrEnum):
@@ -13,49 +13,49 @@ class UserRole(StrEnum):
     TRAINEE = "trainee"
 
 
-Email = Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]    
-    
-class UserCreate(BaseCmd):
+Email = Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=True)]
+
+
+class UserCreateCore(BaseCmd):
     username: Annotated[str, StringConstraints(min_length=5)]
     email: Email
     password: str
     role: UserRole = UserRole.TRAINEE
-    created_by: UserID
 
+
+class UserCreate(UserCreateCore):
+    created_by: UserID
 
 
 class UserCreateWithConfirmPassword(UserCreate):
     confirm_password: str
-    
+
 
 class PasswordUpdate(BaseCmd):
     email: EmailStr
     new_password: str
-    
 
-    
+
 class UserGetByID(UserBase): ...
 
 
 class UserGetByIDQuery(UserBase):
     viewer_id: UserID
-    
-    
-class UserGetByEmail(BaseCmd): 
+
+
+class UserGetByEmail(BaseCmd):
     email: EmailStr
 
 
 class UserDelete(UserBase):
     deleted_by: UserID
-    
+
 
 class UserAuth(BaseCmd):
     email: EmailStr
     password: str
-    
 
-class User(AuditFields, UserCreate, UserBase): 
-    
+
+class User(AuditFields, UserCreateCore, UserBase):
     def is_manager(self) -> bool:
         return self.role in {UserRole.SUBADMIN, UserRole.TRAINER}
-        
