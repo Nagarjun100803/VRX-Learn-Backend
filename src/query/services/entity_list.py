@@ -1,4 +1,5 @@
 from src.auth import Action, AuthService, Entity, require_authorization
+from src.command.commands.users import UserRole
 from src.query.dto.base import PageMeta, Paginated
 from src.query.dto.entity_list import (
     AssignmentDetail,
@@ -156,10 +157,12 @@ class AdminEntityListQueryService:
             course_id=course_id, filters=filters, page_meta=page_meta
         )
 
-    async def search_users(self, username_or_email: str) -> list[UserSearchDetail]:
+    async def search_users(
+        self, username_or_email: str, role: tuple[UserRole, ...] = ()
+    ) -> list[UserSearchDetail]:
 
         return await self.entity_list_query_repo.search_users(
-            username_or_email=username_or_email
+            username_or_email=username_or_email, role=role
         )
 
     async def search_course(self, course_name: str) -> list[CourseSearchDetail]:

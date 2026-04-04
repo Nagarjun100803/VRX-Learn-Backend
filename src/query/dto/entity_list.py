@@ -158,6 +158,7 @@ class UserSearchDetail(BaseDTO):
     id: UserID
     email: Email
     username: str
+    role: UserRole
 
 
 class CourseSearchDetail(BaseDTO):

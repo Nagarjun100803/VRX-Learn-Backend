@@ -1,6 +1,6 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import StringConstraints
 
 from src.api.dependencies import (
@@ -12,6 +12,7 @@ from src.api.dependencies import (
     TrainerEntityListQueryServiceDependency,
 )
 from src.command.commands.base import CourseID, ModuleID
+from src.command.commands.users import UserRole
 from src.query.dto.base import PageMeta, Paginated
 from src.query.dto.entity_list import (
     AssignmentDetail,
@@ -123,8 +124,12 @@ async def search_users(
     username_or_email: Annotated[str, StringConstraints(to_lower=True)],
     query_service: AdminEntityListQueryServiceDependency,
     current_user: CurrentAdmin,
+    role: Annotated[Optional[list[UserRole]], Query()] = None,
 ):
-    return await query_service.search_users(username_or_email=username_or_email)
+    role_to_filter = tuple() if role is None else tuple(role)
+    return await query_service.search_users(
+        username_or_email=username_or_email, role=role_to_filter
+    )
 
 
 @admin_search_router.get("/courses", response_model=list[CourseSearchDetail])

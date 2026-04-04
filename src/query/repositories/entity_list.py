@@ -6,6 +6,7 @@ from pypika.enums import SqlTypes
 from pypika.terms import ValueWrapper
 
 from src.command.commands.media import MediableType, MediaStatus
+from src.command.commands.users import UserRole
 from src.database import ExecutableSQL
 from src.pypika_query_builder import (
     CustomOrder,
@@ -440,7 +441,9 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
 
     # Searching.
     @map_to_dto(dto=UserSearchDetail, dto_mode="list")
-    async def search_users(self, username_or_email: str) -> list[UserSearchDetail]:
+    async def search_users(
+        self, username_or_email: str, role: tuple[UserRole, ...] = ()
+    ) -> list[UserSearchDetail]:
 
         sql = (
             PostgreSQLQuery.from_(user_table)
@@ -452,8 +455,15 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                     ]
                 )
             )
-            .select(user_table.username, user_table.email, user_table.id)
-        ).get_sql()
+            .select(
+                user_table.username, user_table.email, user_table.id, user_table.role
+            )
+        )
+
+        if role:
+            sql = sql.where(user_table.role.isin(arg=role))
+
+        sql = sql.get_sql()
 
         executable = ExecutableSQL(
             sql, values=(f"{username_or_email}%", f"{username_or_email}%")
