@@ -20,10 +20,12 @@ from src.dependencies import (
     ModuleService,
     TraineeAssignmentContentQueryService,
     TraineeCourseContentQueryService,
+    TraineeCourseOverviewQueryService,
     TraineeDashboardQueryService,
     TraineeEntityListQueryService,
     TrainerAssignmentContentQueryService,
     TrainerCourseContentQueryService,
+    TrainerCourseOverviewQueryService,
     TrainerDashboardQueryService,
     TrainerEntityListQueryService,
     UserService,
@@ -39,10 +41,12 @@ from src.dependencies import (
     module_service,
     trainee_assignment_content_query_service,
     trainee_course_content_query_service,
+    trainee_course_overview_query_service,
     trainee_dashboard_query_service,
     trainee_entity_list_query_service,
     trainer_assignment_content_query_service,
     trainer_course_content_query_service,
+    trainer_course_overview_query_service,
     trainer_dashboard_query_service,
     trainer_entity_list_query_service,
     user_repository,
@@ -133,6 +137,14 @@ def get_trainer_assignment_content_query_service() -> (
     return trainer_assignment_content_query_service
 
 
+def get_trainee_course_overview_query_service() -> TraineeCourseOverviewQueryService:
+    return trainee_course_overview_query_service
+
+
+def get_trainer_course_overview_query_service() -> TrainerCourseOverviewQueryService:
+    return trainer_course_overview_query_service
+
+
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]
@@ -198,6 +210,16 @@ TraineeAssignmentContentQueryServiceDependency = Annotated[
 TrainerAssignmentContentQueryServiceDependency = Annotated[
     TrainerAssignmentContentQueryService,
     Depends(get_trainer_assignment_content_query_service),
+]
+
+TraineeCourseOverviewQueryServiceDependency = Annotated[
+    TraineeCourseOverviewQueryService,
+    Depends(get_trainee_course_overview_query_service),
+]
+
+TrainerCourseOverviewQueryServiceDependency = Annotated[
+    TrainerCourseOverviewQueryService,
+    Depends(get_trainer_course_overview_query_service),
 ]
 
 UserContextDependency = Annotated[UserContext, Depends(get_current_user_context)]

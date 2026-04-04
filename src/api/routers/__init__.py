@@ -16,6 +16,12 @@ from src.api.routers.course_contents import (
 from src.api.routers.course_contents import (
     trainer_router as TrainerCourseContentAPIRouter,
 )
+from src.api.routers.course_overview import (
+    trainee_router as TraineeCourseOverviewAPIRouter,
+)
+from src.api.routers.course_overview import (
+    trainer_router as TrainerCourseOverviewAPIRouter,
+)
 from src.api.routers.courses import router as CourseAPIRouter
 from src.api.routers.dashboards import admin_router as AdminDashboardAPIRouter
 from src.api.routers.dashboards import trainee_router as TraineeDashboardAPIRouter
@@ -54,6 +60,8 @@ ROUTERS: list[APIRouter] = [
     TrainerEntityListAPIRouter,
     TraineeAssignmentContentAPIRouter,
     TrainerAssignmentContentAPIRouter,
+    TraineeCourseOverviewAPIRouter,
+    TrainerCourseOverviewAPIRouter,
 ]
 
 __all__ = [
@@ -76,4 +84,6 @@ __all__ = [
     "TrainerEntityListAPIRouter",
     "TraineeAssignmentContentAPIRouter",
     "TrainerAssignmentContentAPIRouter",
+    "TraineeCourseOverviewAPIRouter",
+    "TrainerCourseOverviewAPIRouter",
 ]

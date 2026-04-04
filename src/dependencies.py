@@ -37,9 +37,11 @@ from src.query.repositories import (
     EntityListQueryRepository,
     TraineeAssignmentContentQueryRepository,
     TraineeCourseContentQueryRepository,
+    TraineeCourseOverviewQueryRepository,
     TraineeDashboardQueryRepository,
     TrainerAssignmentContentQueryRepository,
     TrainerCourseContentQueryRepository,
+    TrainerCourseOverviewQueryRepository,
     TrainerDashboardQueryRepository,
 )
 
@@ -49,10 +51,12 @@ from src.query.services import (
     AdminEntityListQueryService,
     TraineeAssignmentContentQueryService,
     TraineeCourseContentQueryService,
+    TraineeCourseOverviewQueryService,
     TraineeDashboardQueryService,
     TraineeEntityListQueryService,
     TrainerAssignmentContentQueryService,
     TrainerCourseContentQueryService,
+    TrainerCourseOverviewQueryService,
     TrainerDashboardQueryService,
     TrainerEntityListQueryService,
 )
@@ -87,6 +91,9 @@ trainee_assignment_content_query_repository = TraineeAssignmentContentQueryRepos
 trainer_assignment_content_query_repository = TrainerAssignmentContentQueryRepository(
     db=db
 )
+
+trainee_course_overview_query_repository = TraineeCourseOverviewQueryRepository(db=db)
+trainer_course_overview_query_repository = TrainerCourseOverviewQueryRepository(db=db)
 
 
 # Helper classes.
@@ -193,5 +200,15 @@ trainee_assignment_content_query_service = TraineeAssignmentContentQueryService(
 trainer_assignment_content_query_service = TrainerAssignmentContentQueryService(
     trainer_assignment_content_repo=trainer_assignment_content_query_repository,
     entity_list_query_repo=entity_list_query_repository,
+    auth_service=auth_service,
+)
+
+trainee_course_overview_query_service = TraineeCourseOverviewQueryService(
+    trainee_course_overview_query_repo=trainee_course_overview_query_repository,
+    auth_service=auth_service,
+)
+
+trainer_course_overview_query_service = TrainerCourseOverviewQueryService(
+    trainer_course_overview_query_repo=trainer_course_overview_query_repository,
     auth_service=auth_service,
 )

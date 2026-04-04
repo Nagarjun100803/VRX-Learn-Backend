@@ -172,7 +172,7 @@ class EntityBase(BaseCmd):
             (
                 f"Invalid id format: {value!r}. "
                 f"Expected {cls.PREFIX}-<number> or just a number."
-                "eg. 'B-123' or 'b-123' or '123' or 123"
+                f"eg. '{cls.PREFIX}-123' or '{cls.PREFIX.lower()}-123' or '123' or 123"
             )
         )
 

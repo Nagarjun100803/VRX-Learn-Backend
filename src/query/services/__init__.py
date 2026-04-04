@@ -6,6 +6,10 @@ from src.query.services.course_contents import (
     TraineeCourseContentQueryService,
     TrainerCourseContentQueryService,
 )
+from src.query.services.course_overview import (
+    TraineeCourseOverviewQueryService,
+    TrainerCourseOverviewQueryService,
+)
 from src.query.services.dashboards import (
     AdminDashboardQueryService,
     TraineeDashboardQueryService,
@@ -28,4 +32,6 @@ __all__ = [
     "TrainerEntityListQueryService",
     "TraineeAssignmentContentQueryService",
     "TrainerAssignmentContentQueryService",
+    "TraineeCourseOverviewQueryService",
+    "TrainerCourseOverviewQueryService",
 ]

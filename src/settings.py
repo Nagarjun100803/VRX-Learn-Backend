@@ -18,12 +18,6 @@ class DatabaseSettings(BaseSettings):
     )
 
 
-class LocalDatabaseSettings(DatabaseSettings):
-    model_config = SettingsConfigDict(
-        env_file="src/.env", env_prefix="LOCAL_DATABASE_", extra="ignore"
-    )
-
-
 class AWSS3Settings(BaseSettings):
     access_key_id: SecretStr
     secret_access_key: SecretStr
