@@ -1,6 +1,7 @@
 # Database initalization.
 from src.api.jwt import JWTHandler
 from src.auth.auth import AuthService
+from src.cache import CacheService
 
 # Repository Imports.
 from src.command.repositories import (
@@ -62,7 +63,7 @@ from src.query.services import (
 )
 
 db = AsyncPgDBManager()
-
+cache_service = CacheService()
 
 # Command Repositories.
 user_repository = UserRepository(db=db)
@@ -158,29 +159,34 @@ assignment_submission_service = AssignmentSubmissionService(
 
 # Query services.
 admin_dashboard_query_service = AdminDashboardQueryService(
-    admin_dashboard_query_repo=admin_dashboard_query_repository
+    admin_dashboard_query_repo=admin_dashboard_query_repository,
+    cache_service=cache_service,
 )
 
 trainee_dashboard_query_service = TraineeDashboardQueryService(
-    trainee_dashboard_query_repo=trainee_dashboard_query_repository
+    trainee_dashboard_query_repo=trainee_dashboard_query_repository,
+    cache_service=cache_service,
 )
 
 trainer_dashboard_query_service = TrainerDashboardQueryService(
-    trainer_dashboard_query_repo=trainer_dashboard_query_repository
+    trainer_dashboard_query_repo=trainer_dashboard_query_repository,
+    cache_service=cache_service,
 )
 
 trainee_course_content_query_service = TraineeCourseContentQueryService(
     trainee_course_content_repo=trainee_course_content_query_repository,
     auth_service=auth_service,
+    cache_service=cache_service,
 )
 
 trainer_course_content_query_service = TrainerCourseContentQueryService(
     trainer_course_content_repo=trainer_course_content_query_repository,
     auth_service=auth_service,
+    cache_service=cache_service,
 )
 
 admin_entity_list_query_service = AdminEntityListQueryService(
-    entity_list_query_repo=entity_list_query_repository
+    entity_list_query_repo=entity_list_query_repository, cache_service=cache_service
 )
 
 trainee_entity_list_query_service = TraineeEntityListQueryService(
@@ -188,27 +194,33 @@ trainee_entity_list_query_service = TraineeEntityListQueryService(
 )
 
 trainer_entity_list_query_service = TrainerEntityListQueryService(
-    entity_list_query_repo=entity_list_query_repository, auth_service=auth_service
+    entity_list_query_repo=entity_list_query_repository,
+    auth_service=auth_service,
+    cache_service=cache_service,
 )
 
 
 trainee_assignment_content_query_service = TraineeAssignmentContentQueryService(
     trainee_assignment_query_repo=trainee_assignment_content_query_repository,
     auth_service=auth_service,
+    cache_service=cache_service,
 )
 
 trainer_assignment_content_query_service = TrainerAssignmentContentQueryService(
     trainer_assignment_content_repo=trainer_assignment_content_query_repository,
     entity_list_query_repo=entity_list_query_repository,
     auth_service=auth_service,
+    cache_service=cache_service,
 )
 
 trainee_course_overview_query_service = TraineeCourseOverviewQueryService(
     trainee_course_overview_query_repo=trainee_course_overview_query_repository,
     auth_service=auth_service,
+    cache_service=cache_service,
 )
 
 trainer_course_overview_query_service = TrainerCourseOverviewQueryService(
     trainer_course_overview_query_repo=trainer_course_overview_query_repository,
     auth_service=auth_service,
+    cache_service=cache_service,
 )
