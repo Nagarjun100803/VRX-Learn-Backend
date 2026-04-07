@@ -1,6 +1,7 @@
-from typing import cast
+from typing import Optional, cast
 
 from src.auth import Action, AuthService, Entity, require_authorization
+from src.cache import CacheKey, CacheService
 from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
 from src.query.dto.request_schemas import CourseViewRequestSchema
 from src.query.repositories.course_overview import (
@@ -14,9 +15,11 @@ class TraineeCourseOverviewQueryService:
         self,
         trainee_course_overview_query_repo: TraineeCourseOverviewQueryRepository,
         auth_service: AuthService,
+        cache_service: CacheService,
     ) -> None:
         self.trainee_course_overview_query_repo = trainee_course_overview_query_repo
         self.auth_service = auth_service
+        self.cache_service = cache_service
 
     @require_authorization(
         action=Action.VIEW,
@@ -28,11 +31,19 @@ class TraineeCourseOverviewQueryService:
     async def get_course_overview(
         self, query: CourseViewRequestSchema
     ) -> TraineeCourseOverview:
-        # NOTE: At this time, the course existance is guaranteed by the authorization decorator.
+
         return cast(
             TraineeCourseOverview,
-            await self.trainee_course_overview_query_repo.course_overview(
-                course_id=query.course_id
+            await self.cache_service.get_or_set(
+                key=CacheKey.TRAINEE_COURSE_OVERVIEW.format(course_id=query.course_id),
+                model=TraineeCourseOverview,
+                ttl=600,
+                negative_ttl=120,
+                fetch_func=lambda: (
+                    self.trainee_course_overview_query_repo.course_overview(
+                        course_id=query.course_id
+                    )
+                ),
             ),
         )
 
@@ -42,9 +53,11 @@ class TrainerCourseOverviewQueryService:
         self,
         trainer_course_overview_query_repo: TrainerCourseOverviewQueryRepository,
         auth_service: AuthService,
+        cache_service: CacheService,
     ) -> None:
         self.trainer_course_overview_query_repo = trainer_course_overview_query_repo
         self.auth_service = auth_service
+        self.cache_service = cache_service
 
     @require_authorization(
         action=Action.VIEW,
@@ -55,11 +68,14 @@ class TrainerCourseOverviewQueryService:
     )
     async def get_course_overview(
         self, query: CourseViewRequestSchema
-    ) -> TrainerCourseOverview:
-        # NOTE: At this time, the course existance is guaranteed by the authorization decorator.
-        return cast(
-            TrainerCourseOverview,
-            await self.trainer_course_overview_query_repo.course_overview(
+    ) -> Optional[TrainerCourseOverview]:
+
+        return await self.cache_service.get_or_set(
+            key=CacheKey.TRAINER_COURSE_OVERVIEW.format(course_id=query.course_id),
+            model=Optional[TrainerCourseOverview],
+            ttl=600,
+            negative_ttl=120,
+            fetch_func=lambda: self.trainer_course_overview_query_repo.course_overview(
                 course_id=query.course_id
             ),
         )

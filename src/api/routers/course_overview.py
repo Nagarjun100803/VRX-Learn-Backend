@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter
 
 from src.api.dependencies import (
@@ -33,7 +35,7 @@ trainer_router = APIRouter(
 )
 
 
-@trainer_router.get("/{course_id}", response_model=TrainerCourseOverview)
+@trainer_router.get("/{course_id}", response_model=Optional[TrainerCourseOverview])
 async def get_course_overview_for_trainer(
     course_id: CourseID,
     query_service: TrainerCourseOverviewQueryServiceDependency,
