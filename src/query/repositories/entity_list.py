@@ -165,7 +165,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
         )
 
         if filters.name:
-            sql = sql.where(user_table.username.like(f"{filters.name}%"))
+            sql = sql.where(user_table.username.ilike(f"{filters.name}%"))
 
         else:
             if filters.sort_by_enrollment_date:
@@ -187,22 +187,26 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
         self, filters: UserFilters, page_meta: PageMeta
     ) -> Paginated[UserDetail]:
 
-        sql = PostgreSQLQuery.from_(user_table).select(
-            user_table.id,
-            user_table.username.as_("name"),
-            user_table.email,
-            user_table.role,
-            user_table.last_login,
-            user_table.created_at,
-            # Need to add user status here.
+        sql = (
+            PostgreSQLQuery.from_(user_table)
+            .where(user_table.deleted_at.isnull())
+            .select(
+                user_table.id,
+                user_table.username.as_("name"),
+                user_table.email,
+                user_table.role,
+                user_table.last_login,
+                user_table.created_at,
+                # Need to add user status here.
+            )
         )
 
         if filters.name_or_email:
             sql = sql.where(
                 Criterion.any(
                     terms=[
-                        user_table.username.like(f"{filters.name_or_email}%"),
-                        user_table.email.like(f"{filters.name_or_email}%"),
+                        user_table.username.ilike(f"{filters.name_or_email}%"),
+                        user_table.email.ilike(f"{filters.name_or_email}%"),
                     ]
                 )
             ).orderby(user_table.username, order=CustomOrder.asc_nulls_last)
@@ -238,6 +242,14 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
             .on(enrollment_table.course_id == course_table.id)
             .join(user_table)
             .on(enrollment_table.user_id == user_table.id)
+            .where(
+                Criterion.all(
+                    terms=[
+                        enrollment_table.deleted_at.isnull(),
+                        course_table.deleted_at.isnull(),
+                    ]
+                )
+            )
             .select(
                 enrollment_table.id,
                 user_table.username.as_("name"),
@@ -256,8 +268,8 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
             sql = sql.where(
                 Criterion.any(
                     terms=[
-                        user_table.username.like(f"{filters.name_or_email}%"),
-                        user_table.email.like(f"{filters.name_or_email}%"),
+                        user_table.username.ilike(f"{filters.name_or_email}%"),
+                        user_table.email.ilike(f"{filters.name_or_email}%"),
                     ]
                 )
             ).orderby(user_table.username, order=CustomOrder.asc_nulls_last)
@@ -292,6 +304,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
 
         trainee_count_query = (
             PostgreSQLQuery.from_(enrollment_table)
+            .where(enrollment_table.deleted_at.isnull())
             .groupby(enrollment_table.course_id)
             .select(
                 enrollment_table.course_id,  # Used to join.
@@ -308,6 +321,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
             .on(course_table.trainer_id == user_table.id)
             .left_join(trainee_count_cte)
             .on(trainee_count_cte.course_id == course_table.id)
+            .where(course_table.deleted_at.isnull())
             .select(
                 course_table.id,
                 course_table.title,
@@ -447,6 +461,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
 
         sql = (
             PostgreSQLQuery.from_(user_table)
+            .where(user_table.deleted_at.isnull())
             .where(
                 Criterion.any(
                     terms=[
@@ -480,7 +495,14 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
         sql = (
             PostgreSQLQuery.from_(course_table)
             .select(course_table.id, course_table.title)
-            .where(course_table.title.ilike(Parameter("$1")))  # type: ignore
+            .where(
+                Criterion.all(
+                    terms=[
+                        course_table.title.ilike(Parameter("$1")),  # type: ignore
+                        course_table.deleted_at.isnull(),
+                    ]
+                )
+            )  # type: ignore
         ).get_sql()
 
         executable = ExecutableSQL(sql, values=(f"{course_name}%",))

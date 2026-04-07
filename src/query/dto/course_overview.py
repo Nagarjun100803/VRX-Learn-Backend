@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 from pydantic import Field
 
@@ -12,7 +12,7 @@ NonNegativeInt = Annotated[int, Field(ge=0)]
 class BaseCourseOverview(BaseDTO):
     course_id: CourseID
     title: CourseTitle
-    short_description: str
+    short_description: Optional[str] = None
     trainer_name: str
     no_of_modules: NonNegativeInt
     no_of_lessons: NonNegativeInt

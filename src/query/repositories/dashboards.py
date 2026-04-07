@@ -232,6 +232,7 @@ class AdminDashboardQueryRepository(BaseQueryRepository):
             .on(course_table.trainer_id == user_table.id)
             .left_join(enrollment_cte)
             .on(course_table.id == enrollment_cte.course_id)
+            .where(course_table.deleted_at.isnull())
             .orderby(enrollment_cte.total_trainees, order=CustomOrder.desc_nulls_last)
             .limit(n)
             .select(
