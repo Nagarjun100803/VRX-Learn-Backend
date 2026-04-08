@@ -15,6 +15,7 @@ from src.command.commands.lessons import (
     LessonReorderParticipants,
     LessonUpdate,
     LessonUploadUrl,
+    LessonWithMedia,
 )
 from src.command.commands.media import MediableType, MediaCreate, MediaStatus
 from src.command.commands.modules import Module, ModuleGet
@@ -131,6 +132,7 @@ class LessonService(BaseService[Lesson]):
         # TODO: Need to delete the actual file from the object storage also.
         return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
 
+    # NOTE: This is not going to use in API Layer.
     @require_authorization(
         action=Action.VIEW,
         entity=Entity.LESSON,
@@ -140,6 +142,19 @@ class LessonService(BaseService[Lesson]):
     )
     async def get(self, query: LessonGetQuery):
         return self._require_entity(await self.repo.get(query), value=query.id)
+
+    @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.LESSON,
+        user_id_field="viewer_id",
+        entity_id_field="id",
+        object_name="query",
+    )
+    async def get_with_media(self, query: LessonGetQuery) -> LessonWithMedia:
+        result = await self.repo.get_with_media(query)
+        if result is None:
+            raise LessonNotFoundError(value=query.id)
+        return result
 
     @require_authorization(
         action=Action.UPDATE,

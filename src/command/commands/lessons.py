@@ -12,6 +12,7 @@ from src.command.commands.base import (
     NullField,
     UserID,
 )
+from src.command.commands.media import AllowedContentTypes
 from src.command.commands.validator import UpdateValidatorMixin
 
 LessonTitle = Annotated[
@@ -74,3 +75,11 @@ class LessonReorderParticipantsCore(UpdateValidatorMixin, BaseCmd):
 class LessonReorderParticipants(LessonReorderParticipantsCore):
     target_id: LessonID
     updated_by: UserID
+
+
+class LessonWithMedia(BaseCmd):
+    id: LessonID
+    title: LessonTitle
+    description: Optional[LessonDescription] = None
+    media_id: MediaID
+    mime_type: AllowedContentTypes

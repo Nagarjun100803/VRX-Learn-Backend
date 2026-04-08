@@ -1,11 +1,7 @@
 from fastapi import APIRouter, status
 
 from src.api.dependencies import CurrentUser, LessonServiceDependency
-from src.api.schemas.lessons import (
-    LessonCreateSchema,
-    LessonOutSchema,
-    LessonUpdateSchema,
-)
+from src.api.schemas.lessons import LessonCreateSchema, LessonUpdateSchema
 from src.command.commands.base import LessonID
 from src.command.commands.lessons import (
     LessonCreate,
@@ -15,19 +11,20 @@ from src.command.commands.lessons import (
     LessonReorderParticipantsCore,
     LessonUpdate,
     LessonUploadUrl,
+    LessonWithMedia,
 )
 from src.command.services.files import FileMetadata
 
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
 
 
-@router.get("/{lesson_id}", response_model=LessonOutSchema)
+@router.get("/{lesson_id}", response_model=LessonWithMedia)
 async def get_lesson(
     lesson_id: LessonID,
     lesson_service: LessonServiceDependency,
     current_user: CurrentUser,
 ):
-    return await lesson_service.get(
+    return await lesson_service.get_with_media(
         LessonGetQuery(id=lesson_id, viewer_id=current_user)
     )
 
