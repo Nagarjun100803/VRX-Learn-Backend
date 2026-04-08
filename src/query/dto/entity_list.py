@@ -21,7 +21,7 @@ from src.command.commands.base import (
 )
 from src.command.commands.courses import CourseTitle
 from src.command.commands.enrollments import EnrollmentStatus
-from src.command.commands.lessons import LessonTitle
+from src.command.commands.lessons import LessonDescription, LessonTitle
 from src.command.commands.media import AllowedContentTypes
 from src.command.commands.modules import ModuleTitile
 from src.command.commands.users import Email, UserRole
@@ -36,6 +36,7 @@ class ModuleDetail(BaseDTO):
 class LessonDetail(BaseDTO):
     id: LessonID
     title: LessonTitle
+    description: Optional[LessonDescription] = None
     media_id: MediaID
     mime_type: AllowedContentTypes
 

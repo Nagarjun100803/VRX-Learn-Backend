@@ -9,8 +9,13 @@ from src.command.commands.base import (
     ModuleID,
     UserID,
 )
-from src.command.commands.courses import CourseShortDescription, CourseTitle
-from src.command.commands.lessons import LessonTitle
+from src.command.commands.courses import (
+    CourseLongDescription,
+    CourseShortDescription,
+    CourseTitle,
+)
+from src.command.commands.lessons import LessonDescription, LessonTitle
+from src.command.commands.media import AllowedContentTypes
 from src.command.commands.modules import ModuleDescription, ModuleTitile
 from src.query.dto.base import BaseDTO
 
@@ -18,7 +23,9 @@ from src.query.dto.base import BaseDTO
 class LessonDetail(BaseDTO):
     id: LessonID
     title: LessonTitle
+    description: Optional[LessonDescription] = None
     media_id: MediaID
+    mime_type: AllowedContentTypes
     filename: str
 
 
@@ -32,10 +39,16 @@ class TraineeModuleDetail(TrainerModuleDetail):
     lessons: list[LessonDetail]
 
 
-class CourseDetail(BaseDTO):
+class TraineeCourseDetail(BaseDTO):
     id: CourseID
     title: CourseTitle
     short_description: Optional[CourseShortDescription] = None
+
+
+class TrainerCourseDetail(TraineeCourseDetail):
+    long_description: Optional[CourseLongDescription] = None
+    trainer_id: UserID
+    trainer_name: str
 
 
 class AssignmentDetail(BaseDTO):
@@ -44,12 +57,12 @@ class AssignmentDetail(BaseDTO):
 
 
 class TraineeCourseContent(BaseDTO):
-    course: CourseDetail
+    course: TraineeCourseDetail
     modules: list[TraineeModuleDetail]
 
 
 class TrainerCourseContent(BaseDTO):
-    course: CourseDetail
+    course: TrainerCourseDetail
     modules: list[TrainerModuleDetail]
     assignments: list[AssignmentDetail]
 

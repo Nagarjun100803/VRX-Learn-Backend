@@ -15,6 +15,7 @@ from src.pypika_query_builder import (
     lesson_table,
     media_asset_table,
     module_table,
+    user_table,
 )
 from src.query.dto.course_contents import TraineeCourseContent, TrainerCourseContent
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
@@ -53,10 +54,14 @@ class TraineeCourseContentQueryRepository(BaseQueryRepository):
                     lesson_table.id,
                     "title",
                     lesson_table.title,
+                    "description",
+                    lesson_table.description,
                     "media_id",
                     media_asset_table.id,
                     "filename",
                     media_asset_table.filename,
+                    "mime_type",
+                    media_asset_table.mime_type,
                 ).as_("lesson"),
                 lesson_table.position_string,
                 # This is for ordering.
@@ -217,6 +222,8 @@ class TrainerCourseContentQueryRepository(BaseQueryRepository):
 
         sql = (
             PostgreSQLQuery.from_(course_table)
+            .join(user_table)
+            .on(user_table.id == course_table.trainer_id)
             .join(module_detail, how=PGJoinType.left_lateral)  # type: ignore
             .on(ValueWrapper(True))  # type: ignore
             .join(assignment_detail, how=PGJoinType.left_lateral)  # type: ignore
@@ -237,6 +244,12 @@ class TrainerCourseContentQueryRepository(BaseQueryRepository):
                     course_table.title,
                     "short_description",
                     course_table.short_description,
+                    "long_description",
+                    course_table.long_description,
+                    "trainer_id",
+                    course_table.trainer_id,
+                    "trainer_name",
+                    user_table.username,
                 ).as_("course"),
                 module_detail.modules,
                 assignment_detail.assignments,

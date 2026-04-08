@@ -93,6 +93,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
             .select(
                 lesson_table.id,
                 lesson_table.title,
+                lesson_table.description,
                 media_asset_table.id.as_("media_id"),
                 media_asset_table.mime_type,
             )
