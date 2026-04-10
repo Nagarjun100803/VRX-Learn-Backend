@@ -93,7 +93,7 @@ class AssignmentService(BaseService[Assignment]):
 
         if cmd.title and cmd.title != assignment.title:
             await self._raise_if_duplicate_title(
-                title=assignment.title, course_id=assignment.course_id
+                title=cmd.title, course_id=assignment.course_id
             )
 
         return self._require_entity(await self.repo.update(cmd), value=cmd.id)

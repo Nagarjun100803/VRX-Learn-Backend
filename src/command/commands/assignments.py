@@ -50,7 +50,7 @@ class AssignmentCreateWithPosition(AssignmentCreate):
 class AssignmentUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[AssignmentTitle], NullField]
     instructions: Annotated[Optional[AssignmentInstruction], NullField]
-    number_of_attempts: Annotated[Optional[NumberOfAttempts], NullField]
+    due_date: Annotated[Optional[datetime], NullField]
 
 
 class AssignmentUpdate(AssignmentUpdateCore, AssignmentBase):

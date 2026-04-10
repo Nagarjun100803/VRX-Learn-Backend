@@ -109,6 +109,8 @@ class CourseDetail(BaseDTO):
     id: CourseID
     title: CourseTitle
     short_description: Optional[str] = None
+    long_description: Optional[str] = None
+    trainer_id: UserID
     trainer_name: str
     no_of_trainees: Annotated[int, Field(ge=0)]
     created_at: date

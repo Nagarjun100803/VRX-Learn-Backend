@@ -327,7 +327,9 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 course_table.id,
                 course_table.title,
                 course_table.short_description,
+                course_table.long_description,
                 user_table.username.as_("trainer_name"),
+                user_table.id.as_("trainer_id"),
                 fn.Cast(course_table.created_at, SqlTypes.DATE).as_("created_at"),
                 fn.Coalesce(trainee_count_cte.no_of_trainees, ValueWrapper(0)).as_(
                     "no_of_trainees"

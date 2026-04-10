@@ -41,7 +41,7 @@ class AssignmentDetail(BaseDTO):
     instructions: Optional[AssignmentInstruction] = None
     due_date: Optional[datetime] = None
     max_score: MaxScore
-    max_attempts: NumberOfAttempts
+    number_of_attempts: NumberOfAttempts
 
 
 class AssignmentAttachment(BaseDTO):
