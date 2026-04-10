@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated
 
 from pydantic import ConfigDict, StringConstraints
@@ -17,8 +18,11 @@ class UserCreateSchema(BaseCmd):
 
 class UserOutSchema(BaseCmd):
     id: UserID
+    username: Annotated[str, StringConstraints(min_length=5)]
     email: Email
     role: UserRole
+    status: str = "active"
+    created_at: datetime
 
 
 class LoginSchema(BaseCmd):
