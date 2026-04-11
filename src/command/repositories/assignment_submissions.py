@@ -103,6 +103,7 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
                 user_table.username.as_("submitter_name"),
                 media_asset_table.id.as_("media_id"),
                 media_asset_table.mime_type,
+                media_asset_table.filename,
             )
         ).get_sql()
 

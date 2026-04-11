@@ -94,6 +94,7 @@ class AssignmentSubmissionWithMedia(
     submitter_name: str
     media_id: MediaID
     mime_type: AllowedContentTypes
+    filename: str
 
 
 class AssignmentSubmissionUploadURL(AssignmentSubmissionBase):
