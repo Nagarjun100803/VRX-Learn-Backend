@@ -13,6 +13,7 @@ from src.command.commands.assignments import (
     NumberOfAttempts,
 )
 from src.command.commands.base import AssignmentID, AssignmentSubmissionID, MediaID
+from src.command.commands.media import AllowedContentTypes
 from src.query.dto.base import BaseDTO, PageMeta
 from src.query.dto.entity_list import (
     AssignmentSubmissionDetail,
@@ -46,6 +47,7 @@ class AssignmentDetail(BaseDTO):
 
 class AssignmentAttachment(BaseDTO):
     media_id: MediaID
+    mime_type: AllowedContentTypes
     filename: str
 
 
@@ -55,8 +57,10 @@ class TraineeSubmissionDetail(BaseDTO):
     score: Optional[Score] = None
     status: AssignmentSubmissionStatus
     attempt: Attempt
-    media_id: MediaID
+    feedback: Optional[str] = None
     submitted_at: datetime
+    media_id: MediaID
+    mime_type: AllowedContentTypes
 
 
 class TrainerAssignmentContent(BaseDTO):

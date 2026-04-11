@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import StrEnum
 from typing import Annotated, Optional
 
@@ -13,7 +14,7 @@ from src.command.commands.base import (
     MediaID,
     UserID,
 )
-from src.command.commands.media import Media
+from src.command.commands.media import AllowedContentTypes, Media
 
 Feedback = Annotated[str, Field(max_length=2000)]
 Score = int  # Temporary Fix
@@ -77,9 +78,22 @@ class AssignmentSubmissionGet(AssignmentSubmissionGetCore):
 class AssignmentSubmission(
     AuditFields, AssignmentSubmissionCreateCore, AssignmentSubmissionBase
 ):
-    score: Optional[Score]
-    feedback: Optional[Feedback]
+    score: Optional[Score] = None
+    feedback: Optional[Feedback] = None
     status: AssignmentSubmissionStatus
+
+
+class AssignmentSubmissionWithMedia(
+    AssignmentSubmissionBase, AssignmentSubmissionCreateCore
+):
+    score: Optional[Score] = None
+    feedback: Optional[Feedback] = None
+    status: AssignmentSubmissionStatus
+    submitted_at: datetime
+    submitted_by: UserID
+    submitter_name: str
+    media_id: MediaID
+    mime_type: AllowedContentTypes
 
 
 class AssignmentSubmissionUploadURL(AssignmentSubmissionBase):

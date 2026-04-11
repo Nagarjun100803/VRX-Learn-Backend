@@ -20,6 +20,7 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionUploadURL,
     AssignmentSubmissionVerify,
     AssignmentSubmissionVerifyWithStatus,
+    AssignmentSubmissionWithMedia,
 )
 from src.command.commands.assignments import AssignmentGet
 from src.command.commands.media import MediableType, MediaCreate, MediaStatus
@@ -471,6 +472,17 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         ```
         """
         return self._require_entity(await self.repo.get(query), value=query.id)
+
+    async def get_with_media(
+        self, query: AssignmentSubmissionGet
+    ) -> AssignmentSubmissionWithMedia:
+
+        submission = await self.repo.get_with_media(query)
+
+        if submission is None:
+            raise AssignmentSubmissionNotFoundError(value=query.id)
+
+        return submission
 
     async def create_with_attachment(
         self, cmd: AssignmentSubmissionCreate, file_cmd: FileMetadata

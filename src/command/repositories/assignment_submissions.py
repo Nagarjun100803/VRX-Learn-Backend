@@ -14,6 +14,7 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionGet,
     AssignmentSubmissionGetCore,
     AssignmentSubmissionVerifyWithStatus,
+    AssignmentSubmissionWithMedia,
 )
 from src.command.commands.media import MediableType, MediaStatus
 from src.command.repositories.base import BaseRepository
@@ -57,6 +58,65 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
             query, [AssignmentSubmissionGetCore, AssignmentSubmissionGet]
         )
         return await super().get(query, connection)
+
+    async def get_with_media(
+        self, query: AssignmentSubmissionGet, connection: Optional[Connection] = None
+    ) -> Optional[AssignmentSubmissionWithMedia]:
+
+        query = self._normalize(query, AssignmentSubmissionGet)
+
+        assignment_submission_table = Table(self.tablename)
+        media_asset_table = Table("media_assets")
+        user_table = Table("users")
+
+        sql = (
+            PostgreSQLQuery.from_(assignment_submission_table)
+            .join(user_table)
+            .on(assignment_submission_table.created_by == user_table.id)
+            .join(media_asset_table)
+            .on(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.id == media_asset_table.mediable_id,
+                        media_asset_table.status == Parameter("$1"),
+                        media_asset_table.mediable_type == Parameter("$2"),
+                    ]
+                )
+            )
+            .where(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.id == Parameter("$3"),
+                        assignment_submission_table.deleted_at.isnull(),
+                        media_asset_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+            .select(
+                assignment_submission_table.id,
+                assignment_submission_table.assignment_id,
+                assignment_submission_table.status,
+                assignment_submission_table.score,
+                assignment_submission_table.feedback,
+                assignment_submission_table.created_at.as_("submitted_at"),
+                assignment_submission_table.created_by.as_("submitted_by"),
+                user_table.username.as_("submitter_name"),
+                media_asset_table.id.as_("media_id"),
+                media_asset_table.mime_type,
+            )
+        ).get_sql()
+
+        executable = ExecutableSQL(
+            sql=sql,
+            values=(MediaStatus.UPLOADED, MediableType.ASSIGNMENT_SUBMISSION, query.id),
+        )
+
+        result = await self.db.execute(executable, fetch_returns="one")
+
+        if result is None:
+            return None
+
+        return AssignmentSubmissionWithMedia.model_validate(dict(result))
 
     async def count_attempts(self, user_id: int, assignment_id: int) -> int:
         """

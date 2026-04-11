@@ -137,10 +137,14 @@ class TraineeAssignmentContentQueryRepository(BaseQueryRepository):
                     assignment_submission_table.status,
                     "attempt",
                     assignment_submission_table.attempt,
+                    "feedback",
+                    assignment_submission_table.feedback,
                     "submitted_at",
                     assignment_submission_table.created_at,
                     "media_id",
                     media_asset_table.id,
+                    "mime_type",
+                    media_asset_table.mime_type,
                 ).as_("submission"),
             )
         )
@@ -192,6 +196,8 @@ class TraineeAssignmentContentQueryRepository(BaseQueryRepository):
                         media_asset_table.id,
                         "filename",
                         media_asset_table.filename,
+                        "mime_type",
+                        media_asset_table.mime_type,
                     ),
                 )
                 .else_(ValueWrapper(None))
@@ -304,6 +310,8 @@ class TrainerAssignmentContentQueryRepository(BaseQueryRepository):
                         media_asset_table.id,
                         "filename",
                         media_asset_table.filename,
+                        "mime_type",
+                        media_asset_table.mime_type,
                     ),
                 )
                 .else_(ValueWrapper(None))

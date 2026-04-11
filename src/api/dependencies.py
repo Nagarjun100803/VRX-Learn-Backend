@@ -246,7 +246,7 @@ async def get_current_admin_or_trainer(user_context: UserContextDependency) -> U
         user_context.role == UserRole.ADMIN or user_context.role == UserRole.TRAINER
     ):
         raise UnauthorizedError(
-            message=f"Permission Denied: {UserRole.ADMIN.value} or {UserRole.TRAINER.value} required."
+            message=f"Permission Denied: '{UserRole.ADMIN.value}' or '{UserRole.TRAINER.value}' required."
         )
     return user_context.user_id
 
@@ -257,7 +257,7 @@ async def get_current_trainee_or_trainer(user_context: UserContextDependency) ->
         or user_context.role == UserRole.TRAINER.value
     ):
         raise UnauthorizedError(
-            message=f"Permission Denied: {UserRole.TRAINEE.value} or {UserRole.TRAINER.value} required."
+            message=f"Permission Denied: '{UserRole.TRAINEE.value}' or '{UserRole.TRAINER.value}' required."
         )
     return user_context.user_id
 

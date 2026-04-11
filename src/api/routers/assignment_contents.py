@@ -3,6 +3,7 @@ from typing import Annotated, Optional
 from fastapi import APIRouter, Depends
 
 from src.api.dependencies import (
+    CurrentAdminOrTrainer,
     CurrentTraineeOrTrainer,
     TraineeAssignmentContentQueryServiceDependency,
     TrainerAssignmentContentQueryServiceDependency,
@@ -81,7 +82,7 @@ async def list_submissions(
     assignment_id: AssignmentID,
     query_params: Annotated[AssignmentSubmissionQuerySchema, Depends()],
     query_service: TrainerAssignmentContentQueryServiceDependency,
-    current_user: CurrentTraineeOrTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.list_submissions(
         query=AssignmentViewRequestSchema(
@@ -103,7 +104,7 @@ async def list_submissions(
 async def get_assignment_content(
     assignment_id: AssignmentID,
     query_service: TrainerAssignmentContentQueryServiceDependency,
-    current_user: CurrentTraineeOrTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.get_assignment_contents(
         AssignmentViewRequestSchema(assignment_id=assignment_id, viewer_id=current_user)

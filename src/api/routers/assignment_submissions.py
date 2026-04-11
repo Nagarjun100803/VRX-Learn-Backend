@@ -4,7 +4,6 @@ from src.api.dependencies import AssignmentSubmissionServiceDependency, CurrentU
 from src.api.schemas.assignment_submissions import (
     AssignmentSubmissionCreateSchema,
     AssignmentSubmissionFeedbackUpdateSchema,
-    AssignmentSubmissionOut,
     AssignmentSubmissionVerifySchema,
 )
 from src.command.commands.assignment_submissions import (
@@ -13,20 +12,21 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionGet,
     AssignmentSubmissionUploadURL,
     AssignmentSubmissionVerify,
+    AssignmentSubmissionWithMedia,
 )
 from src.command.commands.base import AssignmentSubmissionID
 
 router = APIRouter(prefix="/assignment-submission", tags=["Assignment Submissions"])
 
 
-@router.get("/{assignment_submission_id}", response_model=AssignmentSubmissionOut)
+@router.get("/{assignment_submission_id}", response_model=AssignmentSubmissionWithMedia)
 async def get_assignment_submission(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
     current_user: CurrentUser,
 ):
 
-    return await assignment_submission_service.get(
+    return await assignment_submission_service.get_with_media(
         AssignmentSubmissionGet(id=assignment_submission_id, viewer_id=current_user)
     )
 
