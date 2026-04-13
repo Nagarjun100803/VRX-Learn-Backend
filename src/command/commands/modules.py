@@ -13,8 +13,10 @@ from src.command.commands.base import (
 )
 from src.command.commands.validator import UpdateValidatorMixin
 
-ModuleTitile = Annotated[str, StringConstraints(to_upper=True)]
-ModuleDescription = Annotated[str, StringConstraints(min_length=20)]
+ModuleTitile = Annotated[
+    str, StringConstraints(to_upper=True, min_length=1, max_length=200)
+]
+ModuleDescription = Annotated[str, StringConstraints(max_length=5000)]
 
 
 class ModuleCreateCore(BaseCmd):

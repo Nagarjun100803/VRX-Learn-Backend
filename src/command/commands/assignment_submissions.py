@@ -87,7 +87,9 @@ class AssignmentSubmissionWithMedia(
     AssignmentSubmissionBase, AssignmentSubmissionCreateCore
 ):
     score: Optional[Score] = None
+    max_score: int
     feedback: Optional[Feedback] = None
+    attempt: int
     status: AssignmentSubmissionStatus
     submitted_at: datetime
     submitted_by: UserID

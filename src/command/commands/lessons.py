@@ -18,10 +18,10 @@ from src.command.commands.validator import UpdateValidatorMixin
 LessonTitle = Annotated[
     str,
     StringConstraints(
-        min_length=5, max_length=256, strip_whitespace=True, to_upper=True
+        min_length=1, max_length=200, strip_whitespace=True, to_upper=True
     ),
 ]
-LessonDescription = Annotated[str, StringConstraints(min_length=5, max_length=5000)]
+LessonDescription = Annotated[str, StringConstraints(max_length=5000)]
 
 
 class LessonCreateCore(BaseCmd):

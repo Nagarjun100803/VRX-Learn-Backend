@@ -24,10 +24,13 @@ class LiveCourseDetails(BaseCmd):
 
 
 CourseTitle = Annotated[
-    str, StringConstraints(to_upper=True, min_length=10, strip_whitespace=True)
+    str,
+    StringConstraints(
+        to_upper=True, min_length=1, strip_whitespace=True, max_length=200
+    ),
 ]
-CourseShortDescription = Annotated[str, StringConstraints(min_length=50)]
-CourseLongDescription = Annotated[str, StringConstraints(min_length=50, max_length=600)]
+CourseShortDescription = Annotated[str, StringConstraints(max_length=600)]
+CourseLongDescription = Annotated[str, StringConstraints(max_length=5000)]
 Price = Annotated[float, Field(gt=1000)]
 
 

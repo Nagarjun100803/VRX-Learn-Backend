@@ -68,9 +68,12 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
         assignment_submission_table = Table(self.tablename)
         media_asset_table = Table("media_assets")
         user_table = Table("users")
+        assignment_table = Table("assignments")
 
         sql = (
             PostgreSQLQuery.from_(assignment_submission_table)
+            .join(assignment_table)
+            .on(assignment_table.id == assignment_submission_table.assignment_id)
             .join(user_table)
             .on(assignment_submission_table.created_by == user_table.id)
             .join(media_asset_table)
@@ -89,6 +92,7 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
                         assignment_submission_table.id == Parameter("$3"),
                         assignment_submission_table.deleted_at.isnull(),
                         media_asset_table.deleted_at.isnull(),
+                        assignment_table.deleted_at.isnull(),
                     ]
                 )
             )
@@ -97,7 +101,9 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
                 assignment_submission_table.assignment_id,
                 assignment_submission_table.status,
                 assignment_submission_table.score,
+                assignment_table.max_score,
                 assignment_submission_table.feedback,
+                assignment_submission_table.attempt,
                 assignment_submission_table.created_at.as_("submitted_at"),
                 assignment_submission_table.created_by.as_("submitted_by"),
                 user_table.username.as_("submitter_name"),
@@ -229,4 +235,5 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
 
         if result is None:
             return None
-        return AssignmentSubmissionContext.model_validate(result)
+
+        return AssignmentSubmissionContext.model_validate(dict(result))
