@@ -1,13 +1,7 @@
 from math import ceil
 from typing import Annotated, Literal, TypeVar
 
-from pydantic import (
-    BaseModel,
-    BeforeValidator,
-    ConfigDict,
-    Field,
-    computed_field,
-)
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, computed_field
 from pydantic.alias_generators import to_camel
 
 from src.pypika_query_builder import CustomOrder
@@ -103,14 +97,18 @@ class BaseDTO(BaseModel):
     )
 
 
-def get_sort_order(order: Literal["asc", "desc"]) -> CustomOrder:
+def get_sort_order(
+    order: Literal["asc", "desc"], nulls_first: bool = False
+) -> CustomOrder:
     """
     Helper function to get a CustomOrder.
     """
 
     if order == "asc":
-        return CustomOrder.asc_nulls_last
-    return CustomOrder.desc_nulls_last
+        return (
+            CustomOrder.asc_nulls_first if nulls_first else CustomOrder.asc_nulls_last
+        )
+    return CustomOrder.desc_nulls_first if nulls_first else CustomOrder.desc_nulls_last
 
 
 class PageMeta(BaseDTO):

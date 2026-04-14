@@ -53,7 +53,7 @@ async def delete_course(
     )
 
 
-@router.patch("/update-basic-info/{course_id}", response_model=CourseInfoUpdateSchema)
+@router.patch("/update-basic-info/{course_id}", response_model=CourseOutSchema)
 async def update_basic_info(
     course_id: CourseID,
     course: CourseInfoUpdateSchema,
@@ -66,9 +66,7 @@ async def update_basic_info(
     )
 
 
-@router.patch(
-    "/update-prec-info/{course_id}", response_model=RecordedCourseDetailsUpdateSchema
-)
+@router.patch("/update-prec-info/{course_id}", response_model=CourseOutSchema)
 async def update_pre_recorded_course_info(
     course_id: CourseID,
     course: RecordedCourseDetailsUpdateSchema,

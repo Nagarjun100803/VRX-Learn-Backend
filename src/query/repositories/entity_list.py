@@ -180,6 +180,10 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                     user_table.username, order=get_sort_order(filters.sort_by_username)
                 )
 
+            else:
+                # Default sort by created_at desc.
+                sql = sql.orderby(user_table.created_at, order=get_sort_order("desc"))
+
         return await self.paginate_query(
             sql=sql, values=(course_id,), dto_class=TraineeDetail, page_meta=page_meta
         )
@@ -228,6 +232,10 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 sql = sql.orderby(
                     user_table.username, order=get_sort_order(filters.sort_by_username)
                 )
+
+            else:
+                # Default sort by created_at desc.
+                sql = sql.orderby(user_table.created_at, order=get_sort_order("desc"))
 
         return await self.paginate_query(
             sql=sql, values=tuple(), dto_class=UserDetail, page_meta=page_meta
@@ -295,6 +303,12 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                     order=get_sort_order(filters.sort_by_course_name),
                 )
 
+            else:
+                # Default sort by created_at desc.
+                sql = sql.orderby(
+                    enrollment_table.created_at, order=get_sort_order("desc")
+                )
+
         return await self.paginate_query(
             sql=sql, values=tuple(), dto_class=EnrollmentDetail, page_meta=page_meta
         )
@@ -355,9 +369,13 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
         else:
             # Add sort order
             if filters.sort_by_no_of_trainees:
+                # if ascending, nulls first; otherwise, nulls last.
+                nulls_first = filters.sort_by_no_of_trainees == "asc"
                 sql = sql.orderby(
                     trainee_count_cte.no_of_trainees,
-                    order=get_sort_order(filters.sort_by_no_of_trainees),
+                    order=get_sort_order(
+                        filters.sort_by_no_of_trainees, nulls_first=nulls_first
+                    ),
                 )
 
             elif filters.sort_by_created_at:
@@ -371,6 +389,10 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                     course_table.title,
                     order=get_sort_order(filters.sort_by_course_name),
                 )
+
+            else:
+                # Default sort by created_at desc.
+                sql = sql.orderby(course_table.created_at, order=get_sort_order("desc"))
 
         return await self.paginate_query(
             sql=sql, values=tuple(), dto_class=CourseDetail, page_meta=page_meta
