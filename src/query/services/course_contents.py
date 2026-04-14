@@ -2,7 +2,7 @@ from typing import Optional
 
 from src.auth.auth import AuthService, require_authorization
 from src.auth.permission_policy import Action, Entity
-from src.cache import CacheKey, CacheService
+from src.cache import CacheKey, CacheService, CacheTag
 from src.query.dto.course_contents import (
     CourseContentRequestSchema,
     TraineeCourseContent,
@@ -45,6 +45,7 @@ class TraineeCourseContentQueryService:
             fetch_func=lambda: self.trainee_course_content_repo.course_contents(
                 course_id=query.course_id
             ),
+            tags={CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=query.course_id)},
         )
 
 
@@ -79,4 +80,5 @@ class TrainerCourseContentQueryService:
             fetch_func=lambda: self.trainer_course_content_repo.course_contents(
                 course_id=query.course_id
             ),
+            tags={CacheTag.TRAINER_COURSE_CONTENTS.format(course_id=query.course_id)},
         )

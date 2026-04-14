@@ -30,6 +30,8 @@ from src.command.repositories.assignments import AssignmentRepository
 from src.command.services.base import BaseService
 from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
+from src.events.events import AssignmentSubmissionCreatedEvent
+from src.events.publishers import assignment_submission_created_publisher
 from src.exceptions import (
     AssignmentNotFoundError,
     AssignmentSubmissionAlreadyVerified,
@@ -370,15 +372,24 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         else:
             status = AssignmentSubmissionStatus.SUBMITTED
 
-        return cast(
-            AssignmentSubmission,
-            await self.repo.add(
-                AssignmentSubmissionCreateWithAttemptAndStatus(
-                    **cmd.model_dump(), attempt=total_attempt + 1, status=status
-                ),
-                connection,
+        submission = await self.repo.add(
+            AssignmentSubmissionCreateWithAttemptAndStatus(
+                **cmd.model_dump(), attempt=total_attempt + 1, status=status
             ),
+            connection,
         )
+
+        if submission is not None:
+            # Publish assignment submission created event
+            await assignment_submission_created_publisher.publish(
+                AssignmentSubmissionCreatedEvent(
+                    id=submission.id,
+                    assignment_id=submission.assignment_id,
+                    created_by=submission.created_by,  # type: ignore
+                )
+            )
+
+        return cast(AssignmentSubmission, submission)
 
     @require_authorization(
         action=Action.UPDATE,

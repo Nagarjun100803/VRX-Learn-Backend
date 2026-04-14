@@ -24,6 +24,8 @@ from src.command.services.base import BaseService
 from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
 from src.command.services.positioning import PositioningService, ReorderParticipants
+from src.events.events import LessonCreatedEvent, LessonDeletedEvent
+from src.events.publishers import lesson_created_publisher, lesson_deleted_publisher
 from src.exceptions import (
     CourseModuleNotFoundError,
     EntityNotFoundError,
@@ -86,15 +88,22 @@ class LessonService(BaseService[Lesson]):
             tablename=self.repo.tablename, scope="module_id", scope_id=cmd.module_id
         )
 
-        return cast(
-            Lesson,
-            await self.repo.add(
-                LessonCreateWithPosition(
-                    **cmd.model_dump(), position_string=position_string
-                ),
-                connection=connection,
+        lesson = await self.repo.add(
+            LessonCreateWithPosition(
+                **cmd.model_dump(), position_string=position_string
             ),
+            connection=connection,
         )
+
+        await lesson_created_publisher.publish(
+            LessonCreatedEvent(
+                id=lesson.id,
+                module_id=lesson.module_id,
+                created_by=lesson.created_by,  # type: ignore
+            )
+        )
+
+        return cast(Lesson, lesson)
 
     @require_authorization(
         action=Action.UPDATE,
@@ -129,7 +138,19 @@ class LessonService(BaseService[Lesson]):
     )
     async def delete(self, cmd: LessonDelete) -> Lesson:
         # TODO: Need to delete the actual file from the object storage also.
-        return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
+
+        lesson = await self.repo.delete(cmd)
+
+        if lesson is not None:
+            await lesson_deleted_publisher.publish(
+                LessonDeletedEvent(
+                    id=lesson.id,
+                    module_id=lesson.module_id,
+                    deleted_by=lesson.deleted_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(lesson, value=cmd.id)
 
     @require_authorization(
         action=Action.VIEW,

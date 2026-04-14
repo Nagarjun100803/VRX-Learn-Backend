@@ -1,12 +1,24 @@
 import json
+from collections.abc import Iterable
 from enum import StrEnum
 from functools import lru_cache
-from typing import Any, Awaitable, Callable, Optional, Sequence, Set, TypeVar, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    TypeVar,
+    Union,
+)
 
 from pydantic import BaseModel
 from pydantic.type_adapter import TypeAdapter
 from redis.asyncio import Redis
-from typing_extensions import Literal
+
+from src.settings import settings
 
 NULL_SENTINEL = "__NONE__"
 """Used to set the value when database return the value as None"""
@@ -15,12 +27,60 @@ T = TypeVar("T")
 
 
 class CacheTag(StrEnum):
-    COURSE = "tag:course:{course_id}"
-    MODULE = "tag:module:{module_id}"
-    LESSON = "tag:lesson:{lesson_id}"
-    ASSIGNMENT = "tag:assignment:{assignment_id}"
-    ASSIGNMENT_SUBMISSION = "tag:assignment-submission:{assignment_submission_id}"
-    USERS = "tag:users:{user_id}"
+    USER = "tag:user"
+    COURSE = "tag:course"
+    MODULE = "tag:module"
+    LESSON = "tag:lesson"
+    ASSIGNMENT = "tag:assignment"
+    ASSIGNMENT_SUBMISSION = "tag:assignment-submission"
+    ENROLLMENT = "tag:enrollment"
+
+    USER_ENTITY = "tag:user:{user_id}"
+    COURSE_ENTITY = "tag:course:{course_id}"
+    MODULE_ENTITY = "tag:module:{module_id}"
+    LESSON_ENTITY = "tag:lesson:{lesson_id}"
+    ASSIGNMENT_ENTITY = "tag:assignment:{assignment_id}"
+    ASSIGNMENT_SUBMISSION_ENTITY = (
+        "tag:assignment-submission:{assignment_submission_id}"
+    )
+    ENROLLMENT_ENTITY = "tag:enrollment:{enrollment_id}"
+
+    LIST_USERS = "tag:list:users"
+    LIST_COURSES = "tag:list:courses"
+    LIST_ENROLLMENTS = "tag:list:enrollments"
+    LIST_TRAINEES = "tag:list:trainees:{course_id}"
+
+    LIST_MODULES = "tag:list:modules:{course_id}"
+    LIST_LESSONS = "tag:list:lessons:{module_id}"
+    LIST_ASSIGNMENT_SUBMISSIONS = "tag:list:assignment-submissions:{assignment_id}"
+
+    SEARCH_USERS = "tag:search:users"
+    SEARCH_COURSES = "tag:search:courses"
+
+    # Dashboard
+    ADMIN_KPIS = "tag:admin:dashboard:kpis"
+    ADMIN_TOP_ENROLLED_COURSES = "tag:admin:top-enrolled-courses"
+    TRAINEE_ENROLLED_COURSES = "tag:trainee:enrolled-courses:{trainee_id}"
+    TRAINEE_TOP_NEW_COURSES = "tag:trainee:top-new-courses"
+    TRAINEE_CURRENT_COURSE = "tag:trainee:current-course:{trainee_id}"
+    TRAINER_ASSIGNED_COURSES = "tag:trainer:assigned-courses:{trainer_id}"
+    TRAINER_KPIS = "tag:trainer:kpis:{trainer_id}"
+
+    # Course Contents
+    TRAINEE_COURSE_CONTENTS = "tag:trainee:course-contents:{course_id}"
+    TRAINER_COURSE_CONTENTS = "tag:trainee:course-contents:{course_id}"
+
+    # Assignment Contents
+    TRAINEE_LIST_ASSIGNMENTS = "tag:trainee:list:assignments:{course_id}:{trainee_id}"
+    TRAINER_LIST_ASSIGNMENTS = "tag:trainer:list:assignments:{course_id}"
+    TRAINEE_ASSIGNMENT_CONTENTS = (
+        "tag:trainee:assignment-contents:{assignment_id}:{trainee_id}"
+    )
+    TRAINER_ASSIGNMENT_CONTENTS = "tag:trainer:assignment-contents:{assignment_id}"
+
+    # Course Overview
+    TRAINEE_COURSE_OVERVIEW = "tag:trainee:course-overview:{course_id}"
+    TRAINER_COURSE_OVERVIEW = "tag:trainer:course-overview:{course_id}"
 
 
 class CacheKey(StrEnum):
@@ -141,13 +201,8 @@ class CacheService:
         """
         try:
             if self._pool is None:
-                self._pool = Redis(
-                    host="localhost",
-                    port=6379,
-                    db=0,
-                    password="password",
-                    username="default",
-                    decode_responses=True,
+                self._pool = Redis.from_url(
+                    str(settings.redis.uri), decode_responses=True, db=0
                 )
 
                 print("Redis connection pool initalized successfully.")
@@ -227,6 +282,10 @@ class CacheService:
 
             await pipe.execute()
 
+    async def invalidate_key(self, key: str) -> None:
+        """Invalidate a single key."""
+        await self.pool.delete(key)
+
     async def invalidate_tag(self, tag: Union[str, StrEnum]) -> None:
         keys: set[str] = await self.pool.smembers(tag)  # type: ignore
         # Invalidate all the keys associated with the tag.
@@ -234,6 +293,24 @@ class CacheService:
             await self.pool.delete(*keys)
         # Delete the actual tag.
         await self.pool.delete(tag)
+
+    async def invalidate_tags(self, tags: Iterable[Union[str, StrEnum]]) -> None:
+        pipe = self.pool.pipeline()
+
+        # Step 1: fetch all keys in pipeline
+        for tag in tags:
+            pipe.smembers(str(tag))
+
+        results = await pipe.execute()
+
+        # Step 2: delete keys + tags in pipeline
+        pipe = self.pool.pipeline()
+        for tag, keys in zip(tags, results):
+            if keys:
+                pipe.delete(*keys)
+            pipe.delete(str(tag))
+
+        await pipe.execute()
 
     async def get_or_set(
         self,
@@ -280,39 +357,3 @@ class CacheService:
 
         # 5. Return fresh value
         return value
-
-
-# import asyncio
-
-
-# class CourseCard(BaseModel):
-#     id: int
-#     title: str
-#     trainer: str
-
-
-# async def main() -> None:
-
-#     key = "dashboard:trainee:enrolled_courses:1"
-#     tags = ["tag:dashboard", "tag:trainee_dashboard"]
-#     value = [
-#         CourseCard(id=1, title="LangChain", trainer="Nagarjun"),
-#         CourseCard(id=2, title="LangGraph", trainer="Shivan"),
-#     ]
-
-#     cache_service = CacheService()
-
-#     await cache_service.init_pool()
-
-#     # result = await cache_service.set(CacheSet(key=key, tags=tags, value=value))
-#     # result = await cache_service.get(
-#     #     CacheGet(key="dashboard:trainee:enrolled_courses:1", model=list[CourseCard])
-#     # )
-#     result = await cache_service.invalidate_tag("tag:dashboard")
-#     print(result)
-
-#     await cache_service.close_pool()
-
-
-# if __name__ == "__main__":
-#     asyncio.run(main())

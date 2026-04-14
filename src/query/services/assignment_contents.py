@@ -1,7 +1,7 @@
 from typing import Optional, cast
 
 from src.auth import Action, AuthService, Entity, require_authorization
-from src.cache import CacheKey, CacheService
+from src.cache import CacheKey, CacheService, CacheTag
 from src.query.dto.assignment_contents import (
     AssignmentSubmissionFilters,
     TraineeAssignmentContent,
@@ -55,6 +55,15 @@ class TraineeAssignmentContentQueryService:
             fetch_func=lambda: self.trainee_assignment_query_repo.assignments(
                 course_id=query.course_id, trainee_id=query.viewer_id
             ),
+            tags={
+                CacheTag.TRAINEE_LIST_ASSIGNMENTS.format(
+                    course_id=query.course_id, trainee_id=query.viewer_id
+                ),
+                # Note: Add list assignments tag, because we cannot get all the students
+                # enrolled in that course and invalidate if some mutation happens. So we use
+                # this to invalidate easily.
+                CacheTag.TRAINER_LIST_ASSIGNMENTS.format(course_id=query.course_id),
+            },
         )
 
     @require_authorization(
@@ -78,6 +87,11 @@ class TraineeAssignmentContentQueryService:
             fetch_func=lambda: self.trainee_assignment_query_repo.assignment_contents(
                 assignment_id=query.assignment_id, trainee_id=query.viewer_id
             ),
+            tags={
+                CacheTag.TRAINEE_ASSIGNMENT_CONTENTS.format(
+                    assignment_id=query.assignment_id, trainee_id=query.viewer_id
+                )
+            },
         )
 
 
@@ -114,6 +128,7 @@ class TrainerAssignmentContentQueryService:
             fetch_func=lambda: self.trainer_assignment_content_repo.assignments(
                 course_id=query.course_id
             ),
+            tags={CacheTag.TRAINER_LIST_ASSIGNMENTS.format(course_id=query.course_id)},
         )
 
     @require_authorization(
@@ -137,6 +152,11 @@ class TrainerAssignmentContentQueryService:
             fetch_func=lambda: self.trainer_assignment_content_repo.assignment_contents(
                 assignment_id=query.assignment_id
             ),
+            tags={
+                CacheTag.TRAINER_ASSIGNMENT_CONTENTS.format(
+                    assignment_id=query.assignment_id
+                )
+            },
         )
 
     @require_authorization(
@@ -167,8 +187,6 @@ class TrainerAssignmentContentQueryService:
             limit=page_meta.limit,
         )
 
-        print(key)
-
         return cast(
             Paginated[TrainerSubmissionDetail],
             await self.cache_service.get_or_set(
@@ -181,5 +199,10 @@ class TrainerAssignmentContentQueryService:
                     filters=filters,
                     page_meta=page_meta,
                 ),
+                tags={
+                    CacheTag.LIST_ASSIGNMENT_SUBMISSIONS.format(
+                        assignment_id=query.assignment_id
+                    )
+                },
             ),
         )

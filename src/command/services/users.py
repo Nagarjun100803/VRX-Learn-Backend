@@ -16,6 +16,8 @@ from src.command.commands.users import (
 )
 from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
+from src.events.events import UserCreatedEvent, UserDeletedEvent
+from src.events.publishers import user_created_publisher, user_deleted_publisher
 from src.exceptions import (
     EntityNotFoundError,
     PasswordMismatchError,
@@ -78,6 +80,17 @@ class UserService(BaseService[User]):
             )
         )
 
+        # Publish user created event.
+        await user_created_publisher.publish(
+            UserCreatedEvent(
+                id=user.id,
+                username=user.username,
+                email=user.email,
+                role=user.role,
+                created_by=user.created_by,
+            )
+        )
+
         return cast(User, user)
 
     async def update(self, cmd: PasswordUpdate) -> User:
@@ -102,6 +115,12 @@ class UserService(BaseService[User]):
     )
     async def delete(self, cmd: UserDelete) -> User:
         user = await self.repo.delete(cmd)
+
+        if user is not None:
+            # Publish the user deleted event.
+            await user_deleted_publisher.publish(
+                UserDeletedEvent(id=user.id, deleted_by=user.deleted_by)  # type: ignore
+            )
         return self._require_entity(user, value=cmd.id)
 
     @require_authorization(

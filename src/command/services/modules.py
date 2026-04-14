@@ -15,6 +15,8 @@ from src.command.repositories.courses import CourseRepository
 from src.command.repositories.modules import ModuleRepository
 from src.command.services.base import BaseService
 from src.command.services.positioning import PositioningService, ReorderParticipants
+from src.events.events import ModuleCreatedEvent, ModuleDeletedEvent
+from src.events.publishers import module_created_publisher, module_deleted_publisher
 from src.exceptions import (
     CourseModuleAlreadyExistsError,
     CourseModuleNotFoundError,
@@ -71,6 +73,17 @@ class ModuleService(BaseService[Module]):
                 **cmd.model_dump(), position_string=position_string
             )
         )
+
+        if module is not None:
+            # Publish the module created event.
+            await module_created_publisher.publish(
+                ModuleCreatedEvent(
+                    id=module.id,
+                    created_by=module.created_by,  # type: ignore
+                    course_id=module.course_id,
+                )
+            )
+
         return cast(Module, module)
 
     @require_authorization(
@@ -110,6 +123,17 @@ class ModuleService(BaseService[Module]):
     )
     async def delete(self, cmd: ModuleDelete) -> Module:
         module = await self.repo.delete(cmd)
+
+        if module is not None:
+            # Publish the module deleted event.
+            await module_deleted_publisher.publish(
+                ModuleDeletedEvent(
+                    id=module.id,
+                    course_id=module.course_id,
+                    deleted_by=module.deleted_by,  # type: ignore
+                )
+            )
+
         return self._require_entity(module, value=cmd.id)
 
     @require_authorization(

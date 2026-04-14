@@ -1,6 +1,6 @@
 from typing import Optional
 
-from src.cache import CacheKey, CacheService
+from src.cache import CacheKey, CacheService, CacheTag
 from src.query.dto.dashboards import (
     AdminCourseCard,
     AdminKPI,
@@ -36,6 +36,7 @@ class TraineeDashboardQueryService:
             fetch_func=lambda: self.trainee_dashboard_query_repo.enrolled_courses(
                 trainee_id=trainee_id
             ),
+            tags={CacheTag.TRAINEE_ENROLLED_COURSES.format(trainee_id=trainee_id)},
         )
 
     async def list_top_new_courses(self, n: int) -> list[CourseCard]:
@@ -46,6 +47,7 @@ class TraineeDashboardQueryService:
             ttl=300,
             negative_ttl=30,
             fetch_func=lambda: self.trainee_dashboard_query_repo.top_new_courses(n=n),
+            tags={CacheTag.TRAINEE_TOP_NEW_COURSES},
         )
 
     async def get_current_course(self, trainee_id: int) -> Optional[CourseCard]:
@@ -58,6 +60,7 @@ class TraineeDashboardQueryService:
             fetch_func=lambda: self.trainee_dashboard_query_repo.current_course(
                 trainee_id=trainee_id
             ),
+            tags={CacheTag.TRAINEE_CURRENT_COURSE.format(trainee_id=trainee_id)},
         )
 
 
@@ -80,6 +83,7 @@ class TrainerDashboardQueryService:
             fetch_func=lambda: self.trainer_dashboard_query_repo.kpis(
                 trainer_id=trainer_id
             ),
+            tags={CacheTag.TRAINER_KPIS.format(trainer_id=trainer_id)},
         )
 
     async def list_assigned_courses(self, trainer_id: int) -> list[AssignedCourse]:
@@ -94,6 +98,7 @@ class TrainerDashboardQueryService:
             fetch_func=lambda: self.trainer_dashboard_query_repo.assigned_courses(
                 trainer_id=trainer_id
             ),
+            tags={CacheTag.TRAINER_ASSIGNED_COURSES.format(trainer_id=trainer_id)},
         )
 
 
@@ -112,9 +117,9 @@ class AdminDashboardQueryService:
             key=CacheKey.ADMIN_DASHBOARD_KPIS,
             model=Optional[AdminKPI],
             ttl=300,
-            tags={"tag:dashboard:admin"},
             fetch_func=self.admin_dashboard_query_repo.kpis,
             negative_ttl=30,
+            tags={CacheTag.ADMIN_KPIS},
         )
 
     async def list_top_enrolled_courses(self, n: int) -> list[AdminCourseCard]:
@@ -127,4 +132,5 @@ class AdminDashboardQueryService:
             fetch_func=lambda: self.admin_dashboard_query_repo.top_enrolled_courses(
                 n=n
             ),
+            tags={CacheTag.ADMIN_TOP_ENROLLED_COURSES},
         )

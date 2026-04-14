@@ -1,7 +1,7 @@
 from typing import Optional, cast
 
 from src.auth import Action, AuthService, Entity, require_authorization
-from src.cache import CacheKey, CacheService
+from src.cache import CacheKey, CacheService, CacheTag
 from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
 from src.query.dto.request_schemas import CourseViewRequestSchema
 from src.query.repositories.course_overview import (
@@ -44,6 +44,9 @@ class TraineeCourseOverviewQueryService:
                         course_id=query.course_id
                     )
                 ),
+                tags={
+                    CacheTag.TRAINEE_COURSE_OVERVIEW.format(course_id=query.course_id)
+                },
             ),
         )
 
@@ -78,4 +81,5 @@ class TrainerCourseOverviewQueryService:
             fetch_func=lambda: self.trainer_course_overview_query_repo.course_overview(
                 course_id=query.course_id
             ),
+            tags={CacheTag.TRAINER_COURSE_OVERVIEW.format(course_id=query.course_id)},
         )

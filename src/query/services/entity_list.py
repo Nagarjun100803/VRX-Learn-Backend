@@ -1,5 +1,5 @@
 from src.auth import Action, AuthService, Entity, require_authorization
-from src.cache import CacheKey, CacheService
+from src.cache import CacheKey, CacheService, CacheTag
 from src.command.commands.users import UserRole
 from src.query.dto.base import PageMeta, Paginated
 from src.query.dto.entity_list import (
@@ -86,6 +86,7 @@ class TrainerEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.modules(
                 course_id=query.course_id
             ),
+            tags={CacheTag.LIST_MODULES.format(course_id=query.course_id)},
         )
 
     @require_authorization(
@@ -105,6 +106,7 @@ class TrainerEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.lessons(
                 module_id=query.module_id
             ),
+            tags={CacheTag.LIST_LESSONS.format(module_id=query.module_id)},
         )
 
     # NOTE: Passed `entity=Entity.COURSE even though we get all trainees in a course.
@@ -141,6 +143,7 @@ class TrainerEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.trainees(
                 course_id=query.course_id, filters=filters, page_meta=page_meta
             ),
+            tags={CacheTag.LIST_TRAINEES.format(course_id=query.course_id)},
         )
 
     # NOTE: This method is not used in API Layer.
@@ -190,6 +193,7 @@ class AdminEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.users(
                 filters=filters, page_meta=page_meta
             ),
+            tags={CacheTag.LIST_USERS},
         )
 
     async def list_courses(
@@ -213,6 +217,7 @@ class AdminEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.courses(
                 filters=filters, page_meta=page_meta
             ),
+            tags={CacheTag.LIST_COURSES},
         )
 
     async def list_enrollments(
@@ -237,6 +242,7 @@ class AdminEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.enrollments(
                 filters=filters, page_meta=page_meta
             ),
+            tags={CacheTag.LIST_ENROLLMENTS},
         )
 
     async def list_trainees(
@@ -261,6 +267,7 @@ class AdminEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.trainees(
                 course_id=course_id, filters=filters, page_meta=page_meta
             ),
+            tags={CacheTag.LIST_TRAINEES.format(course_id=course_id)},
         )
 
     async def search_users(
@@ -277,6 +284,7 @@ class AdminEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.search_users(
                 username_or_email=username_or_email, role=role
             ),
+            tags={CacheTag.SEARCH_USERS},
         )
 
     async def search_course(self, course_name: str) -> list[CourseSearchDetail]:
@@ -289,4 +297,5 @@ class AdminEntityListQueryService:
             fetch_func=lambda: self.entity_list_query_repo.search_courses(
                 course_name=course_name
             ),
+            tags={CacheTag.SEARCH_COURSES},
         )

@@ -17,6 +17,7 @@ class UserCreateSchema(BaseCmd):
 
 class UserOutSchema(BaseCmd):
     id: UserID
+    username: str
     email: Email
     role: UserRole
 

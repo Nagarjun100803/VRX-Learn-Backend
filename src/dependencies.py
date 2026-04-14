@@ -1,7 +1,8 @@
 # Database initalization.
 from src.api.jwt import JWTHandler
 from src.auth.auth import AuthService
-from src.cache import CacheService
+from src.cache import CacheInvalidator, CacheService
+from src.cache.invalidator import _TagResolver
 
 # Repository Imports.
 from src.command.repositories import (
@@ -64,6 +65,8 @@ from src.query.services import (
 
 db = AsyncPgDBManager()
 cache_service = CacheService()
+_resolver = _TagResolver(db=db)
+cache_invalidator = CacheInvalidator(cache_service=cache_service, resolver=_resolver)
 
 # Command Repositories.
 user_repository = UserRepository(db=db)

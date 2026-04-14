@@ -7,6 +7,7 @@ from fastapi.responses import JSONResponse
 from src.api.exception_registry import exception_registry
 from src.api.routers import ROUTERS
 from src.dependencies import cache_service, db
+from src.events.handlers import router as events_router
 from src.exceptions import DomainError
 from src.settings import settings
 
@@ -43,6 +44,9 @@ async def health_check() -> dict:
 # Register api routers.
 for router in ROUTERS:
     app.include_router(router, prefix=api_version)
+
+# Include Event Handler Router.
+app.include_router(events_router)
 
 
 @app.exception_handler(DomainError)
