@@ -24,8 +24,18 @@ from src.command.services.base import BaseService
 from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
 from src.command.services.positioning import PositioningService, ReorderParticipants
-from src.events.events import LessonCreatedEvent, LessonDeletedEvent
-from src.events.publishers import lesson_created_publisher, lesson_deleted_publisher
+from src.events.events import (
+    LessonCreatedEvent,
+    LessonDeletedEvent,
+    LessonReorderedEvent,
+    LessonUpdatedEvent,
+)
+from src.events.publishers import (
+    lesson_created_publisher,
+    lesson_deleted_publisher,
+    lesson_reordered_publisher,
+    lesson_updated_publisher,
+)
 from src.exceptions import (
     CourseModuleNotFoundError,
     EntityNotFoundError,
@@ -127,7 +137,18 @@ class LessonService(BaseService[Lesson]):
         if duplicate_lesson_title_flag:
             raise LessonAlreadyExistsError(value=cmd.title, identifier="title")
 
-        return self._require_entity(await self.repo.update(cmd), value=cmd.id)
+        lesson = await self.repo.update(cmd)
+        # Publish lesson updated event.
+        if lesson is not None:
+            await lesson_updated_publisher.publish(
+                LessonUpdatedEvent(
+                    id=lesson.id,
+                    module_id=lesson.module_id,
+                    updated_by=lesson.updated_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(lesson, value=cmd.id)
 
     @require_authorization(
         action=Action.DELETE,
@@ -170,7 +191,7 @@ class LessonService(BaseService[Lesson]):
         object_name="cmd",
     )
     async def reorder(self, cmd: LessonReorderParticipants) -> str:
-        return await self.positioning_service.reorder(
+        position_string = await self.positioning_service.reorder(
             participants=ReorderParticipants(
                 preceding_id=cmd.preceding_id,
                 target_id=cmd.target_id,
@@ -179,6 +200,13 @@ class LessonService(BaseService[Lesson]):
             tablename="lessons",
             scope="module_id",
         )
+        await lesson_reordered_publisher.publish(
+            LessonReorderedEvent(
+                id=cmd.target_id,
+                updated_by=cmd.updated_by,  # type: ignore
+            )
+        )
+        return position_string
 
     async def init_lesson_create(
         self, cmd: LessonCreate, file_cmd: FileMetadata

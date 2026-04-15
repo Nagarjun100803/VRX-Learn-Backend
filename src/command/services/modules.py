@@ -15,8 +15,18 @@ from src.command.repositories.courses import CourseRepository
 from src.command.repositories.modules import ModuleRepository
 from src.command.services.base import BaseService
 from src.command.services.positioning import PositioningService, ReorderParticipants
-from src.events.events import ModuleCreatedEvent, ModuleDeletedEvent
-from src.events.publishers import module_created_publisher, module_deleted_publisher
+from src.events.events import (
+    ModuleCreatedEvent,
+    ModuleDeletedEvent,
+    ModuleReorderedEvent,
+    ModuleUpdatedEvent,
+)
+from src.events.publishers import (
+    module_created_publisher,
+    module_deleted_publisher,
+    module_reordered_publisher,
+    module_updated_publisher,
+)
 from src.exceptions import (
     CourseModuleAlreadyExistsError,
     CourseModuleNotFoundError,
@@ -112,7 +122,18 @@ class ModuleService(BaseService[Module]):
                 )
 
         # Update the fields.
-        return self._require_entity(await self.repo.update(cmd), value=cmd.id)
+        updated_module = await self.repo.update(cmd)
+        if updated_module is not None:
+            # Publish the module updated event.
+            await module_updated_publisher.publish(
+                ModuleUpdatedEvent(
+                    id=updated_module.id,
+                    updated_by=updated_module.updated_by,  # type: ignore
+                    course_id=updated_module.course_id,
+                )
+            )
+
+        return self._require_entity(updated_module, value=cmd.id)
 
     @require_authorization(
         action=Action.DELETE,
@@ -154,7 +175,7 @@ class ModuleService(BaseService[Module]):
         entity_id_field="target_id",
     )
     async def reorder(self, cmd: ModuleReorderParticipants) -> str:
-        return await self.positioning_service.reorder(
+        position_string = await self.positioning_service.reorder(
             participants=ReorderParticipants(
                 preceding_id=cmd.preceding_id,
                 target_id=cmd.target_id,
@@ -163,3 +184,10 @@ class ModuleService(BaseService[Module]):
             tablename="modules",
             scope="course_id",
         )
+        await module_reordered_publisher.publish(
+            ModuleReorderedEvent(
+                id=cmd.target_id,
+                updated_by=cmd.updated_by,  # type: ignore
+            )
+        )
+        return position_string

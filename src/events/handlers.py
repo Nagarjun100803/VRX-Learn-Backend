@@ -13,9 +13,11 @@ from src.events.events import (
     EnrollmentUpdatedEvent,
     LessonCreatedEvent,
     LessonDeletedEvent,
+    LessonReorderedEvent,
     LessonUpdatedEvent,
     ModuleCreatedEvent,
     ModuleDeletedEvent,
+    ModuleReorderedEvent,
     ModuleUpdatedEvent,
     UserCreatedEvent,
     UserDeletedEvent,
@@ -48,7 +50,10 @@ async def handle_course_created(
 
 
 @router.subscriber("course.updated")
-async def handle_course_updated(event: CourseUpdatedEvent): ...
+async def handle_course_updated(
+    event: CourseUpdatedEvent, cache_invalidator: CacheInvalidatorServiceDependency
+):
+    await cache_invalidator.on_course_updated(event)
 
 
 @router.subscriber("course.deleted")
@@ -67,7 +72,17 @@ async def handle_module_created(
 
 
 @router.subscriber("module.updated")
-async def handle_module_updated(event: ModuleUpdatedEvent): ...
+async def handle_module_updated(
+    event: ModuleUpdatedEvent, cache_invalidator: CacheInvalidatorServiceDependency
+):
+    await cache_invalidator.on_module_updated(event)
+
+
+@router.subscriber("module.reordered")
+async def handle_module_reordered(
+    event: ModuleReorderedEvent, cache_invalidator: CacheInvalidatorServiceDependency
+):
+    await cache_invalidator.on_module_reordered(event)
 
 
 @router.subscriber("module.deleted")
@@ -86,7 +101,17 @@ async def handle_lesson_created(
 
 
 @router.subscriber("lesson.updated")
-async def handle_lesson_updated(event: LessonUpdatedEvent): ...
+async def handle_lesson_updated(
+    event: LessonUpdatedEvent, cache_invalidator: CacheInvalidatorServiceDependency
+):
+    await cache_invalidator.on_lesson_updated(event)
+
+
+@router.subscriber("lesson.reordered")
+async def handle_lesson_reordered(
+    event: LessonReorderedEvent, cache_invalidator: CacheInvalidatorServiceDependency
+):
+    await cache_invalidator.on_lesson_reordered(event)
 
 
 @router.subscriber("lesson.deleted")
@@ -123,7 +148,10 @@ async def handle_assignment_created(
 
 
 @router.subscriber("assignment.updated")
-async def handle_assignment_updated(event: AssignmentUpdatedEvent): ...
+async def handle_assignment_updated(
+    event: AssignmentUpdatedEvent, cache_invalidator: CacheInvalidatorServiceDependency
+):
+    await cache_invalidator.on_assignment_updated(event)
 
 
 @router.subscriber("assignment.deleted")

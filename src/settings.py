@@ -14,7 +14,7 @@ class DatabaseSettings(BaseSettings):
     max_conn: int
 
     model_config = SettingsConfigDict(
-        env_file="src/.env", env_prefix="LOCAL_DATABASE_", extra="ignore"
+        env_file="src/.env", env_prefix="DATABASE_", extra="ignore"
     )
 
 

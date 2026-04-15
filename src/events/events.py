@@ -93,7 +93,13 @@ class ModuleCreatedEvent(BaseEvent):
 class ModuleUpdatedEvent(BaseEvent):
     event_type: str = "module.updated"
     id: ModuleID
-    course_id: CourseID
+    course_id: CourseID | None
+    updated_by: UserID
+
+
+class ModuleReorderedEvent(BaseEvent):
+    event_type: str = "module.reordered"
+    id: ModuleID
     updated_by: UserID
 
 
@@ -115,6 +121,12 @@ class LessonUpdatedEvent(BaseEvent):
     event_type: str = "lesson.updated"
     id: LessonID
     module_id: ModuleID
+    updated_by: UserID
+
+
+class LessonReorderedEvent(BaseEvent):
+    event_type: str = "lesson.reordered"
+    id: LessonID
     updated_by: UserID
 
 

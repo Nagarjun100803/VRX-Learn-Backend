@@ -307,7 +307,13 @@ class CacheService:
         pipe = self.pool.pipeline()
         for tag, keys in zip(tags, results):
             if keys:
+                for key in keys:
+                    print("--" * 50)
+                    print(f"Invalidating key: {key}")
                 pipe.delete(*keys)
+            else:
+                print("--" * 50)
+                print(f"Invalidating tag {tag} with no keys")
             pipe.delete(str(tag))
 
         await pipe.execute()

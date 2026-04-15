@@ -14,11 +14,13 @@ course_deleted_publisher = router.publisher("course.deleted")
 # Module
 module_created_publisher = router.publisher("module.created")
 module_updated_publisher = router.publisher("module.updated")
+module_reordered_publisher = router.publisher("module.reordered")
 module_deleted_publisher = router.publisher("module.deleted")
 
 # Lesson
 lesson_created_publisher = router.publisher("lesson.created")
 lesson_updated_publisher = router.publisher("lesson.updated")
+lesson_reordered_publisher = router.publisher("lesson.reordered")
 lesson_deleted_publisher = router.publisher("lesson.deleted")
 
 # Enrollment

@@ -21,14 +21,21 @@ from src.events.events import (
     EnrollmentUpdatedEvent,
     LessonCreatedEvent,
     LessonDeletedEvent,
+    LessonReorderedEvent,
     LessonUpdatedEvent,
     ModuleCreatedEvent,
     ModuleDeletedEvent,
+    ModuleReorderedEvent,
     ModuleUpdatedEvent,
     UserCreatedEvent,
     UserDeletedEvent,
 )
-from src.pypika_query_builder import assignment_table, course_table, module_table
+from src.pypika_query_builder import (
+    assignment_table,
+    course_table,
+    lesson_table,
+    module_table,
+)
 
 
 class _TagResolver:
@@ -110,6 +117,23 @@ class _TagResolver:
 
         return result["course_id"] if result is not None else 0
 
+    async def get_module_id_and_course_id_by_lesson_id(
+        self, lesson_id: int
+    ) -> tuple[int, int]:
+        sql = (
+            PostgreSQLQuery.from_(lesson_table)
+            .join(module_table)
+            .on(module_table.id == lesson_table.module_id)
+            .where(lesson_table.id == Parameter("$1"))
+            .select(module_table.id, module_table.course_id)
+        ).get_sql()
+
+        executable = ExecutableSQL(sql=sql, values=(lesson_id,))
+
+        result = await self.db.execute(executable, fetch_returns="one")
+
+        return (result["id"], result["course_id"]) if result is not None else (0, 0)
+
 
 class CacheInvalidator:
     def __init__(self, cache_service: CacheService, resolver: _TagResolver) -> None:
@@ -133,7 +157,18 @@ class CacheInvalidator:
         ]
         await self.cache_service.invalidate_tags(tags)
 
-    async def on_course_updated(self, event: CourseUpdatedEvent): ...
+    async def on_course_updated(self, event: CourseUpdatedEvent):
+        tags = [
+            CacheTag.LIST_COURSES,
+            CacheTag.SEARCH_COURSES,
+            CacheTag.TRAINER_ASSIGNED_COURSES.format(trainer_id=event.trainer_id),
+            CacheTag.TRAINEE_COURSE_OVERVIEW.format(course_id=event.id),
+            CacheTag.TRAINER_COURSE_OVERVIEW.format(course_id=event.id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=event.id),
+            CacheTag.TRAINER_COURSE_CONTENTS.format(course_id=event.id),
+        ]
+
+        await self.cache_service.invalidate_tags(tags)
 
     async def on_course_deleted(self, event: CourseDeletedEvent):
 
@@ -209,7 +244,22 @@ class CacheInvalidator:
 
         await self.cache_service.invalidate_tags(tags)
 
-    async def on_module_updated(self, event: ModuleUpdatedEvent): ...
+    async def on_module_updated(self, event: ModuleUpdatedEvent):
+        tags = [
+            CacheTag.LIST_MODULES.format(course_id=event.course_id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=event.course_id),
+            CacheTag.TRAINER_COURSE_CONTENTS.format(course_id=event.course_id),
+        ]
+        await self.cache_service.invalidate_tags(tags)
+
+    async def on_module_reordered(self, event: ModuleReorderedEvent):
+        course_id = await self.resolver.get_course_id_by_module_id(event.id)
+        tags = [
+            CacheTag.LIST_MODULES.format(course_id=course_id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=course_id),
+            CacheTag.TRAINER_COURSE_CONTENTS.format(course_id=course_id),
+        ]
+        await self.cache_service.invalidate_tags(tags)
 
     async def on_module_deleted(self, event: ModuleDeletedEvent):
         tags = [
@@ -228,11 +278,31 @@ class CacheInvalidator:
             CacheTag.LIST_LESSONS.format(module_id=event.module_id),
             CacheTag.TRAINEE_COURSE_OVERVIEW.format(course_id=course_id),
             CacheTag.TRAINER_COURSE_OVERVIEW.format(course_id=course_id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=course_id),
         ]
 
         await self.cache_service.invalidate_tags(tags)
 
-    async def on_lesson_updated(self, event: LessonUpdatedEvent): ...
+    async def on_lesson_updated(self, event: LessonUpdatedEvent):
+        course_id = await self.resolver.get_course_id_by_module_id(event.module_id)
+
+        tags = [
+            CacheTag.LIST_LESSONS.format(module_id=event.module_id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=course_id),
+        ]
+
+        await self.cache_service.invalidate_tags(tags)
+
+    async def on_lesson_reordered(self, event: LessonReorderedEvent):
+        (
+            module_id,
+            course_id,
+        ) = await self.resolver.get_module_id_and_course_id_by_lesson_id(event.id)
+        tags = [
+            CacheTag.LIST_LESSONS.format(module_id=module_id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=course_id),
+        ]
+        await self.cache_service.invalidate_tags(tags)
 
     async def on_lesson_deleted(self, event: LessonDeletedEvent):
         course_id = await self.resolver.get_course_id_by_module_id(event.module_id)
@@ -241,6 +311,7 @@ class CacheInvalidator:
             CacheTag.LIST_LESSONS.format(module_id=event.module_id),
             CacheTag.TRAINEE_COURSE_OVERVIEW.format(course_id=course_id),
             CacheTag.TRAINER_COURSE_OVERVIEW.format(course_id=course_id),
+            CacheTag.TRAINEE_COURSE_CONTENTS.format(course_id=course_id),
         ]
 
         await self.cache_service.invalidate_tags(tags)
@@ -255,7 +326,13 @@ class CacheInvalidator:
 
         await self.cache_service.invalidate_tags(tags)
 
-    async def on_assignment_updated(self, event: AssignmentUpdatedEvent): ...
+    async def on_assignment_updated(self, event: AssignmentUpdatedEvent):
+        tags = [
+            CacheTag.TRAINER_LIST_ASSIGNMENTS.format(course_id=event.course_id),
+            CacheTag.TRAINER_COURSE_CONTENTS.format(course_id=event.course_id),
+        ]
+
+        await self.cache_service.invalidate_tags(tags)
 
     async def on_assignment_deleted(self, event: AssignmentDeletedEvent):
         tags = [

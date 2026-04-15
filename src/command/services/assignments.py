@@ -22,10 +22,15 @@ from src.command.repositories.courses import CourseRepository
 from src.command.services.base import BaseService
 from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
-from src.events.events import AssignmentCreatedEvent, AssignmentDeletedEvent
+from src.events.events import (
+    AssignmentCreatedEvent,
+    AssignmentDeletedEvent,
+    AssignmentUpdatedEvent,
+)
 from src.events.publishers import (
     assignment_created_publisher,
     assignment_deleted_publisher,
+    assignment_updated_publisher,
 )
 from src.exceptions import (
     AssignmentAlreadyExistsError,
@@ -113,7 +118,18 @@ class AssignmentService(BaseService[Assignment]):
                 title=assignment.title, course_id=assignment.course_id
             )
 
-        return self._require_entity(await self.repo.update(cmd), value=cmd.id)
+        assignment = await self.repo.update(cmd)
+
+        if assignment is not None:
+            await assignment_updated_publisher.publish(
+                AssignmentUpdatedEvent(
+                    id=assignment.id,
+                    course_id=assignment.course_id,
+                    updated_by=assignment.updated_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(assignment, value=cmd.id)
 
     @require_authorization(
         action=Action.DELETE,
