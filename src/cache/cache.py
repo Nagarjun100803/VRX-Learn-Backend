@@ -27,14 +27,10 @@ T = TypeVar("T")
 
 
 class CacheTag(StrEnum):
-    USER = "tag:user"
-    COURSE = "tag:course"
-    MODULE = "tag:module"
-    LESSON = "tag:lesson"
-    ASSIGNMENT = "tag:assignment"
-    ASSIGNMENT_SUBMISSION = "tag:assignment-submission"
-    ENROLLMENT = "tag:enrollment"
+    # Auth
+    USER_CONTEXT = "tag:user:context:{token}"
 
+    # Entities
     USER_ENTITY = "tag:user:{user_id}"
     COURSE_ENTITY = "tag:course:{course_id}"
     MODULE_ENTITY = "tag:module:{module_id}"
@@ -45,6 +41,7 @@ class CacheTag(StrEnum):
     )
     ENROLLMENT_ENTITY = "tag:enrollment:{enrollment_id}"
 
+    # Lists
     LIST_USERS = "tag:list:users"
     LIST_COURSES = "tag:list:courses"
     LIST_ENROLLMENTS = "tag:list:enrollments"
@@ -84,6 +81,16 @@ class CacheTag(StrEnum):
 
 
 class CacheKey(StrEnum):
+    # Authentication.
+    USER_CONTEXT = "user:contenxt:{token}"
+
+    # Authorization.
+    AUTHORIZATION = (
+        "authorization:entity={entity},action={action},entity_id={entity_id},"
+        "parent_id={parent_id},user_id={user_id}"
+    )
+
+    # Dashboard
     ADMIN_DASHBOARD_KPIS = "dashboard:admin:kpis"
     ADMIN_DASHBOARD_TOP_ENROLLED_COURSES = "dashboard:admin:top-enrolled-courses:{n}"
     TRAINEE_DASHBOARD_CURRENT_COURSE = "dashboard:trainee:current-course:{trainee_id}"
@@ -150,6 +157,7 @@ class CacheKey(StrEnum):
         "page_meta:page={page}&&limit={limit}"
     )
 
+    # Search
     SEARCH_USERS = (
         "search:users:filters:username_or_email={username_or_email}&&role={role}"
     )
@@ -184,6 +192,8 @@ class CacheSet(BaseModel):
     """Value to store in a Redis key."""
     ttl: Optional[int] = None
     """Time to Live to add a expire time of a key in seconds"""
+    negative_ttl: Optional[int] = None
+    """Time to Live for negative keys (i.e. keys that are not found)"""
     tags: Optional[Set[Union[str, StrEnum]]] = None
     """
     Set of string used to group the keys, used to easily delete different keys,
@@ -259,7 +269,7 @@ class CacheService:
         value = cache_obj.value
 
         if value is None:
-            await self.pool.set(cache_obj.key, NULL_SENTINEL, ex=cache_obj.ttl)
+            await self.pool.set(cache_obj.key, NULL_SENTINEL, ex=cache_obj.negative_ttl)
             return
 
         if isinstance(value, list):

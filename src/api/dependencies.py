@@ -33,6 +33,7 @@ from src.dependencies import (
     admin_entity_list_query_service,
     assignment_service,
     assignment_submission_service,
+    cache_service,
     course_service,
     enrollment_service,
     jwt_handler,
@@ -163,7 +164,7 @@ AssignmentSubmissionServiceDependency = Annotated[
 
 
 authentication_service = AuthenticationService(
-    user_repo=user_repository, jwt_handler=jwt_handler
+    user_repo=user_repository, jwt_handler=jwt_handler, cache_service=cache_service
 )
 
 

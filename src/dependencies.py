@@ -106,7 +106,9 @@ jwt_handler = JWTHandler()
 
 # Services.
 
-auth_service = AuthService(user_repo=user_repository, db=db)
+auth_service = AuthService(
+    user_repo=user_repository, db=db, cache_service=cache_service
+)
 
 positioning_service = PositioningService(db=db)
 

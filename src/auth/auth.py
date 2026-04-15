@@ -6,6 +6,8 @@ from asyncpg import Connection
 
 from src.auth.access_spec import SpecType, get_spec_type
 from src.auth.permission_policy import Action, Entity, get_policy
+from src.cache import CacheKey, CacheService
+from src.cache.cache import NULL_SENTINEL, CacheGet, CacheSet
 from src.command.commands.users import UserGetByID
 from src.command.repositories.users import UserRepository
 from src.database import AsyncPgDBManager
@@ -13,7 +15,12 @@ from src.exceptions import UnauthorizedError
 
 
 class AuthService:
-    def __init__(self, user_repo: UserRepository, db: AsyncPgDBManager) -> None:
+    def __init__(
+        self,
+        user_repo: UserRepository,
+        db: AsyncPgDBManager,
+        cache_service: CacheService,
+    ) -> None:
         """
         Initializes the AuthService with required repositories and database managers.
 
@@ -21,10 +28,12 @@ class AuthService:
             user_repo: The repository used to fetch user details and roles.
             db: The asynchronous database manager used for executing
                 contextual access specification queries.
+            cache_service: The cache service used to cache authorization results.
         """
 
         self.user_repo = user_repo
         self.db = db
+        self.cache_service = cache_service
 
     async def _validate_view(
         self,
@@ -81,7 +90,7 @@ class AuthService:
 
         return await access_spec.has_access()
 
-    async def authorize(
+    async def _authorize(
         self,
         entity: Entity,
         action: Action,
@@ -150,6 +159,44 @@ class AuthService:
         elif action == Action.VIEW:
             if not await self._validate_view(spec_type, user_id, entity_id, parent_id):
                 raise UnauthorizedError(message="View not allowed by relationship")
+
+    async def authorize(
+        self,
+        entity: Entity,
+        action: Action,
+        user_id: int,
+        entity_id: Optional[int] = None,
+        parent_id: Optional[int] = None,
+        connection: Optional[Connection] = None,
+    ) -> None:
+
+        key = CacheKey.AUTHORIZATION.format(
+            entity=entity,
+            action=action,
+            entity_id=entity_id,
+            parent_id=parent_id,
+            user_id=user_id,
+        )
+
+        result = await self.cache_service.get(CacheGet(key=key, model=None))
+
+        if result is not None and result == NULL_SENTINEL:
+            return
+
+        result = await self._authorize(
+            entity=entity,
+            action=action,
+            user_id=user_id,
+            entity_id=entity_id,
+            parent_id=parent_id,
+            connection=connection,
+        )
+
+        await self.cache_service.set(
+            CacheSet(key=key, value=result, ttl=300, negative_ttl=300)
+        )
+
+        return result
 
 
 P = ParamSpec("P")
