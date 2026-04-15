@@ -14,6 +14,12 @@ from src.command.commands.users import UserGetByID, UserRole
 from src.command.repositories.courses import CourseRepository
 from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
+from src.events.events import CourseCreatedEvent, CourseDeletedEvent, CourseUpdatedEvent
+from src.events.publishers import (
+    course_created_publisher,
+    course_deleted_publisher,
+    course_updated_publisher,
+)
 from src.exceptions import (
     CourseAlreadyExistsError,
     CourseNotFoundError,
@@ -62,7 +68,18 @@ class CourseService(BaseService[Course]):
 
         await self._validate_trainer(trainer_id=cmd.trainer_id)
 
-        return cast(Course, await self.repo.add(cmd))
+        course = await self.repo.add(cmd)
+
+        if course is not None:
+            # Publish the course created event.
+            await course_created_publisher.publish(
+                CourseCreatedEvent(
+                    id=course.id,
+                    created_by=course.created_by,  # type: ignore
+                    trainer_id=course.trainer_id,
+                )
+            )
+        return cast(Course, course)
 
     @require_authorization(
         action=Action.UPDATE,
@@ -79,11 +96,21 @@ class CourseService(BaseService[Course]):
             if cmd.trainer_id is not None:
                 await self._validate_trainer(trainer_id=cmd.trainer_id)
             course = await self.repo.update(cmd)
-            return self._require_entity(course, value=cmd.id)
 
         else:
             course = await self.repo.update(cmd)
-            return self._require_entity(course, value=cmd.id)
+
+        if course is not None:
+            # Publish the course updated event.
+            await course_updated_publisher.publish(
+                CourseUpdatedEvent(
+                    id=course.id,
+                    updated_by=course.updated_by,  # type: ignore
+                    trainer_id=course.trainer_id,
+                )
+            )
+
+        return self._require_entity(course, value=cmd.id)
 
     @require_authorization(
         action=Action.DELETE,
@@ -94,6 +121,16 @@ class CourseService(BaseService[Course]):
     )
     async def delete(self, cmd: CourseDelete):
         course = await self.repo.delete(cmd)
+
+        if course is not None:
+            # Publish the course deleted event.
+            await course_deleted_publisher.publish(
+                CourseDeletedEvent(
+                    id=course.id,
+                    deleted_by=course.deleted_by,  # type: ignore
+                    trainer_id=course.trainer_id,
+                )
+            )
         return self._require_entity(course, value=cmd.id)
 
     @require_authorization(

@@ -27,6 +27,18 @@ from src.command.services.base import BaseService
 from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
 from src.command.services.positioning import PositioningService, ReorderParticipants
+from src.events.events import (
+    LessonCreatedEvent,
+    LessonDeletedEvent,
+    LessonReorderedEvent,
+    LessonUpdatedEvent,
+)
+from src.events.publishers import (
+    lesson_created_publisher,
+    lesson_deleted_publisher,
+    lesson_reordered_publisher,
+    lesson_updated_publisher,
+)
 from src.exceptions import (
     CourseModuleNotFoundError,
     EntityNotFoundError,
@@ -89,15 +101,22 @@ class LessonService(BaseService[Lesson]):
             tablename=self.repo.tablename, scope="module_id", scope_id=cmd.module_id
         )
 
-        return cast(
-            Lesson,
-            await self.repo.add(
-                LessonCreateWithPosition(
-                    **cmd.model_dump(), position_string=position_string
-                ),
-                connection=connection,
+        lesson = await self.repo.add(
+            LessonCreateWithPosition(
+                **cmd.model_dump(), position_string=position_string
             ),
+            connection=connection,
         )
+
+        await lesson_created_publisher.publish(
+            LessonCreatedEvent(
+                id=lesson.id,
+                module_id=lesson.module_id,
+                created_by=lesson.created_by,  # type: ignore
+            )
+        )
+
+        return cast(Lesson, lesson)
 
     @require_authorization(
         action=Action.UPDATE,
@@ -121,7 +140,18 @@ class LessonService(BaseService[Lesson]):
         if duplicate_lesson_title_flag:
             raise LessonAlreadyExistsError(value=cmd.title, identifier="title")
 
-        return self._require_entity(await self.repo.update(cmd), value=cmd.id)
+        lesson = await self.repo.update(cmd)
+        # Publish lesson updated event.
+        if lesson is not None:
+            await lesson_updated_publisher.publish(
+                LessonUpdatedEvent(
+                    id=lesson.id,
+                    module_id=lesson.module_id,
+                    updated_by=lesson.updated_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(lesson, value=cmd.id)
 
     @require_authorization(
         action=Action.DELETE,
@@ -132,7 +162,19 @@ class LessonService(BaseService[Lesson]):
     )
     async def delete(self, cmd: LessonDelete) -> Lesson:
         # TODO: Need to delete the actual file from the object storage also.
-        return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
+
+        lesson = await self.repo.delete(cmd)
+
+        if lesson is not None:
+            await lesson_deleted_publisher.publish(
+                LessonDeletedEvent(
+                    id=lesson.id,
+                    module_id=lesson.module_id,
+                    deleted_by=lesson.deleted_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(lesson, value=cmd.id)
 
     # NOTE: This is not going to use in API Layer.
     @require_authorization(
@@ -166,7 +208,7 @@ class LessonService(BaseService[Lesson]):
         object_name="cmd",
     )
     async def reorder(self, cmd: LessonReorderParticipants) -> str:
-        return await self.positioning_service.reorder(
+        position_string = await self.positioning_service.reorder(
             participants=ReorderParticipants(
                 preceding_id=cmd.preceding_id,
                 target_id=cmd.target_id,
@@ -175,6 +217,13 @@ class LessonService(BaseService[Lesson]):
             tablename="lessons",
             scope="module_id",
         )
+        await lesson_reordered_publisher.publish(
+            LessonReorderedEvent(
+                id=cmd.target_id,
+                updated_by=cmd.updated_by,  # type: ignore
+            )
+        )
+        return position_string
 
     async def init_lesson_create(
         self, cmd: LessonCreate, file_cmd: FileMetadata

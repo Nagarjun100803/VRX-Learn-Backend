@@ -14,6 +14,11 @@ from src.command.repositories.courses import CourseRepository
 from src.command.repositories.enrollments import EnrollmentRepository
 from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
+from src.events.events import EnrollmentCreatedEvent, EnrollmentDeletedEvent
+from src.events.publishers import (
+    enrollment_created_publisher,
+    enrollment_deleted_publisher,
+)
 from src.exceptions import (
     CourseNotFoundError,
     EnrollmentAlreadyExistsError,
@@ -75,7 +80,17 @@ class EnrollmentService(BaseService[Enrollment]):
                 value=(cmd.user_id, cmd.course_id), identifier=("user_id", "course_id")
             )
 
-        return cast(Enrollment, await self.repo.add(cmd))
+        enrollment = await self.repo.add(cmd)
+
+        if enrollment is not None:
+            # Publish the enrollment created event.
+            await enrollment_created_publisher.publish(
+                EnrollmentCreatedEvent(
+                    id=enrollment.id, created_by=enrollment.created_by
+                )  # type: ignore
+            )
+
+        return cast(Enrollment, enrollment)
 
     @require_authorization(
         action=Action.UPDATE,
@@ -97,7 +112,17 @@ class EnrollmentService(BaseService[Enrollment]):
     )
     async def delete(self, cmd: EnrollmentDelete) -> Enrollment:
         # NOTE:  No checks added
-        return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
+        enrollment = await self.repo.delete(cmd)
+
+        if enrollment is not None:
+            # Publish the enrollment deleted event.
+            await enrollment_deleted_publisher.publish(
+                EnrollmentDeletedEvent(
+                    id=enrollment.id, deleted_by=enrollment.deleted_by
+                )  # type: ignore
+            )
+
+        return self._require_entity(enrollment, value=cmd.id)
 
     @require_authorization(
         action=Action.VIEW,

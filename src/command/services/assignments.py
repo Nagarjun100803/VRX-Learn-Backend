@@ -28,6 +28,16 @@ from src.command.repositories.courses import CourseRepository
 from src.command.services.base import BaseService
 from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
+from src.events.events import (
+    AssignmentCreatedEvent,
+    AssignmentDeletedEvent,
+    AssignmentUpdatedEvent,
+)
+from src.events.publishers import (
+    assignment_created_publisher,
+    assignment_deleted_publisher,
+    assignment_updated_publisher,
+)
 from src.exceptions import (
     AssignmentAlreadyExistsError,
     AssignmentNotFoundError,
@@ -81,7 +91,19 @@ class AssignmentService(BaseService[Assignment]):
         if not course_id_exist_flag:
             raise CourseNotFoundError(value=cmd.course_id)
 
-        return cast(Assignment, await self.repo.add(cmd, connection=connection))
+        assignment = await self.repo.add(cmd, connection=connection)
+
+        if assignment is not None:
+            # Publish assignment created event
+            await assignment_created_publisher.publish(
+                AssignmentCreatedEvent(
+                    id=assignment.id,
+                    course_id=assignment.course_id,
+                    created_by=assignment.created_by,  # type: ignore
+                )
+            )
+
+        return cast(Assignment, assignment)
 
     @require_authorization(
         action=Action.UPDATE,
@@ -102,7 +124,18 @@ class AssignmentService(BaseService[Assignment]):
                 title=cmd.title, course_id=assignment.course_id
             )
 
-        return self._require_entity(await self.repo.update(cmd), value=cmd.id)
+        assignment = await self.repo.update(cmd)
+
+        if assignment is not None:
+            await assignment_updated_publisher.publish(
+                AssignmentUpdatedEvent(
+                    id=assignment.id,
+                    course_id=assignment.course_id,
+                    updated_by=assignment.updated_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(assignment, value=cmd.id)
 
     @require_authorization(
         action=Action.DELETE,
@@ -112,7 +145,19 @@ class AssignmentService(BaseService[Assignment]):
         object_name="cmd",
     )
     async def delete(self, cmd: AssignmentDelete) -> Assignment:
-        return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
+        assignment = await self.repo.delete(cmd)
+
+        if assignment is not None:
+            # Publish assignment deleted event
+            await assignment_deleted_publisher.publish(
+                AssignmentDeletedEvent(
+                    id=assignment.id,
+                    course_id=assignment.course_id,
+                    deleted_by=assignment.deleted_by,  # type: ignore
+                )
+            )
+
+        return self._require_entity(assignment, value=cmd.id)
 
     @require_authorization(
         action=Action.VIEW,
