@@ -14,7 +14,7 @@ from src.command.commands.base import (
     MediaID,
     UserID,
 )
-from src.command.commands.media import AllowedContentTypes, Media
+from src.command.commands.media import AllowedContentTypes, Media, MediaDetail
 
 Feedback = Annotated[str, Field(max_length=2000)]
 Score = int  # Temporary Fix
@@ -78,6 +78,7 @@ class AssignmentSubmissionGet(AssignmentSubmissionGetCore):
 class AssignmentSubmission(
     AuditFields, AssignmentSubmissionCreateCore, AssignmentSubmissionBase
 ):
+    attempt: Optional[int] = None
     score: Optional[Score] = None
     feedback: Optional[Feedback] = None
     status: AssignmentSubmissionStatus
@@ -99,9 +100,14 @@ class AssignmentSubmissionWithMedia(
     filename: str
 
 
-class AssignmentSubmissionUploadURL(AssignmentSubmissionBase):
-    media_id: MediaID
-    upload_url: str
+class AssignmentSubmissionDetail(
+    AssignmentSubmissionCreateWithAttemptAndStatus, AssignmentSubmissionBase
+): ...
+
+
+class AssignmentSubmissionUpload(BaseCmd):
+    assignment_submission: AssignmentSubmissionDetail
+    media: MediaDetail
 
 
 # NOTE: Delete is not in scope. Will implement later if required.

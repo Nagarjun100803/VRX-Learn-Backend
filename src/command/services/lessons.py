@@ -11,11 +11,13 @@ from src.command.commands.lessons import (
     LessonCreate,
     LessonCreateWithPosition,
     LessonDelete,
+    LessonDetail,
     LessonGetQuery,
     LessonReorderParticipants,
     LessonUpdate,
-    LessonUploadUrl,
+    LessonUpload,
     LessonWithMedia,
+    MediaDetail,
 )
 from src.command.commands.media import MediableType, MediaCreate, MediaStatus
 from src.command.commands.modules import Module, ModuleGet
@@ -176,7 +178,7 @@ class LessonService(BaseService[Lesson]):
 
     async def init_lesson_create(
         self, cmd: LessonCreate, file_cmd: FileMetadata
-    ) -> LessonUploadUrl:
+    ) -> LessonUpload:
 
         async with self.repo.db.transaction() as connection:
             module, _ = await asyncio.gather(
@@ -208,6 +210,18 @@ class LessonService(BaseService[Lesson]):
                 media, expire_mins=120, connection=connection
             )
 
-        return LessonUploadUrl(
-            media_id=media_id, lesson_id=lesson.id, upload_url=upload_url
+        return LessonUpload(
+            lesson=LessonDetail(
+                id=lesson.id,
+                title=lesson.title,
+                description=lesson.description,
+                created_by=lesson.created_by,  # type: ignore[arg-type]
+                created_at=lesson.created_at,  # type: ignore[arg-type]
+            ),
+            media=MediaDetail(
+                media_id=media_id,
+                filename=file_cmd.filename,
+                mime_type=file_cmd.content_type,
+                upload_url=upload_url,
+            ),
         )

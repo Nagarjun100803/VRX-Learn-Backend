@@ -10,10 +10,10 @@ from src.command.commands.base import (
     AuditFields,
     BaseCmd,
     CourseID,
-    MediaID,
     NullField,
     UserID,
 )
+from src.command.commands.media import MediaDetail
 from src.command.commands.validator import UpdateValidatorMixin
 
 AssignmentTitle = Annotated[
@@ -78,9 +78,13 @@ class AssignmentReArrange(AssignmentReArrangeCore):
     updated_by: UserID
 
 
-class AssignmentUploadUrl(AssignmentBase):
-    media_id: MediaID
-    upload_url: str
+class AssignmentDetail(AssignmentBase, AssignmentCreate):
+    created_at: datetime
+
+
+class AssignmentUpload(BaseCmd):
+    assignment: AssignmentDetail
+    media: MediaDetail
 
 
 class Assignment(AuditFields, AssignmentCreateCore, AssignmentBase): ...

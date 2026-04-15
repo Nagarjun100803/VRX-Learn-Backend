@@ -3,24 +3,21 @@ from typing import Union
 from fastapi import APIRouter, HTTPException, status
 
 from src.api.dependencies import AssignmentServiceDependency, CurrentUser
-from src.api.schemas.assignments import (
-    AssignmentCreateSchema,
-    AssignmentOut,
-    AssignmentUpdateSchema,
-)
+from src.api.schemas.assignments import AssignmentCreateSchema, AssignmentUpdateSchema
 from src.command.commands.assignments import (
     AssignmentCreate,
     AssignmentDelete,
+    AssignmentDetail,
     AssignmentGetQuery,
     AssignmentUpdate,
-    AssignmentUploadUrl,
+    AssignmentUpload,
 )
 from src.command.commands.base import AssignmentID
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
 
-@router.get("/{assignment_id}", response_model=AssignmentOut)
+@router.get("/{assignment_id}", response_model=AssignmentDetail)
 async def get_assignment(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
@@ -32,7 +29,7 @@ async def get_assignment(
     )
 
 
-@router.post("/", response_model=Union[AssignmentUploadUrl, AssignmentOut])
+@router.post("/", response_model=Union[AssignmentUpload, AssignmentDetail])
 async def create_assignment(
     assignment_payload: AssignmentCreateSchema,
     assignment_service: AssignmentServiceDependency,

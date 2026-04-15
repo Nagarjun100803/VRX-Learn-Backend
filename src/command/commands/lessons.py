@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Optional
 
 from pydantic import StringConstraints
@@ -12,7 +13,7 @@ from src.command.commands.base import (
     NullField,
     UserID,
 )
-from src.command.commands.media import AllowedContentTypes
+from src.command.commands.media import AllowedContentTypes, MediaDetail
 from src.command.commands.validator import UpdateValidatorMixin
 
 LessonTitle = Annotated[
@@ -61,10 +62,17 @@ class LessonGetQuery(LessonGet):
 class Lesson(AuditFields, LessonCreateCore, LessonBase): ...
 
 
-class LessonUploadUrl(BaseCmd):
-    media_id: MediaID
-    lesson_id: LessonID
-    upload_url: str
+class LessonDetail(BaseCmd):
+    id: LessonID
+    title: LessonTitle
+    description: Optional[LessonDescription] = None
+    created_by: UserID
+    created_at: datetime
+
+
+class LessonUpload(BaseCmd):
+    lesson: LessonDetail
+    media: MediaDetail
 
 
 class LessonReorderParticipantsCore(UpdateValidatorMixin, BaseCmd):

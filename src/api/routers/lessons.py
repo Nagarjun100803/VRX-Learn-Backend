@@ -10,7 +10,7 @@ from src.command.commands.lessons import (
     LessonReorderParticipants,
     LessonReorderParticipantsCore,
     LessonUpdate,
-    LessonUploadUrl,
+    LessonUpload,
     LessonWithMedia,
 )
 from src.command.services.files import FileMetadata
@@ -29,7 +29,7 @@ async def get_lesson(
     )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=LessonUploadUrl)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=LessonUpload)
 async def create_lesson(
     lesson: LessonCreateSchema,
     lesson_service: LessonServiceDependency,

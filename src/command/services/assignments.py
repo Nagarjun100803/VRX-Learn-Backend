@@ -11,12 +11,18 @@ from src.command.commands.assignments import (
     Assignment,
     AssignmentCreate,
     AssignmentDelete,
+    AssignmentDetail,
     AssignmentGet,
     AssignmentGetQuery,
     AssignmentUpdate,
-    AssignmentUploadUrl,
+    AssignmentUpload,
 )
-from src.command.commands.media import MediableType, MediaCreate, MediaStatus
+from src.command.commands.media import (
+    MediableType,
+    MediaCreate,
+    MediaDetail,
+    MediaStatus,
+)
 from src.command.repositories.assignments import AssignmentRepository
 from src.command.repositories.courses import CourseRepository
 from src.command.services.base import BaseService
@@ -122,7 +128,7 @@ class AssignmentService(BaseService[Assignment]):
 
     async def init_assignment_create(
         self, cmd: AssignmentCreate, file_cmd: FileMetadata
-    ) -> AssignmentUploadUrl:
+    ) -> AssignmentUpload:
 
         # Check for file size.
         if file_cmd.size > MAX_FILE_SIZE_FOR_ASSIGNMENT:
@@ -165,4 +171,21 @@ class AssignmentService(BaseService[Assignment]):
                 media, connection=connection
             )
 
-        return AssignmentUploadUrl(id=assignment.id, media_id=media_id, upload_url=url)
+        return AssignmentUpload(
+            assignment=AssignmentDetail(
+                id=assignment.id,
+                title=assignment.title,
+                instructions=assignment.instructions,
+                created_at=assignment.created_at,  # type: ignore
+                created_by=assignment.created_by,  # type: ignore
+                course_id=assignment.course_id,
+                max_score=assignment.max_score,
+                number_of_attempts=assignment.number_of_attempts,
+            ),
+            media=MediaDetail(
+                media_id=media_id,
+                filename=media.filename,
+                mime_type=media.mime_type,
+                upload_url=url,
+            ),
+        )

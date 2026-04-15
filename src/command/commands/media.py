@@ -3,7 +3,7 @@ from typing import Annotated
 
 from pydantic import Field
 
-from src.command.commands.base import AuditFields, BaseCmd, MediaBase, UserID
+from src.command.commands.base import AuditFields, BaseCmd, MediaBase, MediaID, UserID
 
 
 class AllowedContentTypes(StrEnum):
@@ -64,3 +64,12 @@ class MediaGet(MediaBase): ...
 
 
 class Media(AuditFields, MediaCreateCore, MediaBase): ...
+
+
+class MediaDetail(BaseCmd):
+    """Used when sending Upload urls"""
+
+    media_id: MediaID
+    filename: str
+    mime_type: AllowedContentTypes
+    upload_url: str

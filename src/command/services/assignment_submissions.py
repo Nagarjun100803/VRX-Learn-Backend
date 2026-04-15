@@ -13,17 +13,23 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionContext,
     AssignmentSubmissionCreate,
     AssignmentSubmissionCreateWithAttemptAndStatus,
+    AssignmentSubmissionDetail,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionGet,
     AssignmentSubmissionGetCore,
     AssignmentSubmissionStatus,
-    AssignmentSubmissionUploadURL,
+    AssignmentSubmissionUpload,
     AssignmentSubmissionVerify,
     AssignmentSubmissionVerifyWithStatus,
     AssignmentSubmissionWithMedia,
 )
 from src.command.commands.assignments import AssignmentGet
-from src.command.commands.media import MediableType, MediaCreate, MediaStatus
+from src.command.commands.media import (
+    MediableType,
+    MediaCreate,
+    MediaDetail,
+    MediaStatus,
+)
 from src.command.repositories.assignment_submissions import (
     AssignmentSubmissionRepository,
 )
@@ -486,7 +492,7 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
 
     async def create_with_attachment(
         self, cmd: AssignmentSubmissionCreate, file_cmd: FileMetadata
-    ) -> AssignmentSubmissionUploadURL:
+    ) -> AssignmentSubmissionUpload:
         """
         Create a submission and generate an upload URL for the submission file.
 
@@ -595,6 +601,12 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
                 media, expire_mins=120, connection=conn
             )
 
-        return AssignmentSubmissionUploadURL(
-            id=submission.id, media_id=media_id, upload_url=url
+        return AssignmentSubmissionUpload(
+            assignment_submission=AssignmentSubmissionDetail(**submission.model_dump()),
+            media=MediaDetail(
+                media_id=media_id,
+                filename=file_cmd.filename,
+                mime_type=file_cmd.content_type,
+                upload_url=url,
+            ),
         )

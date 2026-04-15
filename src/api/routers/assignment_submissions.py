@@ -10,7 +10,7 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionCreate,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionGet,
-    AssignmentSubmissionUploadURL,
+    AssignmentSubmissionUpload,
     AssignmentSubmissionVerify,
     AssignmentSubmissionWithMedia,
 )
@@ -32,9 +32,7 @@ async def get_assignment_submission(
 
 
 @router.post(
-    "/",
-    status_code=status.HTTP_201_CREATED,
-    response_model=AssignmentSubmissionUploadURL,
+    "/", status_code=status.HTTP_201_CREATED, response_model=AssignmentSubmissionUpload
 )
 async def create_assignment_submission(
     assignment_submission: AssignmentSubmissionCreateSchema,
