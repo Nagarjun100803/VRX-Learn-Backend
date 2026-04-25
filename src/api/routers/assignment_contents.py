@@ -68,7 +68,7 @@ trainer_router = APIRouter(
 async def trainer_view_list_assignments(
     course_id: CourseID,
     query_service: TrainerAssignmentContentQueryServiceDependency,
-    current_user: CurrentTraineeOrTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.list_assignments(
         CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)

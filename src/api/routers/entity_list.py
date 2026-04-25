@@ -6,8 +6,8 @@ from pydantic import StringConstraints
 from src.api.dependencies import (
     AdminEntityListQueryServiceDependency,
     CurrentAdmin,
+    CurrentAdminOrTrainer,
     CurrentTraineeOrTrainer,
-    CurrentTrainer,
     TraineeEntityListQueryServiceDependency,
     TrainerEntityListQueryServiceDependency,
 )
@@ -173,7 +173,7 @@ trainer_router = APIRouter(
 async def list_assignments_for_trainer(
     course_id: CourseID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.list_assignments(
         CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
@@ -184,7 +184,7 @@ async def list_assignments_for_trainer(
 async def list_modules(
     course_id: CourseID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.list_modules(
         CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
@@ -195,7 +195,7 @@ async def list_modules(
 async def list_lessons(
     module_id: ModuleID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.list_lessons(
         ModuleViewRequestSchema(module_id=module_id, viewer_id=current_user)
@@ -207,7 +207,7 @@ async def list_trainees_for_trainer(
     course_id: CourseID,
     filters: Annotated[TraineeQueryParams, Depends()],
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
 
     return await query_service.list_trainees(

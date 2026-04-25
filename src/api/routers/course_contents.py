@@ -3,8 +3,8 @@ from typing import Optional
 from fastapi import APIRouter
 
 from src.api.dependencies import (
+    CurrentAdminOrTrainer,
     CurrentTraineeOrTrainer,
-    CurrentTrainer,
     TraineeCourseContentQueryServiceDependency,
     TrainerCourseContentQueryServiceDependency,
 )
@@ -42,7 +42,7 @@ trainer_router = APIRouter(
 async def get_course_contents_for_trainer(
     course_id: CourseID,
     query_service: TrainerCourseContentQueryServiceDependency,
-    current_user: CurrentTrainer,
+    current_user: CurrentAdminOrTrainer,
 ):
     return await query_service.get_course_contents(
         CourseContentRequestSchema(course_id=course_id, viewer_id=current_user)
