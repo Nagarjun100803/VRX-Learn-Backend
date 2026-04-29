@@ -103,11 +103,11 @@ class LateralQuery(Selectable):
         return f"{inner} {self.alias}"
 
 
-user_table = Table("users", alias="u")
-course_table = Table("courses", alias="c")
-module_table = Table("modules", alias="m")
-lesson_table = Table("lessons", alias="l")
-enrollment_table = Table("enrollments", alias="e")
-assignment_table = Table("assignments", alias="a")
-assignment_submission_table = Table("assignment_submissions", alias="asub")
-media_asset_table = Table("media_assets", alias="me")
+user_table = Table("users")
+course_table = Table("courses")
+module_table = Table("modules")
+lesson_table = Table("lessons")
+enrollment_table = Table("enrollments")
+assignment_table = Table("assignments")
+assignment_submission_table = Table("assignment_submissions")
+media_asset_table = Table("media_assets")

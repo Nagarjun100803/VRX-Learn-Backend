@@ -1,4 +1,4 @@
-from typing import ClassVar, Optional
+from typing import Any, ClassVar, Optional
 
 from asyncpg import Connection, Record
 from pydantic import BaseModel
@@ -19,7 +19,12 @@ from src.command.commands.assignment_submissions import (
 from src.command.commands.media import MediableType, MediaStatus
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import PGSqlTypes, RowToJson
+from src.pypika_query_builder import (
+    PGSqlTypes,
+    RowToJson,
+    assignment_submission_table,
+    media_asset_table,
+)
 
 
 class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
@@ -46,6 +51,73 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
         )
 
         return await super().update(cmd, connection)
+
+    async def _delete_assignment_submission(
+        self,
+        assignment_submission_id: int,
+        deleted_by: int,
+        connection: Optional[Connection] = None,
+    ) -> Optional[AssignmentSubmission]:
+
+        # Delete the assignment submission.
+        delete_assignment_submission_query = (
+            PostgreSQLQuery.update(assignment_submission_table)
+            .set(assignment_submission_table.deleted_at, functions.Now())
+            .set(assignment_submission_table.deleted_by, Parameter("$2"))
+            .where(
+                Criterion.all(
+                    terms=[
+                        assignment_submission_table.id == Parameter("$1"),
+                        assignment_submission_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+        ).get_sql()
+
+        # Delete media associated with the assignment submission.
+        delete_assignment_submission_media_sql = (
+            PostgreSQLQuery.update(media_asset_table)
+            .set(media_asset_table.deleted_at, functions.Now())
+            .set(media_asset_table.deleted_by, Parameter("$2"))
+            .where(
+                Criterion.all(
+                    terms=[
+                        media_asset_table.mediable_id == Parameter("$1"),
+                        media_asset_table.mediable_type == Parameter("$3"),
+                    ]
+                )
+            )
+        ).get_sql()
+
+        delete_assignment_submission_query: Any = (
+            delete_assignment_submission_query.returning("*")
+        )
+        delete_assignment_submission_sql: str = (
+            delete_assignment_submission_query.get_sql()
+        )
+
+        executable1 = ExecutableSQL(
+            sql=delete_assignment_submission_sql,
+            values=(assignment_submission_id, deleted_by),
+        )
+        executable2 = ExecutableSQL(
+            sql=delete_assignment_submission_media_sql,
+            values=(
+                assignment_submission_id,
+                deleted_by,
+                MediableType.ASSIGNMENT_SUBMISSION,
+            ),
+        )
+
+        async with self.db.transaction() as connection:
+            await self.db.execute(
+                executable2, fetch_returns="none", connection=connection
+            )
+            deleted_assignment_submission = await self.db.execute(
+                executable1, fetch_returns="one", connection=connection
+            )
+
+            return self._to_domain(deleted_assignment_submission)
 
     async def delete(self, cmd, connection: Optional[Connection] = None):
         raise NotImplementedError("Deleting assignment submissions is not implemented")

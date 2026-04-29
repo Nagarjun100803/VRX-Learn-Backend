@@ -7,6 +7,7 @@ from pypika import Parameter, PostgreSQLQuery, Table, functions
 from pypika.terms import Criterion
 
 from src.command.commands.base import ID
+from src.command.commands.media import MediableType
 from src.command.commands.users import (
     PasswordUpdate,
     User,
@@ -17,6 +18,12 @@ from src.command.commands.users import (
 )
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
+from src.pypika_query_builder import (
+    assignment_submission_table,
+    enrollment_table,
+    media_asset_table,
+    user_table,
+)
 
 
 class UserRepository(BaseRepository[User]):
@@ -42,6 +49,100 @@ class UserRepository(BaseRepository[User]):
         cmd = self._normalize(cmd, PasswordUpdate)
         return await super().update(cmd, connection)
 
+    async def _delete_enrollments(
+        self, cmd: UserDelete, connection: Optional[Connection] = None
+    ) -> None:
+
+        delete_enrollment_sql = (
+            PostgreSQLQuery.update(enrollment_table)
+            .set(enrollment_table.deleted_at, functions.Now())
+            .set(enrollment_table.deleted_by, Parameter("$2"))
+            .where(enrollment_table.user_id == Parameter("$1"))
+        ).get_sql()
+
+        executable = ExecutableSQL(
+            sql=delete_enrollment_sql, values=(cmd.id, cmd.deleted_by)
+        )
+
+        await self.db.execute(executable, fetch_returns="none", connection=connection)
+
+    async def _delete_assignment_submissions(
+        self, cmd: UserDelete, connection: Optional[Connection] = None
+    ) -> None:
+
+        assignment_submission_ids_subquery = (
+            PostgreSQLQuery.from_(assignment_submission_table)
+            .where(assignment_submission_table.created_by == Parameter("$1"))
+            .select(assignment_submission_table.id)
+        )
+
+        # Delete the assignment submissions created by the user.
+        delete_assignment_submission_sql = (
+            PostgreSQLQuery.update(assignment_submission_table)
+            .set(assignment_submission_table.deleted_at, functions.Now())
+            .set(assignment_submission_table.deleted_by, Parameter("$2"))
+            .where(
+                assignment_submission_table.id.isin(assignment_submission_ids_subquery)
+            )
+        ).get_sql()
+
+        # Delete the media associated with those assignment submissions.
+        delete_assignment_submission_media_sql = (
+            PostgreSQLQuery.update(media_asset_table)
+            .set(media_asset_table.deleted_at, functions.Now())
+            .set(media_asset_table.deleted_by, Parameter("$2"))
+            .where(
+                Criterion.all(
+                    terms=[
+                        media_asset_table.mediable_id.isin(
+                            assignment_submission_ids_subquery
+                        ),
+                        media_asset_table.mediable_type == Parameter("$3"),
+                    ]
+                )
+            )
+        ).get_sql()
+
+        executable1 = ExecutableSQL(
+            sql=delete_assignment_submission_sql, values=(cmd.id, cmd.deleted_by)
+        )
+        executable2 = ExecutableSQL(
+            sql=delete_assignment_submission_media_sql,
+            values=(cmd.id, cmd.deleted_by, MediableType.ASSIGNMENT_SUBMISSION),
+        )
+
+        await self.db.execute(executable1, fetch_returns="none", connection=connection)
+        await self.db.execute(executable2, fetch_returns="none", connection=connection)
+
+    async def _delete_user(
+        self, cmd: UserDelete, connection: Optional[Connection] = None
+    ) -> Optional[User]:
+
+        delete_user_query = (
+            PostgreSQLQuery.update(user_table)
+            .set(user_table.deleted_at, functions.Now())
+            .set(user_table.deleted_by, Parameter("$2"))
+            .where(
+                Criterion.all(
+                    terms=[
+                        user_table.id == Parameter("$1"),
+                        user_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+        )
+
+        delete_user_query: Any = delete_user_query.returning("*")  # type: ignore
+        delete_user_sql: str = delete_user_query.get_sql()
+
+        executable = ExecutableSQL(sql=delete_user_sql, values=(cmd.id, cmd.deleted_by))
+
+        deleted_user = await self.db.execute(
+            executable, fetch_returns="one", connection=connection
+        )
+
+        return self._to_domain(deleted_user)
+
     @override
     async def delete(
         self, cmd: BaseModel, connection: Optional[Connection] = None
@@ -49,7 +150,11 @@ class UserRepository(BaseRepository[User]):
 
         cmd = self._normalize(cmd, UserDelete)
 
-        return await super().delete(cmd, connection=connection)
+        async with self.db.transaction() as connection:
+            await self._delete_enrollments(cmd, connection=connection)
+            await self._delete_assignment_submissions(cmd, connection=connection)
+
+            return await self._delete_user(cmd, connection=connection)
 
     @override
     async def get(
