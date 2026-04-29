@@ -165,10 +165,16 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
             )
         )
 
+        # Searching
         if filters.name:
             sql = sql.where(user_table.username.ilike(f"{filters.name}%"))
 
         else:
+            # Filtering
+            if filters.role:
+                sql = sql.where(user_table.role == filters.role)
+
+            # Sorting
             if filters.sort_by_enrollment_date:
                 sql = sql.orderby(
                     enrollment_table.created_at,
