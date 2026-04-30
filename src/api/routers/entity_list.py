@@ -1,6 +1,8 @@
+from datetime import datetime
 from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from pydantic import StringConstraints
 
 from src.api.dependencies import (
@@ -42,6 +44,27 @@ from src.query.dto.request_schemas import (
 admin_router = APIRouter(prefix="/list/admin", tags=["List View", "Admin List View"])
 
 
+def _generate_filename(prefix: str) -> str:
+    return f"{prefix}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+
+
+@admin_router.get("/users/export", response_class=StreamingResponse)
+async def export_users(
+    filters: Annotated[UserFilters, Depends()],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+
+    filename = _generate_filename("users")
+    generator = query_service.export_users(filters)
+
+    return StreamingResponse(
+        generator,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @admin_router.get("/users", response_model=Paginated[UserDetail])
 async def list_users(
     filters: Annotated[UserQueryParams, Depends()],
@@ -56,6 +79,23 @@ async def list_users(
             sort_by_created_at=filters.sort_by_created_at,
         ),
         page_meta=PageMeta(page=filters.page, limit=filters.limit),
+    )
+
+
+@admin_router.get("/courses/export", response_class=StreamingResponse)
+async def export_courses(
+    filters: Annotated[CourseFilters, Depends()],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+
+    filename = _generate_filename("courses")
+    generator = query_service.export_courses(filters)
+
+    return StreamingResponse(
+        generator,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
@@ -76,6 +116,22 @@ async def list_courses(
     )
 
 
+@admin_router.get("/enrollments/export", response_class=StreamingResponse)
+async def export_enrollments(
+    filters: Annotated[EnrollmentFilters, Depends()],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+    filename = _generate_filename("enrollments")
+    generator = query_service.export_enrollments(filters)
+
+    return StreamingResponse(
+        generator,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
 @admin_router.get("/enrollments", response_model=Paginated[EnrollmentDetail])
 async def list_enrollments(
     filters: Annotated[EnrollmentQueryParams, Depends()],
@@ -91,6 +147,23 @@ async def list_enrollments(
             sort_by_enrollment_date=filters.sort_by_enrollment_date,
         ),
         page_meta=PageMeta(page=filters.page, limit=filters.limit),
+    )
+
+
+@admin_router.get("/trainees/{course_id}/export", response_class=StreamingResponse)
+async def export_trainees(
+    course_id: CourseID,
+    filters: Annotated[TraineeFilters, Depends()],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+    filename = _generate_filename("trainees")
+    generator = query_service.export_trainees(course_id, filters)
+
+    return StreamingResponse(
+        generator,
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 

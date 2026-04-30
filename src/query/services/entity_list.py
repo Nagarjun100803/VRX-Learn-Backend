@@ -1,3 +1,5 @@
+from typing_extensions import AsyncGenerator
+
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.users import UserRole
 from src.query.dto.base import PageMeta, Paginated
@@ -133,6 +135,9 @@ class AdminEntityListQueryService:
             filters=filters, page_meta=page_meta
         )
 
+    def export_users(self, filters: UserFilters) -> AsyncGenerator[bytes, None]:
+        return self.entity_list_query_repo.export_users(filters=filters)
+
     async def list_courses(
         self, filters: CourseFilters, page_meta: PageMeta
     ) -> Paginated[CourseDetail]:
@@ -140,6 +145,9 @@ class AdminEntityListQueryService:
         return await self.entity_list_query_repo.courses(
             filters=filters, page_meta=page_meta
         )
+
+    def export_courses(self, filters: CourseFilters) -> AsyncGenerator[bytes, None]:
+        return self.entity_list_query_repo.export_courses(filters=filters)
 
     async def list_enrollments(
         self, filters: EnrollmentFilters, page_meta: PageMeta
@@ -149,12 +157,24 @@ class AdminEntityListQueryService:
             filters=filters, page_meta=page_meta
         )
 
+    def export_enrollments(
+        self, filters: EnrollmentFilters
+    ) -> AsyncGenerator[bytes, None]:
+        return self.entity_list_query_repo.export_enrollments(filters=filters)
+
     async def list_trainees(
         self, course_id: int, filters: TraineeFilters, page_meta: PageMeta
     ):
 
         return await self.entity_list_query_repo.trainees(
             course_id=course_id, filters=filters, page_meta=page_meta
+        )
+
+    def export_trainees(
+        self, course_id: int, filters: TraineeFilters
+    ) -> AsyncGenerator[bytes, None]:
+        return self.entity_list_query_repo.export_trainees(
+            course_id=course_id, filters=filters
         )
 
     async def search_users(

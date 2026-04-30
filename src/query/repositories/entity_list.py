@@ -3,7 +3,9 @@ from typing import cast
 from pypika import Criterion, Parameter, PostgreSQLQuery, Table
 from pypika import functions as fn
 from pypika.enums import SqlTypes
+from pypika.queries import QueryBuilder
 from pypika.terms import ValueWrapper
+from typing_extensions import AsyncGenerator
 
 from src.command.commands.media import MediableType, MediaStatus
 from src.command.commands.users import UserRole
@@ -38,10 +40,10 @@ from src.query.dto.entity_list import (
     UserSearchDetail,
 )
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
-from src.query.repositories.paginate import PaginatorMixin
+from src.query.repositories.mixins import ExportMixin, PaginatorMixin
 
 
-class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
+class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin, ExportMixin):
     @map_to_dto(dto=ModuleDetail, dto_mode="list")
     async def modules(self, course_id: int) -> list[ModuleDetail]:
 
@@ -135,9 +137,7 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
             await self.db.execute(executable, fetch_returns="all"),
         )
 
-    async def trainees(
-        self, course_id: int, filters: TraineeFilters, page_meta: PageMeta
-    ) -> Paginated[TraineeDetail]:
+    def _build_trainee_query(self, filters: TraineeFilters) -> QueryBuilder:
 
         sql = (
             PostgreSQLQuery.from_(course_table)
@@ -190,14 +190,24 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 # Default sort by created_at desc.
                 sql = sql.orderby(user_table.created_at, order=get_sort_order("desc"))
 
+        return sql
+
+    async def trainees(
+        self, course_id: int, filters: TraineeFilters, page_meta: PageMeta
+    ) -> Paginated[TraineeDetail]:
+
+        sql = self._build_trainee_query(filters)
         return await self.paginate_query(
             sql=sql, values=(course_id,), dto_class=TraineeDetail, page_meta=page_meta
         )
 
-    async def users(
-        self, filters: UserFilters, page_meta: PageMeta
-    ) -> Paginated[UserDetail]:
+    def export_trainees(
+        self, course_id: int, filters: TraineeFilters
+    ) -> AsyncGenerator[bytes, None]:
+        sql = self._build_trainee_query(filters)
+        return self.export(sql=sql, values=(course_id,), dto_class=TraineeDetail)
 
+    def _build_user_query(self, filters: UserFilters) -> QueryBuilder:
         sql = (
             PostgreSQLQuery.from_(user_table)
             .where(user_table.deleted_at.isnull())
@@ -243,13 +253,23 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 # Default sort by created_at desc.
                 sql = sql.orderby(user_table.created_at, order=get_sort_order("desc"))
 
+        return sql
+
+    async def users(
+        self, filters: UserFilters, page_meta: PageMeta
+    ) -> Paginated[UserDetail]:
+
+        sql = self._build_user_query(filters)
+
         return await self.paginate_query(
             sql=sql, values=tuple(), dto_class=UserDetail, page_meta=page_meta
         )
 
-    async def enrollments(
-        self, filters: EnrollmentFilters, page_meta: PageMeta
-    ) -> Paginated[EnrollmentDetail]:
+    def export_users(self, filters: UserFilters) -> AsyncGenerator[bytes, None]:
+        sql = self._build_user_query(filters)
+        return self.export(sql=sql, values=tuple(), dto_class=UserDetail)
+
+    def _build_enrollment_query(self, filters: EnrollmentFilters) -> QueryBuilder:
 
         sql = (
             PostgreSQLQuery.from_(enrollment_table)
@@ -314,14 +334,25 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 sql = sql.orderby(
                     enrollment_table.created_at, order=get_sort_order("desc")
                 )
+        return sql
+
+    async def enrollments(
+        self, filters: EnrollmentFilters, page_meta: PageMeta
+    ) -> Paginated[EnrollmentDetail]:
+
+        sql = self._build_enrollment_query(filters)
 
         return await self.paginate_query(
             sql=sql, values=tuple(), dto_class=EnrollmentDetail, page_meta=page_meta
         )
 
-    async def courses(
-        self, filters: CourseFilters, page_meta: PageMeta
-    ) -> Paginated[CourseDetail]:
+    def export_enrollments(
+        self, filters: EnrollmentFilters
+    ) -> AsyncGenerator[bytes, None]:
+        sql = self._build_enrollment_query(filters)
+        return self.export(sql=sql, values=tuple(), dto_class=EnrollmentDetail)
+
+    def _build_course_query(self, filters: CourseFilters) -> QueryBuilder:
 
         trainee_count_query = (
             PostgreSQLQuery.from_(enrollment_table)
@@ -400,9 +431,19 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin):
                 # Default sort by created_at desc.
                 sql = sql.orderby(course_table.created_at, order=get_sort_order("desc"))
 
+        return sql
+
+    async def courses(
+        self, filters: CourseFilters, page_meta: PageMeta
+    ) -> Paginated[CourseDetail]:
+        sql = self._build_course_query(filters)
         return await self.paginate_query(
             sql=sql, values=tuple(), dto_class=CourseDetail, page_meta=page_meta
         )
+
+    def export_courses(self, filters: CourseFilters) -> AsyncGenerator[bytes, None]:
+        sql = self._build_course_query(filters)
+        return self.export(sql=sql, values=tuple(), dto_class=CourseDetail)
 
     async def assignment_submissions(
         self,

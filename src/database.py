@@ -177,6 +177,19 @@ class AsyncPgDBManager:
                 return await conn.execute(executable.sql, *executable.values)
                 # Returns the status string on success.
 
+    async def stream(self, executable: ExecutableSQL) -> AsyncGenerator[Record, None]:
+        """
+        Streams records from the database using a prepared statement.
+        """
+
+        print(executable.preview())
+        async with self.transaction() as connection:
+            stmt = await connection.prepare(query=executable.sql)
+            async for row in stmt.cursor(*executable.values, prefetch=500):
+                # fetch 500 rows at a time and yield them.
+                # fetch next 500 rows after each batch is yielded.
+                yield row
+
     async def soft_delete(
         self,
         executables: list[ExecutableSQL],
