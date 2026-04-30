@@ -1,6 +1,13 @@
 from fastapi import APIRouter, status
 
 from src.api.dependencies import CurrentUser, ModuleServiceDependency
+from src.api.docs.modules import (
+    CREATE_MODULE,
+    DELETE_MODULE,
+    GET_MODULE,
+    UPDATE_MODULE,
+    UPDATE_MODULE_POSITION,
+)
 from src.api.schemas.modules import (
     ModuleCreateSchema,
     ModuleOutSchema,
@@ -19,7 +26,7 @@ from src.command.commands.modules import (
 router = APIRouter(prefix="/modules", tags=["Modules"])
 
 
-@router.get("/{module_id}", response_model=ModuleOutSchema)
+@router.get("/{module_id}", response_model=ModuleOutSchema, **GET_MODULE)
 async def get_module(
     module_id: ModuleID,
     module_service: ModuleServiceDependency,
@@ -31,7 +38,12 @@ async def get_module(
     )
 
 
-@router.post("/", response_model=ModuleOutSchema, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=ModuleOutSchema,
+    status_code=status.HTTP_201_CREATED,
+    **CREATE_MODULE,
+)
 async def create_module(
     module: ModuleCreateSchema,
     module_service: ModuleServiceDependency,
@@ -42,7 +54,7 @@ async def create_module(
     )
 
 
-@router.patch("/{module_id}", response_model=ModuleUpdateSchema)
+@router.patch("/{module_id}", response_model=ModuleUpdateSchema, **UPDATE_MODULE)
 async def update_module(
     module_id: ModuleID,
     module: ModuleUpdateSchema,
@@ -55,7 +67,7 @@ async def update_module(
     )
 
 
-@router.delete("/{module_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{module_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_MODULE)
 async def delete_module(
     module_id: ModuleID,
     module_service: ModuleServiceDependency,
@@ -66,7 +78,9 @@ async def delete_module(
     )
 
 
-@router.patch("/{module_id}/update-position", response_model=str)
+@router.patch(
+    "/{module_id}/update-position", response_model=str, **UPDATE_MODULE_POSITION
+)
 async def update_module_position(
     module_id: ModuleID,
     participants: ModuleReorderParticipantsCore,

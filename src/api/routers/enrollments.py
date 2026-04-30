@@ -1,6 +1,12 @@
 from fastapi import APIRouter, status
 
 from src.api.dependencies import CurrentUser, EnrollmentServiceDependency
+from src.api.docs.enrollments import (
+    CREATE_ENROLLMENT,
+    DELETE_ENROLLMENT,
+    GET_ENROLLMENT,
+    UPDATE_ENROLLMENT,
+)
 from src.api.schemas.enrollments import (
     EnrollmentCreateSchema,
     EnrollmentOut,
@@ -17,7 +23,7 @@ from src.command.commands.enrollments import (
 router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
 
 
-@router.get("/{enrollment_id}", response_model=EnrollmentOut)
+@router.get("/{enrollment_id}", response_model=EnrollmentOut, **GET_ENROLLMENT)
 async def get_enrollment(
     enrollment_id: EnrollmentID,
     enrollment_service: EnrollmentServiceDependency,
@@ -28,7 +34,12 @@ async def get_enrollment(
     )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=EnrollmentOut)
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=EnrollmentOut,
+    **CREATE_ENROLLMENT,
+)
 async def create_enrollment(
     enrollment: EnrollmentCreateSchema,
     enrollment_service: EnrollmentServiceDependency,
@@ -39,7 +50,11 @@ async def create_enrollment(
     )
 
 
-@router.patch("/{enrollment_id}/update-status", response_model=EnrollmentUpdateSchema)
+@router.patch(
+    "/{enrollment_id}/update-status",
+    response_model=EnrollmentUpdateSchema,
+    **UPDATE_ENROLLMENT,
+)
 async def update_status(
     enrollment_id: EnrollmentID,
     enrollment: EnrollmentUpdateSchema,
@@ -57,7 +72,9 @@ async def update_status(
     )
 
 
-@router.delete("/{enrollment_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{enrollment_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_ENROLLMENT
+)
 async def delete_enrollment(
     enrollment_id: EnrollmentID,
     enrollment_service: EnrollmentServiceDependency,

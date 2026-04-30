@@ -1,6 +1,13 @@
 from fastapi import APIRouter, status
 
 from src.api.dependencies import CurrentUser, LessonServiceDependency
+from src.api.docs.lessons import (
+    CREATE_LESSON,
+    DELETE_LESSON,
+    GET_LESSON,
+    LESSON_UPDATE,
+    UPDATE_LESSON_POSITION,
+)
 from src.api.schemas.lessons import LessonCreateSchema, LessonUpdateSchema
 from src.command.commands.base import LessonID
 from src.command.commands.lessons import (
@@ -18,7 +25,7 @@ from src.command.services.files import FileMetadata
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
 
 
-@router.get("/{lesson_id}", response_model=LessonWithMedia)
+@router.get("/{lesson_id}", response_model=LessonWithMedia, **GET_LESSON)
 async def get_lesson(
     lesson_id: LessonID,
     lesson_service: LessonServiceDependency,
@@ -29,7 +36,12 @@ async def get_lesson(
     )
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=LessonUpload)
+@router.post(
+    "/",
+    status_code=status.HTTP_201_CREATED,
+    response_model=LessonUpload,
+    **CREATE_LESSON,
+)
 async def create_lesson(
     lesson: LessonCreateSchema,
     lesson_service: LessonServiceDependency,
@@ -51,7 +63,7 @@ async def create_lesson(
     )
 
 
-@router.delete("/{lesson_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{lesson_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_LESSON)
 async def delete_lesson(
     lesson_id: LessonID,
     lesson_service: LessonServiceDependency,
@@ -63,7 +75,7 @@ async def delete_lesson(
     )
 
 
-@router.patch("/{lesson_id}/update", response_model=LessonUpdateSchema)
+@router.patch("/{lesson_id}/update", response_model=LessonUpdateSchema, **LESSON_UPDATE)
 async def lesson_update(
     lesson_id: LessonID,
     lesson: LessonUpdateSchema,
@@ -80,7 +92,9 @@ async def lesson_update(
     )
 
 
-@router.patch("/{lesson_id}/update-position", response_model=str)
+@router.patch(
+    "/{lesson_id}/update-position", response_model=str, **UPDATE_LESSON_POSITION
+)
 async def update_lesson_position(
     lesson_id: LessonID,
     participants: LessonReorderParticipantsCore,

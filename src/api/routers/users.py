@@ -7,6 +7,7 @@ from src.api.dependencies import (
     UserContextDependency,
     UserServiceDependency,
 )
+from src.api.docs.users import CREATE_USER, DELETE_USER, GET_USER, LOGIN, LOGOUT, ME
 from src.api.jwt import JWTPayloadCreate
 from src.api.schemas.users import LoginSchema, UserCreateSchema, UserOutSchema
 from src.command.commands.base import UserID
@@ -20,7 +21,7 @@ from src.command.commands.users import (
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post("/login")
+@router.post("/login", **LOGIN)
 async def login(
     login_details: LoginSchema,
     user_service: UserServiceDependency,
@@ -43,7 +44,7 @@ async def login(
     return response
 
 
-@router.post("/logout")
+@router.post("/logout", **LOGOUT)
 async def logout():
     response = JSONResponse(content={"message": "Logged out successfully."})
     response.delete_cookie(
@@ -52,19 +53,24 @@ async def logout():
     return response
 
 
-@router.get("/me")
+@router.get("/me", **ME)
 async def me(user_context: UserContextDependency):
     return user_context
 
 
-@router.get("/{user_id}", response_model=UserOutSchema)
+@router.get("/{user_id}", response_model=UserOutSchema, **GET_USER)
 async def get_user(
     user_id: UserID, user_service: UserServiceDependency, current_user: CurrentUser
 ):
     return await user_service.get(UserGetByIDQuery(id=user_id, viewer_id=current_user))
 
 
-@router.post("/", response_model=UserOutSchema, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=UserOutSchema,
+    status_code=status.HTTP_201_CREATED,
+    **CREATE_USER,
+)
 async def create_user(
     user: UserCreateSchema,
     user_service: UserServiceDependency,
@@ -76,7 +82,7 @@ async def create_user(
     )
 
 
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_USER)
 async def delete_user(
     user_id: UserID, user_service: UserServiceDependency, current_user: CurrentUser
 ):

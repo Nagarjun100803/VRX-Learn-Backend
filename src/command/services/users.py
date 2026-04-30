@@ -1,6 +1,6 @@
 from typing import ClassVar, Type, cast
 
-from passlib.hash import argon2
+from passlib.hash import argon2  # type: ignore
 
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.users import (

@@ -1,8 +1,12 @@
-from typing import Union
-
 from fastapi import APIRouter, HTTPException, status
 
 from src.api.dependencies import AssignmentServiceDependency, CurrentUser
+from src.api.docs.assignments import (
+    CREATE_ASSIGNMENT,
+    DELETE_ASSIGNMENT,
+    GET_ASSIGNMENT,
+    UPDATE_ASSIGNMENT,
+)
 from src.api.schemas.assignments import AssignmentCreateSchema, AssignmentUpdateSchema
 from src.command.commands.assignments import (
     AssignmentCreate,
@@ -10,14 +14,13 @@ from src.command.commands.assignments import (
     AssignmentDetail,
     AssignmentGetQuery,
     AssignmentUpdate,
-    AssignmentUpload,
 )
 from src.command.commands.base import AssignmentID
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
 
-@router.get("/{assignment_id}", response_model=AssignmentDetail)
+@router.get("/{assignment_id}", response_model=AssignmentDetail, **GET_ASSIGNMENT)
 async def get_assignment(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
@@ -29,7 +32,7 @@ async def get_assignment(
     )
 
 
-@router.post("/", response_model=Union[AssignmentUpload, AssignmentDetail])
+@router.post("/", **CREATE_ASSIGNMENT)
 async def create_assignment(
     assignment_payload: AssignmentCreateSchema,
     assignment_service: AssignmentServiceDependency,
@@ -63,7 +66,11 @@ async def create_assignment(
     )
 
 
-@router.patch("/{assignment_id}/update-details", response_model=AssignmentUpdateSchema)
+@router.patch(
+    "/{assignment_id}/update-details",
+    response_model=AssignmentUpdateSchema,
+    **UPDATE_ASSIGNMENT,
+)
 async def update_assignment(
     assignment_id: AssignmentID,
     assignment: AssignmentUpdateSchema,
@@ -77,7 +84,9 @@ async def update_assignment(
     )
 
 
-@router.delete("/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{assignment_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_ASSIGNMENT
+)
 async def delete_assignment(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
