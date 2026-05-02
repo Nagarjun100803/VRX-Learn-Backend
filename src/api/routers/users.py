@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
@@ -46,7 +46,7 @@ async def login(
         samesite="none",
         httponly=True,
         secure=True,
-        expires=datetime.now() + timedelta(days=2),
+        expires=datetime.now(tz=UTC) + timedelta(days=2),
     )
     return response
 
