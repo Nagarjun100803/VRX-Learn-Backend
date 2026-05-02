@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
@@ -39,7 +41,12 @@ async def login(
     )
     response = JSONResponse(content={"message": "Logged in successfully"})
     response.set_cookie(
-        key="access_token", value=token, samesite="none", httponly=True, secure=True
+        key="access_token",
+        value=token,
+        samesite="none",
+        httponly=True,
+        secure=True,
+        expires=datetime.now() + timedelta(days=2),
     )
     return response
 
