@@ -1,3 +1,4 @@
+import asyncio
 from typing import ClassVar, Type, Union, cast
 
 from src.auth import Action, AuthService, Entity, require_authorization
@@ -48,6 +49,10 @@ class CourseService(BaseService[Course]):
         if user.role != UserRole.TRAINER:
             raise InvalidRoleError(role=UserRole.TRAINER)
 
+    async def _validate_title(self, title: str) -> None:
+        if await self.repo.exists_by(title=title):
+            raise CourseAlreadyExistsError(value=title, identifier="title")
+
     @require_authorization(
         action=Action.CREATE,
         entity=Entity.COURSE,
@@ -56,11 +61,11 @@ class CourseService(BaseService[Course]):
         object_name="cmd",
     )
     async def create(self, cmd: CourseCreate) -> Course:
-        # Check the course is alraedy exist with the given title.
-        if await self.repo.exists_by(title=cmd.title):
-            raise CourseAlreadyExistsError(value=cmd.title, identifier="title")
-
-        await self._validate_trainer(trainer_id=cmd.trainer_id)
+        # Check if course already exists and validate trainer
+        await asyncio.gather(
+            self._validate_title(cmd.title),
+            self._validate_trainer(trainer_id=cmd.trainer_id),
+        )
 
         return cast(Course, await self.repo.add(cmd))
 
@@ -78,6 +83,11 @@ class CourseService(BaseService[Course]):
         if isinstance(cmd, CourseInfoUpdate):
             if cmd.trainer_id is not None:
                 await self._validate_trainer(trainer_id=cmd.trainer_id)
+
+            # Check if title already exists
+            if cmd.title is not None:
+                await self._validate_title(cmd.title)
+
             course = await self.repo.update(cmd)
             return self._require_entity(course, value=cmd.id)
 

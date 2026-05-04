@@ -17,7 +17,7 @@ Email = Annotated[EmailStr, StringConstraints(to_lower=True, strip_whitespace=Tr
 
 
 class UserCreateCore(BaseCmd):
-    username: Annotated[str, StringConstraints(min_length=5)]
+    username: Annotated[str, StringConstraints(min_length=4)]
     email: Email
     password: str
     role: UserRole = UserRole.TRAINEE
