@@ -31,11 +31,6 @@ class UserCreateWithConfirmPassword(UserCreate):
     confirm_password: str
 
 
-class PasswordUpdate(BaseCmd):
-    email: EmailStr
-    new_password: str
-
-
 class UserGetByID(UserBase): ...
 
 
@@ -53,6 +48,20 @@ class UserDelete(UserBase):
 
 class UserAuth(BaseCmd):
     email: EmailStr
+    password: str
+
+
+class ForgetPassword(BaseCmd):
+    email: Email
+
+
+class ResetPassword(BaseCmd):
+    id: int
+    password: str
+
+
+class RequestResetPassword(BaseCmd):
+    token: str
     password: str
 
 

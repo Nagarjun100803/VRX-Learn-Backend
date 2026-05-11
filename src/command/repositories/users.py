@@ -9,7 +9,7 @@ from pypika.terms import Criterion
 from src.command.commands.base import ID
 from src.command.commands.media import MediableType
 from src.command.commands.users import (
-    PasswordUpdate,
+    ResetPassword,
     User,
     UserCreate,
     UserDelete,
@@ -46,8 +46,29 @@ class UserRepository(BaseRepository[User]):
         self, cmd: BaseModel, connection: Optional[Connection] = None
     ) -> Optional[User]:
 
-        cmd = self._normalize(cmd, PasswordUpdate)
-        return await super().update(cmd, connection)
+        cmd = self._normalize(cmd, ResetPassword)
+        query = (
+            PostgreSQLQuery.update(user_table)
+            .set(user_table.password, Parameter("$2"))
+            .where(
+                Criterion.all(
+                    terms=[
+                        user_table.id == Parameter("$1"),
+                        user_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+        )
+
+        query: Any = query.returning("*")  # type: ignore
+        sql: str = query.get_sql()
+
+        executable = ExecutableSQL(sql=sql, values=(cmd.id, cmd.password))
+
+        result = await self.db.execute(
+            executable, fetch_returns="one", connection=connection
+        )
+        return self._to_domain(result)
 
     async def _delete_enrollments(
         self, cmd: UserDelete, connection: Optional[Connection] = None

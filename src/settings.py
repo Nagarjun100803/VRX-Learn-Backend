@@ -47,11 +47,22 @@ class CORSSettings(BaseSettings):
     )
 
 
+class SecuritySettings(BaseSettings):
+    secret_key: SecretStr
+    salt: SecretStr
+    token_max_age: int
+
+    model_config = SettingsConfigDict(
+        env_file="src/.env", extra="ignore", env_prefix="SECURITY_"
+    )
+
+
 class Settings(BaseModel):
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]  # type: ignore[arg-type]
     jwt: Annotated[JWTSettings, Field(default_factory=JWTSettings)]  # type: ignore[arg-type]
     aws: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]  # type: ignore[arg-type]
     cors: Annotated[CORSSettings, Field(default_factory=CORSSettings)]  # type: ignore[arg-type]
+    security: Annotated[SecuritySettings, Field(default_factory=SecuritySettings)]  # type: ignore[arg-type]
 
 
 settings = Settings()  # type: ignore[reportCallIssue]

@@ -329,3 +329,11 @@ class InvalidScoreError(ValidationError):
 
         super().__init__(final_messgae)
         self.max_score = max_score
+
+
+class PasswordResetTokenExpiredError(ValidationError):
+    _default = "The password reset token has expired."
+
+
+class InvalidPasswordResetTokenError(ValidationError):
+    _default = "The password reset token is invalid."

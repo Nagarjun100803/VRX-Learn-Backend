@@ -4,6 +4,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import (
+    CurrentAdmin,
     CurrentUser,
     JWTServiceDependency,
     UserContextDependency,
@@ -11,9 +12,17 @@ from src.api.dependencies import (
 )
 from src.api.docs.users import CREATE_USER, DELETE_USER, GET_USER, LOGIN, LOGOUT, ME
 from src.api.jwt import JWTPayloadCreate
-from src.api.schemas.users import LoginSchema, UserCreateSchema, UserOutSchema
+from src.api.schemas.users import (
+    LoginSchema,
+    ResetPasswordSchema,
+    UserCreateSchema,
+    UserOutSchema,
+)
 from src.command.commands.base import UserID
 from src.command.commands.users import (
+    ForgetPassword,
+    RequestResetPassword,
+    ResetPassword,
     UserAuth,
     UserCreateWithConfirmPassword,
     UserDelete,
@@ -65,6 +74,22 @@ async def me(user_context: UserContextDependency):
     return user_context
 
 
+@router.post("/forget-password", response_model=str)
+async def forget_password(
+    forget_password: ForgetPassword, user_service: UserServiceDependency
+):
+    return await user_service.request_password_reset(cmd=forget_password)
+
+
+@router.patch("/reset-password", response_model=UserOutSchema)
+async def reset_password(
+    token: str, reset_password: ResetPasswordSchema, user_service: UserServiceDependency
+):
+    return await user_service.update(
+        cmd=RequestResetPassword(token=token, password=reset_password.password)
+    )
+
+
 @router.get("/{user_id}", response_model=UserOutSchema, **GET_USER)
 async def get_user(
     user_id: UserID, user_service: UserServiceDependency, current_user: CurrentUser
@@ -87,6 +112,16 @@ async def create_user(
     return await user_service.create(
         UserCreateWithConfirmPassword(**user.model_dump(), created_by=current_user)
     )
+
+
+@router.patch("/{user_id}/update-password", response_model=UserOutSchema)
+async def update_password(
+    user_id: UserID,
+    password: str,
+    user_service: UserServiceDependency,
+    current_user: CurrentAdmin,
+):
+    return await user_service.update(ResetPassword(id=user_id, password=password))
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_USER)

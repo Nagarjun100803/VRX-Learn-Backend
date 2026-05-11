@@ -225,7 +225,9 @@ class BaseRepository[T](ABC):
 
         executable = ExecutableSQL(sql=sql.get_sql(), values=tuple(filters.values()))
         result = await self.db.execute(
-            executable, fetch_returns="one" if not fetch_all else "all"
+            executable,
+            fetch_returns="one" if not fetch_all else "all",
+            connection=connection,
         )
         return result
 
@@ -254,7 +256,9 @@ class BaseRepository[T](ABC):
         sql = PostgreSQLQuery.select(ExistsCriterion(filter_query).as_("exists"))
         executable = ExecutableSQL(sql=sql.get_sql(), values=tuple(filters.values()))
 
-        result = await self.db.execute(executable, fetch_returns="one")
+        result = await self.db.execute(
+            executable, fetch_returns="one", connection=connection
+        )
 
         if result is None:
             return False

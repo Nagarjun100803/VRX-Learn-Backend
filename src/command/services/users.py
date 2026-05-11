@@ -1,10 +1,13 @@
-from typing import ClassVar, Type, cast
+from typing import ClassVar, Optional, Type, Union, cast
 
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from passlib.hash import argon2  # type: ignore
 
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.users import (
-    PasswordUpdate,
+    ForgetPassword,
+    RequestResetPassword,
+    ResetPassword,
     User,
     UserAuth,
     UserCreate,
@@ -18,10 +21,18 @@ from src.command.repositories.users import UserRepository
 from src.command.services.base import BaseService
 from src.exceptions import (
     EntityNotFoundError,
+    InvalidPasswordResetTokenError,
     PasswordMismatchError,
+    PasswordResetTokenExpiredError,
     UnAuthenticated,
     UserAlreadyExistsError,
     UserNotFoundError,
+)
+from src.settings import settings
+
+_serializer = URLSafeTimedSerializer(
+    secret_key=settings.security.secret_key.get_secret_value(),
+    salt=settings.security.salt.get_secret_value(),
 )
 
 
@@ -80,18 +91,50 @@ class UserService(BaseService[User]):
 
         return cast(User, user)
 
-    async def update(self, cmd: PasswordUpdate) -> User:
-        # Check user found with the email.
-        if not await self.repo.exists_by(email=cmd.email):
-            raise UserNotFoundError(value=cmd.email, identifier="email")
+    async def _update_password(self, cmd: ResetPassword) -> Optional[User]:
 
-        hashed_password = self.password_handler.hash_password(cmd.new_password)
+        if not await self.repo.exists_by(id=cmd.id):
+            raise UserNotFoundError(value=cmd.id)
 
-        user = await self.repo.update(
-            PasswordUpdate(email=cmd.email, new_password=hashed_password)
+        hashed_password = self.password_handler.hash_password(cmd.password)
+
+        return await self.repo.update(
+            cmd=ResetPassword(id=cmd.id, password=hashed_password)
         )
 
-        return self._require_entity(user)
+    async def _update_password_by_owner(
+        self, cmd: RequestResetPassword
+    ) -> Optional[User]:
+
+        try:
+            payload = _serializer.loads(
+                cmd.token, max_age=settings.security.token_max_age
+            )
+            email = payload["email"]
+            user = await self.repo.get(UserGetByEmail(email=email))
+
+            if user is None:
+                raise UserNotFoundError(value=email, identifier="email")
+
+            hashed_password = self.password_handler.hash_password(cmd.password)
+
+            return await self.repo.update(
+                cmd=ResetPassword(id=user.id, password=hashed_password)
+            )
+
+        except SignatureExpired:
+            raise PasswordResetTokenExpiredError()
+        except BadSignature:
+            raise InvalidPasswordResetTokenError()
+
+    async def update(self, cmd: Union[ResetPassword, RequestResetPassword]) -> User:
+
+        if isinstance(cmd, ResetPassword):
+            updated_user = await self._update_password(cmd=cmd)
+        else:
+            updated_user = await self._update_password_by_owner(cmd=cmd)
+
+        return self._require_entity(updated_user)
 
     @require_authorization(
         action=Action.DELETE,
@@ -119,6 +162,7 @@ class UserService(BaseService[User]):
 
     async def authenticate(self, auth: UserAuth) -> User:
         user = await self.repo.get(UserGetByEmail(email=auth.email))
+
         if user is None or not self.password_handler.verify_password(
             auth.password, user.password
         ):
@@ -127,3 +171,12 @@ class UserService(BaseService[User]):
         await self.repo.update_last_login(user_id=user.id)
 
         return user
+
+    async def request_password_reset(self, cmd: ForgetPassword) -> str:
+        user_exists = await self.repo.exists_by(email=cmd.email)
+        if not user_exists:
+            raise UserNotFoundError(value=cmd.email, identifier="email")
+        token = _serializer.dumps({"email": cmd.email})
+
+        # Later will send it as notification via email.
+        return token

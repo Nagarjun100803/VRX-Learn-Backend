@@ -17,3 +17,4 @@ redis_learning
 tests
 cache.py
 qb
+*.pem
