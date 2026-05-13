@@ -22,10 +22,21 @@ class AWSS3Settings(BaseSettings):
     access_key_id: SecretStr
     secret_access_key: SecretStr
     region: SecretStr
-    s3_bucket: SecretStr
+    bucket: SecretStr
 
     model_config = SettingsConfigDict(
-        env_file="src/.env", extra="ignore", env_prefix="AWS_"
+        env_file="src/.env", extra="ignore", env_prefix="AWS_S3_"
+    )
+
+
+class AWSSESSettings(BaseSettings):
+    access_key_id: SecretStr
+    secret_access_key: SecretStr
+    region: SecretStr
+    from_email: SecretStr
+
+    model_config = SettingsConfigDict(
+        env_file="src/.env", extra="ignore", env_prefix="AWS_SES_"
     )
 
 
@@ -47,22 +58,27 @@ class CORSSettings(BaseSettings):
     )
 
 
-class SecuritySettings(BaseSettings):
+class PasswordResetSettings(BaseSettings):
+    frontend_base_url: str
+    reset_path: str
     secret_key: SecretStr
     salt: SecretStr
-    token_max_age: int
+    token_expire_seconds: int
 
     model_config = SettingsConfigDict(
-        env_file="src/.env", extra="ignore", env_prefix="SECURITY_"
+        env_file="src/.env", extra="ignore", env_prefix="PASSWORD_RESET_"
     )
 
 
 class Settings(BaseModel):
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]  # type: ignore[arg-type]
     jwt: Annotated[JWTSettings, Field(default_factory=JWTSettings)]  # type: ignore[arg-type]
-    aws: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]  # type: ignore[arg-type]
+    aws_s3: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]  # type: ignore[arg-type]
+    aws_ses: Annotated[AWSSESSettings, Field(default_factory=AWSSESSettings)]  # type: ignore[arg-type]
     cors: Annotated[CORSSettings, Field(default_factory=CORSSettings)]  # type: ignore[arg-type]
-    security: Annotated[SecuritySettings, Field(default_factory=SecuritySettings)]  # type: ignore[arg-type]
+    password_reset: Annotated[
+        PasswordResetSettings, Field(default_factory=PasswordResetSettings)  # type: ignore[arg-type]
+    ]
 
 
 settings = Settings()  # type: ignore[reportCallIssue]

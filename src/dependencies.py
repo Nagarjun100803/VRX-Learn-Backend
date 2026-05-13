@@ -30,6 +30,8 @@ from src.command.services import (
 from src.command.services.files import get_session
 from src.command.services.users import PasswordHandler
 from src.database import AsyncPgDBManager
+from src.notifications import SES, EmailTemplates, NotificationSender
+from src.notifications import get_session as get_ses_session
 
 # Query Repository imports.
 from src.query.repositories import (
@@ -122,9 +124,17 @@ module_service = ModuleService(
 )
 
 session = get_session()
+ses_session = get_ses_session()
+
 file_service = S3(bucket="vrx-learn", session=session)
 
 media_service = MediaService(file_service=file_service, repo=media_repository)
+
+email_service = SES(session=ses_session)
+email_templates = EmailTemplates()
+notification_service = NotificationSender(
+    provider=email_service, template=email_templates
+)
 
 lesson_service = LessonService(
     repo=lesson_repository,

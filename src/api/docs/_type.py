@@ -7,6 +7,5 @@ class EndpointDoc(TypedDict, total=False):
     description: str
     response_description: str
     responses: dict[Union[int, str], dict]
-    deprecated: bool
     openapi_extra: dict
     tags: list[Union[str, Enum]]

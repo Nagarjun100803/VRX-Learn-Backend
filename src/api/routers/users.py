@@ -1,12 +1,15 @@
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urlencode, urljoin
 
 from fastapi import APIRouter, status
+from fastapi.background import BackgroundTasks
 from fastapi.responses import JSONResponse
 
 from src.api.dependencies import (
     CurrentAdmin,
     CurrentUser,
     JWTServiceDependency,
+    NotificationServiceDependency,
     UserContextDependency,
     UserServiceDependency,
 )
@@ -28,11 +31,12 @@ from src.command.commands.users import (
     UserDelete,
     UserGetByIDQuery,
 )
+from src.settings import settings
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router.post("/login", **LOGIN)
+@router.post("/login", deprecated=True, **LOGIN)
 async def login(
     login_details: LoginSchema,
     user_service: UserServiceDependency,
@@ -60,7 +64,7 @@ async def login(
     return response
 
 
-@router.post("/logout", **LOGOUT)
+@router.post("/logout", deprecated=True, **LOGOUT)
 async def logout():
     response = JSONResponse(content={"message": "Logged out successfully."})
     response.delete_cookie(
@@ -69,19 +73,36 @@ async def logout():
     return response
 
 
-@router.get("/me", **ME)
+@router.get("/me", deprecated=True, **ME)
 async def me(user_context: UserContextDependency):
     return user_context
 
 
-@router.post("/forget-password", response_model=str)
+@router.post(
+    "/forget-password", status_code=status.HTTP_204_NO_CONTENT, deprecated=True
+)
 async def forget_password(
-    forget_password: ForgetPassword, user_service: UserServiceDependency
+    forget_password: ForgetPassword,
+    user_service: UserServiceDependency,
+    notification_service: NotificationServiceDependency,
+    background_tasks: BackgroundTasks,
 ):
-    return await user_service.request_password_reset(cmd=forget_password)
+    user, token = await user_service.request_password_reset(cmd=forget_password)
+    params = urlencode(query={"token": token})
+    url = urljoin(
+        settings.password_reset.frontend_base_url, settings.password_reset.reset_path
+    )
+    final_url = f"{url}?{params}"
+
+    # Send email using background tasks.
+    kwargs = {"username": user.username, "to": user.email, "reset_link": final_url}
+
+    background_tasks.add_task(
+        func=notification_service.send_reset_password_email, **kwargs
+    )
 
 
-@router.patch("/reset-password", response_model=UserOutSchema)
+@router.patch("/reset-password", response_model=UserOutSchema, deprecated=True)
 async def reset_password(
     token: str, reset_password: ResetPasswordSchema, user_service: UserServiceDependency
 ):

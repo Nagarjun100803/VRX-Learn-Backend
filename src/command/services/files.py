@@ -69,9 +69,9 @@ PRESIGNED_URL_EXPIRE_MINS = 120  # 2 Hour
 @lru_cache
 def get_session() -> aioboto3.Session:
     return aioboto3.Session(
-        aws_access_key_id=settings.aws.access_key_id.get_secret_value(),
-        aws_secret_access_key=settings.aws.secret_access_key.get_secret_value(),
-        region_name=settings.aws.region.get_secret_value(),
+        aws_access_key_id=settings.aws_s3.access_key_id.get_secret_value(),
+        aws_secret_access_key=settings.aws_s3.secret_access_key.get_secret_value(),
+        region_name=settings.aws_s3.region.get_secret_value(),
     )
 
 

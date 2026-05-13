@@ -31,8 +31,8 @@ from src.exceptions import (
 from src.settings import settings
 
 _serializer = URLSafeTimedSerializer(
-    secret_key=settings.security.secret_key.get_secret_value(),
-    salt=settings.security.salt.get_secret_value(),
+    secret_key=settings.password_reset.secret_key.get_secret_value(),
+    salt=settings.password_reset.salt.get_secret_value(),
 )
 
 
@@ -108,7 +108,7 @@ class UserService(BaseService[User]):
 
         try:
             payload = _serializer.loads(
-                cmd.token, max_age=settings.security.token_max_age
+                cmd.token, max_age=settings.password_reset.token_expire_seconds
             )
             email = payload["email"]
             user = await self.repo.get(UserGetByEmail(email=email))
@@ -172,11 +172,11 @@ class UserService(BaseService[User]):
 
         return user
 
-    async def request_password_reset(self, cmd: ForgetPassword) -> str:
-        user_exists = await self.repo.exists_by(email=cmd.email)
-        if not user_exists:
+    async def request_password_reset(self, cmd: ForgetPassword) -> tuple[User, str]:
+        user = await self.repo.get(UserGetByEmail(email=cmd.email))
+        if user is None:
             raise UserNotFoundError(value=cmd.email, identifier="email")
+
         token = _serializer.dumps({"email": cmd.email})
 
-        # Later will send it as notification via email.
-        return token
+        return (user, token)

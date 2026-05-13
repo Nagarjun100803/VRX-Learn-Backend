@@ -18,6 +18,7 @@ from src.dependencies import (
     LessonService,
     MediaService,
     ModuleService,
+    NotificationSender,
     TraineeAssignmentContentQueryService,
     TraineeCourseContentQueryService,
     TraineeCourseOverviewQueryService,
@@ -39,6 +40,7 @@ from src.dependencies import (
     lesson_service,
     media_service,
     module_service,
+    notification_service,
     trainee_assignment_content_query_service,
     trainee_course_content_query_service,
     trainee_course_overview_query_service,
@@ -75,6 +77,10 @@ def get_lesson_service() -> LessonService:
 
 def get_jwt_handler() -> JWTHandler:
     return jwt_handler
+
+
+def get_notification_service() -> NotificationSender:
+    return notification_service
 
 
 def get_assignment_service() -> AssignmentService:
@@ -161,6 +167,9 @@ AssignmentSubmissionServiceDependency = Annotated[
     AssignmentSubmissionService, Depends(get_assignment_submission_service)
 ]
 
+NotificationServiceDependency = Annotated[
+    NotificationSender, Depends(get_notification_service)
+]
 
 authentication_service = AuthenticationService(
     user_repo=user_repository, jwt_handler=jwt_handler

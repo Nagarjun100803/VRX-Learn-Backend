@@ -10,6 +10,7 @@ from src.api.routers.assignment_submissions import (
     router as AssignmentSubmissionAPIRouter,
 )
 from src.api.routers.assignments import router as AssignmentAPIRouter
+from src.api.routers.auth import router as AuthRouter
 from src.api.routers.course_contents import (
     trainee_router as TraineeCourseContentAPIRouter,
 )
@@ -40,6 +41,7 @@ from src.api.routers.users import router as UserAPIRouter
 
 ROUTERS: list[APIRouter] = [
     # Write routers.
+    AuthRouter,
     UserAPIRouter,
     CourseAPIRouter,
     EnrollmentAPIRouter,
@@ -65,6 +67,7 @@ ROUTERS: list[APIRouter] = [
 ]
 
 __all__ = [
+    "AuthRouter",
     "UserAPIRouter",
     "CourseAPIRouter",
     "EnrollmentAPIRouter",
