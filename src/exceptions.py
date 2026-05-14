@@ -88,8 +88,12 @@ class AssignmentNotFoundError(EntityNotFoundError):
     _entity = "Assignment"
 
 
-class AssignmentSubmissionNotFoundError(EnrollmentNotFoundError):
+class AssignmentSubmissionNotFoundError(EntityNotFoundError):
     _entity = "Assignment Submission"
+
+
+class IssueNotFoundError(EntityNotFoundError):
+    _entity = "Issue"
 
 
 """

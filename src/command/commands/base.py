@@ -213,6 +213,10 @@ class AssignmentSubmissionBase(EntityBase):
     PREFIX: ClassVar[str] = "AS"
 
 
+class IssueBase(EntityBase):
+    PREFIX: ClassVar[str] = "I"
+
+
 BaseID = Annotated[
     int,
     BeforeValidator(partial(to_internal_id, cls=EntityBase)),
@@ -277,6 +281,11 @@ AssignmentSubmissionID = Annotated[
     ),
 ]
 
+IssueID = Annotated[
+    int,
+    BeforeValidator(partial(to_internal_id, cls=IssueBase)),
+    PlainSerializer(partial(to_external_id, cls=IssueBase), when_used="json"),
+]
 
 any_id_adaptor = TypeAdapter(ID)
 

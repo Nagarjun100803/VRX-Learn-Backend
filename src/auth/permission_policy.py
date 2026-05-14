@@ -12,6 +12,7 @@ class Entity(StrEnum):
     ENROLLMENT = "enrollment"
     ASSIGNMENT = "assignment"
     ASSIGNMENT_SUBMISSION = "assignment-submission"
+    ISSUE = "issue"
 
 
 class Action(StrEnum):
@@ -87,6 +88,13 @@ OWNED_CREATE_AND_VIEW = Policy(
 )
 """**`OWNED_CREATE_AND_VIEW`** allows `create` and `view` actions but only on owned resources and does not allow update and delete actions."""
 
+NO_ACCESS = Policy("no-access", capabilities=frozenset(), scope="global")
+"""**`NO_ACCESS`** allows no access to the resource."""
+
+CREATE_ONLY = Policy(
+    "create-only", capabilities=frozenset({Action.CREATE}), scope="global"
+)
+"""`CREATE_ONLY` allows `create` action globally but does not allow `view`, `update` and `delete` actions."""
 
 POLICY_V1: dict[UserRole, dict[Entity, Policy]] = {
     UserRole.SUBADMIN: {
@@ -97,6 +105,7 @@ POLICY_V1: dict[UserRole, dict[Entity, Policy]] = {
         Entity.LESSON: STAFF_EDIT,
         Entity.ASSIGNMENT: READ_ONLY,
         Entity.ASSIGNMENT_SUBMISSION: READ_ONLY,
+        Entity.ISSUE: CREATE_ONLY,
     },
     UserRole.TRAINER: {
         Entity.USER: OWNED_READ_ONLY,
@@ -106,6 +115,7 @@ POLICY_V1: dict[UserRole, dict[Entity, Policy]] = {
         Entity.LESSON: OWNED_CRUD_ALL,
         Entity.ASSIGNMENT: OWNED_CRUD_ALL,
         Entity.ASSIGNMENT_SUBMISSION: OWNED_READ_AND_UPDATE,
+        Entity.ISSUE: CREATE_ONLY,
     },
     UserRole.TRAINEE: {
         Entity.USER: OWNED_READ_ONLY,
@@ -115,6 +125,7 @@ POLICY_V1: dict[UserRole, dict[Entity, Policy]] = {
         Entity.LESSON: OWNED_READ_ONLY,
         Entity.ASSIGNMENT: OWNED_READ_ONLY,
         Entity.ASSIGNMENT_SUBMISSION: OWNED_CREATE_AND_VIEW,
+        Entity.ISSUE: CREATE_ONLY,
     },
 }
 """

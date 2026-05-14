@@ -15,6 +15,8 @@ from src.dependencies import (
     AssignmentSubmissionService,
     CourseService,
     EnrollmentService,
+    IssueQueryService,
+    IssueService,
     LessonService,
     MediaService,
     ModuleService,
@@ -36,6 +38,8 @@ from src.dependencies import (
     assignment_submission_service,
     course_service,
     enrollment_service,
+    issue_query_service,
+    issue_service,
     jwt_handler,
     lesson_service,
     media_service,
@@ -99,6 +103,10 @@ def get_assignment_submission_service() -> AssignmentSubmissionService:
     return assignment_submission_service
 
 
+def get_issue_service() -> IssueService:
+    return issue_service
+
+
 def get_admin_dashboard_query_service() -> AdminDashboardQueryService:
     return admin_dashboard_query_service
 
@@ -151,6 +159,10 @@ def get_trainer_course_overview_query_service() -> TrainerCourseOverviewQuerySer
     return trainer_course_overview_query_service
 
 
+def get_issue_query_service() -> IssueQueryService:
+    return issue_query_service
+
+
 UserServiceDependency = Annotated[UserService, Depends(get_user_service)]
 CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]
@@ -170,6 +182,8 @@ AssignmentSubmissionServiceDependency = Annotated[
 NotificationServiceDependency = Annotated[
     NotificationSender, Depends(get_notification_service)
 ]
+IssueServiceDependency = Annotated[IssueService, Depends(get_issue_service)]
+
 
 authentication_service = AuthenticationService(
     user_repo=user_repository, jwt_handler=jwt_handler
@@ -229,6 +243,10 @@ TraineeCourseOverviewQueryServiceDependency = Annotated[
 TrainerCourseOverviewQueryServiceDependency = Annotated[
     TrainerCourseOverviewQueryService,
     Depends(get_trainer_course_overview_query_service),
+]
+
+IssueQueryServiceDependency = Annotated[
+    IssueQueryService, Depends(get_issue_query_service)
 ]
 
 UserContextDependency = Annotated[UserContext, Depends(get_current_user_context)]

@@ -20,6 +20,7 @@ from src.query.services.entity_list import (
     TraineeEntityListQueryService,
     TrainerEntityListQueryService,
 )
+from src.query.services.issues import IssueQueryService
 
 __all__ = [
     "AdminDashboardQueryService",
@@ -34,4 +35,5 @@ __all__ = [
     "TrainerAssignmentContentQueryService",
     "TraineeCourseOverviewQueryService",
     "TrainerCourseOverviewQueryService",
+    "IssueQueryService",
 ]

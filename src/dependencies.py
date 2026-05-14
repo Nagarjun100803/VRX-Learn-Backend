@@ -8,6 +8,7 @@ from src.command.repositories import (
     AssignmentSubmissionRepository,
     CourseRepository,
     EnrollmentRepository,
+    IssueRepository,
     LessonRepository,
     MediaRepository,
     ModuleRepository,
@@ -21,6 +22,7 @@ from src.command.services import (
     AssignmentSubmissionService,
     CourseService,
     EnrollmentService,
+    IssueService,
     LessonService,
     MediaService,
     ModuleService,
@@ -37,6 +39,7 @@ from src.notifications import get_session as get_ses_session
 from src.query.repositories import (
     AdminDashboardQueryRepository,
     EntityListQueryRepository,
+    IssueQueryRepository,
     TraineeAssignmentContentQueryRepository,
     TraineeCourseContentQueryRepository,
     TraineeCourseOverviewQueryRepository,
@@ -51,6 +54,7 @@ from src.query.repositories import (
 from src.query.services import (
     AdminDashboardQueryService,
     AdminEntityListQueryService,
+    IssueQueryService,
     TraineeAssignmentContentQueryService,
     TraineeCourseContentQueryService,
     TraineeCourseOverviewQueryService,
@@ -75,6 +79,7 @@ lesson_repository = LessonRepository(db=db)
 assignment_repository = AssignmentRepository(db=db)
 enrollment_repository = EnrollmentRepository(db=db)
 assignment_submission_repository = AssignmentSubmissionRepository(db=db)
+issue_repository = IssueRepository(db=db)
 
 
 # Query Repositories.
@@ -96,7 +101,7 @@ trainer_assignment_content_query_repository = TrainerAssignmentContentQueryRepos
 
 trainee_course_overview_query_repository = TraineeCourseOverviewQueryRepository(db=db)
 trainer_course_overview_query_repository = TrainerCourseOverviewQueryRepository(db=db)
-
+issue_query_repository = IssueQueryRepository(db=db)
 
 # Helper classes.
 password_handler = PasswordHandler()
@@ -165,6 +170,10 @@ assignment_submission_service = AssignmentSubmissionService(
     auth_service=auth_service,
 )
 
+issue_service = IssueService(
+    repo=issue_repository, auth_service=auth_service, media_service=media_service
+)
+
 
 # Query services.
 admin_dashboard_query_service = AdminDashboardQueryService(
@@ -222,3 +231,5 @@ trainer_course_overview_query_service = TrainerCourseOverviewQueryService(
     trainer_course_overview_query_repo=trainer_course_overview_query_repository,
     auth_service=auth_service,
 )
+
+issue_query_service = IssueQueryService(issue_query_repo=issue_query_repository)

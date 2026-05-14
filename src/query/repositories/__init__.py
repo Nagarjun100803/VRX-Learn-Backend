@@ -16,6 +16,7 @@ from src.query.repositories.dashboards import (
     TrainerDashboardQueryRepository,
 )
 from src.query.repositories.entity_list import EntityListQueryRepository
+from src.query.repositories.issues import IssueQueryRepository
 
 __all__ = [
     "AdminDashboardQueryRepository",
@@ -28,4 +29,5 @@ __all__ = [
     "TrainerAssignmentContentQueryRepository",
     "TraineeCourseOverviewQueryRepository",
     "TrainerCourseOverviewQueryRepository",
+    "IssueQueryRepository",
 ]

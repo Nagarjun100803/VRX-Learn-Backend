@@ -26,6 +26,9 @@ from src.query.dto.entity_list import (
     EnrollmentDetail,
     EnrollmentFilters,
     EnrollmentQueryParams,
+    IssueDetail,
+    IssueFilters,
+    IssueQueryParams,
     LessonDetail,
     ModuleDetail,
     TraineeDetail,
@@ -184,6 +187,20 @@ async def list_trainees_for_admin(
             sort_by_username=filters.sort_by_username,
         ),
         page_meta=PageMeta(page=filters.page, limit=filters.limit),
+    )
+
+
+@admin_router.get("/issues", response_model=Paginated[IssueDetail])
+async def list_issues(
+    filters: Annotated[IssueQueryParams, Depends()],
+    query_service: AdminEntityListQueryServiceDependency,
+    current_user: CurrentAdmin,
+):
+    return await query_service.list_issues(
+        filters=IssueFilters(
+            category=filters.category, status=filters.status, role=filters.role
+        ),
+        page_mata=PageMeta(page=filters.page, limit=filters.limit),
     )
 
 

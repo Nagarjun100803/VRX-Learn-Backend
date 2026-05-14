@@ -16,6 +16,7 @@ from src.pypika_query_builder import (
     assignment_table,
     course_table,
     enrollment_table,
+    issue_table,
     lesson_table,
     media_asset_table,
     module_table,
@@ -31,6 +32,8 @@ from src.query.dto.entity_list import (
     CourseSearchDetail,
     EnrollmentDetail,
     EnrollmentFilters,
+    IssueDetail,
+    IssueFilters,
     LessonDetail,
     ModuleDetail,
     TraineeDetail,
@@ -582,4 +585,65 @@ class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin, ExportMixin
         return cast(
             list[CourseSearchDetail],
             await self.db.execute(executable, fetch_returns="all"),
+        )
+
+    def _build_issue_query(self, filters: IssueFilters) -> QueryBuilder:
+        sql = (
+            PostgreSQLQuery.from_(issue_table)
+            .join(user_table)
+            .on(issue_table.created_by == user_table.id)
+            .left_join(media_asset_table)
+            .on(
+                Criterion.all(
+                    terms=[
+                        media_asset_table.mediable_id == issue_table.id,
+                        media_asset_table.mediable_type == MediableType.ISSUE,
+                    ]
+                )
+            )
+            .where(
+                Criterion.all(
+                    terms=[
+                        Criterion.any(
+                            terms=[
+                                media_asset_table.id.isnull(),
+                                media_asset_table.status == MediaStatus.UPLOADED,
+                            ]
+                        ),
+                        media_asset_table.deleted_at.isnull(),
+                        issue_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+            .select(
+                issue_table.id,
+                issue_table.subject,
+                issue_table.category,
+                issue_table.description,
+                issue_table.status,
+                issue_table.created_at.as_("submitted_at"),
+                user_table.id.as_("user_id"),
+                user_table.username,
+                user_table.email,
+                user_table.role,
+            )
+        )
+
+        if filters.role:
+            sql = sql.where(user_table.role == filters.role)
+
+        if filters.category:
+            sql = sql.where(issue_table.category == filters.category)
+
+        if filters.status:
+            sql = sql.where(issue_table.status == filters.status)
+
+        return sql
+
+    async def issues(
+        self, filters: IssueFilters, page_meta: PageMeta
+    ) -> Paginated[IssueDetail]:
+        sql = self._build_issue_query(filters=filters)
+        return await self.paginate_query(
+            sql=sql, values=tuple(), dto_class=IssueDetail, page_meta=page_meta
         )

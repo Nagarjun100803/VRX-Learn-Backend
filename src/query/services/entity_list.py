@@ -11,6 +11,8 @@ from src.query.dto.entity_list import (
     CourseSearchDetail,
     EnrollmentDetail,
     EnrollmentFilters,
+    IssueDetail,
+    IssueFilters,
     LessonDetail,
     ModuleDetail,
     TraineeFilters,
@@ -188,3 +190,10 @@ class AdminEntityListQueryService:
     async def search_course(self, course_name: str) -> list[CourseSearchDetail]:
 
         return await self.entity_list_query_repo.search_courses(course_name=course_name)
+
+    async def list_issues(
+        self, filters: IssueFilters, page_mata: PageMeta
+    ) -> Paginated[IssueDetail]:
+        return await self.entity_list_query_repo.issues(
+            filters=filters, page_meta=page_mata
+        )
