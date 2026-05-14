@@ -3,6 +3,7 @@ from src.command.services.assignments import AssignmentService
 from src.command.services.course import CourseService
 from src.command.services.enrollments import EnrollmentService
 from src.command.services.files import S3
+from src.command.services.issues import IssueService
 from src.command.services.lessons import LessonService
 from src.command.services.media import MediaService
 from src.command.services.modules import ModuleService
@@ -20,4 +21,5 @@ __all__ = [
     "AssignmentService",
     "AssignmentSubmissionService",
     "PositioningService",
+    "IssueService",
 ]

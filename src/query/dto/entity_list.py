@@ -14,6 +14,7 @@ from src.command.commands.base import (
     AssignmentSubmissionID,
     CourseID,
     EnrollmentID,
+    IssueID,
     LessonID,
     MediaID,
     ModuleID,
@@ -21,6 +22,12 @@ from src.command.commands.base import (
 )
 from src.command.commands.courses import CourseTitle
 from src.command.commands.enrollments import EnrollmentStatus
+from src.command.commands.issues import (
+    IssueCategory,
+    IssueDescription,
+    IssueStatus,
+    IssueSubject,
+)
 from src.command.commands.lessons import LessonDescription, LessonTitle
 from src.command.commands.media import AllowedContentTypes
 from src.command.commands.modules import ModuleTitile
@@ -142,6 +149,24 @@ class AssignmentSubmissionFilters(BaseDTO):
     sort_by_grade: Optional[Literal["asc", "desc"]] = None
 
 
+class IssueDetail(BaseDTO):
+    id: IssueID
+    subject: IssueSubject
+    category: IssueCategory
+    description: Optional[IssueDescription] = None
+    status: IssueStatus
+    submitted_at: datetime
+    user_id: UserID
+    username: str
+    email: Email
+
+
+class IssueFilters(BaseDTO):
+    category: Optional[IssueCategory] = None
+    status: Optional[IssueStatus] = None
+    role: Optional[UserRole] = None
+
+
 class CourseQueryParams(CourseFilters, PageMeta): ...
 
 
@@ -155,6 +180,9 @@ class UserQueryParams(UserFilters, PageMeta): ...
 
 
 class TraineeQueryParams(TraineeFilters, PageMeta): ...
+
+
+class IssueQueryParams(IssueFilters, PageMeta): ...
 
 
 class UserSearchDetail(BaseDTO):

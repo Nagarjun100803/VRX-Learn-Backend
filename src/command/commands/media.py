@@ -23,6 +23,7 @@ class MediableType(StrEnum):
     ASSIGNMENT = "assignment"
     ASSIGNMENT_SUBMISSION = "assignment-submission"
     LAB_CREDENTIAL = "lab-credential"
+    ISSUE = "issue"
 
 
 class MediaStatus(StrEnum):

@@ -4,6 +4,7 @@ from src.command.repositories.assignment_submissions import (
 from src.command.repositories.assignments import AssignmentRepository
 from src.command.repositories.courses import CourseRepository
 from src.command.repositories.enrollments import EnrollmentRepository
+from src.command.repositories.issues import IssueRepository
 from src.command.repositories.lessons import LessonRepository
 from src.command.repositories.media import MediaRepository
 from src.command.repositories.modules import ModuleRepository
@@ -18,4 +19,5 @@ __all__ = [
     "MediaRepository",
     "AssignmentRepository",
     "AssignmentSubmissionRepository",
+    "IssueRepository",
 ]
