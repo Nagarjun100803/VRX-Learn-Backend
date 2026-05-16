@@ -159,6 +159,7 @@ class IssueDetail(BaseDTO):
     user_id: UserID
     username: str
     email: Email
+    role: UserRole
 
 
 class IssueFilters(BaseDTO):
