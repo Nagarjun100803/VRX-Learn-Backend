@@ -1,5 +1,6 @@
 from src.command.services.assignment_submissions import AssignmentSubmissionService
 from src.command.services.assignments import AssignmentService
+from src.command.services.authentication import AuthenticationService
 from src.command.services.course import CourseService
 from src.command.services.enrollments import EnrollmentService
 from src.command.services.files import S3
@@ -22,4 +23,5 @@ __all__ = [
     "AssignmentSubmissionService",
     "PositioningService",
     "IssueService",
+    "AuthenticationService",
 ]

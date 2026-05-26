@@ -6,7 +6,7 @@ from src.exceptions import (
     EnrollmentNotFoundError,
     InvalidRoleError,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
 )
 
 GET_ENROLLMENT: EndpointDoc = {
@@ -23,7 +23,7 @@ GET_ENROLLMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Enrollment Not Found",
@@ -48,7 +48,7 @@ CREATE_ENROLLMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         409: _generate_error(
             description="Enrollment Already Exists",
@@ -106,7 +106,7 @@ UPDATE_ENROLLMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Enrollment Not Found",
@@ -131,7 +131,7 @@ DELETE_ENROLLMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Enrollment Not Found",

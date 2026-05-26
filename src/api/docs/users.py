@@ -4,7 +4,7 @@ from src.api.schemas.users import UserOutSchema
 from src.exceptions import (
     PasswordMismatchError,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
     UserAlreadyExistsError,
 )
 
@@ -42,7 +42,7 @@ CREATE_USER: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         400: _generate_error(
             description="Password Mismatch",
@@ -102,7 +102,7 @@ GET_USER: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
     },
 }
@@ -122,7 +122,7 @@ DELETE_USER: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
     },
 }

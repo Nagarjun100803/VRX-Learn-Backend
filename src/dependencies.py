@@ -1,11 +1,11 @@
 # Database initalization.
-from src.api.jwt import JWTHandler
 from src.auth.auth import AuthService
 
 # Repository Imports.
 from src.command.repositories import (
     AssignmentRepository,
     AssignmentSubmissionRepository,
+    AuthenticationRepository,
     CourseRepository,
     EnrollmentRepository,
     IssueRepository,
@@ -20,6 +20,7 @@ from src.command.services import (
     S3,
     AssignmentService,
     AssignmentSubmissionService,
+    AuthenticationService,
     CourseService,
     EnrollmentService,
     IssueService,
@@ -30,7 +31,8 @@ from src.command.services import (
     UserService,
 )
 from src.command.services.files import get_session
-from src.command.services.users import PasswordHandler
+from src.core.security.jwt import JWTHandler
+from src.core.security.password import PasswordHasher
 from src.database import AsyncPgDBManager
 from src.notifications import SES, EmailTemplates, NotificationSender
 from src.notifications import get_session as get_ses_session
@@ -71,6 +73,8 @@ db = AsyncPgDBManager()
 
 
 # Command Repositories.
+
+authentication_repository = AuthenticationRepository(db=db)
 user_repository = UserRepository(db=db)
 course_repository = CourseRepository(db=db)
 module_repository = ModuleRepository(db=db)
@@ -104,17 +108,26 @@ trainer_course_overview_query_repository = TrainerCourseOverviewQueryRepository(
 issue_query_repository = IssueQueryRepository(db=db)
 
 # Helper classes.
-password_handler = PasswordHandler()
+
+# Core
 jwt_handler = JWTHandler()
+password_hasher = PasswordHasher()
 
 # Services.
 
 auth_service = AuthService(user_repo=user_repository, db=db)
 
+authentication_service = AuthenticationService(
+    repo=authentication_repository,
+    user_repo=user_repository,
+    password_hasher=password_hasher,
+    jwt_handler=jwt_handler,
+)
+
 positioning_service = PositioningService(db=db)
 
 user_service = UserService(
-    repo=user_repository, password_handler=password_handler, auth_service=auth_service
+    repo=user_repository, password_hasher=password_hasher, auth_service=auth_service
 )
 
 course_service = CourseService(

@@ -58,9 +58,27 @@ class CORSSettings(BaseSettings):
     )
 
 
+class FrontendSettings(BaseSettings):
+    base_url: str
+
+    model_config = SettingsConfigDict(
+        env_file="src/.env", extra="ignore", env_prefix="FRONTEND_"
+    )
+
+
+class EmailVerifySettings(BaseSettings):
+    path: str
+    secret_key: SecretStr
+    salt: SecretStr
+    token_expire_seconds: int
+
+    model_config = SettingsConfigDict(
+        env_file="src/.env", extra="ignore", env_prefix="EMAIL_VERIFY_"
+    )
+
+
 class PasswordResetSettings(BaseSettings):
-    frontend_base_url: str
-    reset_path: str
+    path: str
     secret_key: SecretStr
     salt: SecretStr
     token_expire_seconds: int
@@ -76,6 +94,10 @@ class Settings(BaseModel):
     aws_s3: Annotated[AWSS3Settings, Field(default_factory=AWSS3Settings)]  # type: ignore[arg-type]
     aws_ses: Annotated[AWSSESSettings, Field(default_factory=AWSSESSettings)]  # type: ignore[arg-type]
     cors: Annotated[CORSSettings, Field(default_factory=CORSSettings)]  # type: ignore[arg-type]
+    frontend: Annotated[FrontendSettings, Field(default_factory=FrontendSettings)]  # type: ignore[arg-type]
+    email_verification: Annotated[
+        EmailVerifySettings, Field(default_factory=EmailVerifySettings)  # type: ignore[arg-type]
+    ]
     password_reset: Annotated[
         PasswordResetSettings, Field(default_factory=PasswordResetSettings)  # type: ignore[arg-type]
     ]

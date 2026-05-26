@@ -7,7 +7,7 @@ from src.exceptions import (
     LessonAlreadyExistsError,
     LessonNotFoundError,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
 )
 
 GET_LESSON: EndpointDoc = {
@@ -24,7 +24,7 @@ GET_LESSON: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Lesson Not Found",
@@ -52,7 +52,7 @@ CREATE_LESSON: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         409: _generate_error(
             description="Lesson Already Exists",
@@ -82,7 +82,7 @@ DELETE_LESSON: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Lesson Not Found",
@@ -110,7 +110,7 @@ LESSON_UPDATE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Lesson Not Found",
@@ -140,7 +140,7 @@ UPDATE_LESSON_POSITION: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
     },
 }

@@ -117,8 +117,12 @@ class UnAuthenticated(SecurityError):
     _default = "Authentication is required."
 
 
-class UnauthorizedError(SecurityError):
+class UnAuthorizedError(SecurityError):
     _default = "Do not have a permission to perform this action."
+
+
+class EmailNotVerifiedError(SecurityError):
+    _default = "Email not verified."
 
 
 """
@@ -335,9 +339,17 @@ class InvalidScoreError(ValidationError):
         self.max_score = max_score
 
 
-class PasswordResetTokenExpiredError(ValidationError):
+class ExpiredPasswordResetTokenError(SecurityError):
     _default = "The password reset token has expired."
 
 
 class InvalidPasswordResetTokenError(ValidationError):
     _default = "The password reset token is invalid."
+
+
+class ExpiredEmailVerificationTokenError(SecurityError):
+    _default = "The email verification token has expired."
+
+
+class InvalidEmailVerificationTokenError(SecurityError):
+    _default = "The email verification token is invalid."

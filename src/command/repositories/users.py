@@ -6,10 +6,8 @@ from pydantic import BaseModel
 from pypika import Parameter, PostgreSQLQuery, Table, functions
 from pypika.terms import Criterion
 
-from src.command.commands.base import ID
 from src.command.commands.media import MediableType
 from src.command.commands.users import (
-    ResetPassword,
     User,
     UserCreate,
     UserDelete,
@@ -41,34 +39,9 @@ class UserRepository(BaseRepository[User]):
         cmd = self._normalize(cmd, UserCreate)
         return await super().add(cmd, connection)
 
-    @override
     async def update(
         self, cmd: BaseModel, connection: Optional[Connection] = None
-    ) -> Optional[User]:
-
-        cmd = self._normalize(cmd, ResetPassword)
-        query = (
-            PostgreSQLQuery.update(user_table)
-            .set(user_table.password, Parameter("$2"))
-            .where(
-                Criterion.all(
-                    terms=[
-                        user_table.id == Parameter("$1"),
-                        user_table.deleted_at.isnull(),
-                    ]
-                )
-            )
-        )
-
-        query: Any = query.returning("*")  # type: ignore
-        sql: str = query.get_sql()
-
-        executable = ExecutableSQL(sql=sql, values=(cmd.id, cmd.password))
-
-        result = await self.db.execute(
-            executable, fetch_returns="one", connection=connection
-        )
-        return self._to_domain(result)
+    ) -> Optional[User]: ...
 
     async def _delete_enrollments(
         self, cmd: UserDelete, connection: Optional[Connection] = None
@@ -204,26 +177,3 @@ class UserRepository(BaseRepository[User]):
         )
 
         return self._to_domain(user)
-
-    async def update_last_login(self, user_id: ID) -> Optional[User]:
-
-        table = Table(self.tablename)
-        update_query = (
-            PostgreSQLQuery.update(table)
-            .set("last_login", functions.Now())
-            .set("updated_by", user_id)
-            .where(
-                Criterion.all(
-                    terms=[table.id == Parameter("$1"), table.deleted_at.isnull()]
-                )
-            )
-        )
-
-        update_query: Any = update_query.returning("*")
-        sql: str = update_query.get_sql()
-
-        executable = ExecutableSQL(sql, (user_id,))
-
-        result = await self.db.execute(executable, fetch_returns="one")
-
-        return self._to_domain(result)

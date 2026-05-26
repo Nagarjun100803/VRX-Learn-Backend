@@ -7,7 +7,7 @@ from src.exceptions import (
     AssignmentNotFoundError,
     CourseNotFoundError,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
 )
 
 GET_ASSIGNMENT: EndpointDoc = {
@@ -24,7 +24,7 @@ GET_ASSIGNMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Not Found",
@@ -104,7 +104,7 @@ Create a new assignment. This endpoint supports two scenarios:
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         409: _generate_error(
             description="Assignment Already Exists",
@@ -162,7 +162,7 @@ UPDATE_ASSIGNMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Not Found",
@@ -192,7 +192,7 @@ DELETE_ASSIGNMENT: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Not Found",

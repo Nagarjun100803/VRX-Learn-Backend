@@ -9,7 +9,7 @@ from src.auth.permission_policy import Action, Entity, get_policy
 from src.command.commands.users import UserGetByID
 from src.command.repositories.users import UserRepository
 from src.database import AsyncPgDBManager
-from src.exceptions import UnauthorizedError
+from src.exceptions import UnAuthorizedError
 
 
 class AuthService:
@@ -122,11 +122,11 @@ class AuthService:
         # ===== Tier 1: RBAC (Role-Based Access Control) =====
         user = await self.user_repo.get(UserGetByID(id=user_id))
         if user is None:
-            raise UnauthorizedError(message=f"User {user_id} not found")
+            raise UnAuthorizedError(message=f"User {user_id} not found")
 
         policy = get_policy(user.role, entity)
         if not policy.allows(action):
-            raise UnauthorizedError(
+            raise UnAuthorizedError(
                 message=f"Role '{user.role.value}' cannot {action.value} {entity.value}"
             )
 
@@ -139,17 +139,17 @@ class AuthService:
 
         if action == Action.CREATE:
             if not await self._validate_create(spec_type, user_id, parent_id):
-                raise UnauthorizedError(message="Create not allowed by relationship")
+                raise UnAuthorizedError(message="Create not allowed by relationship")
 
         elif action in {Action.UPDATE, Action.DELETE}:
             if not await self._validate_update_or_delete(spec_type, user_id, entity_id):
-                raise UnauthorizedError(
+                raise UnAuthorizedError(
                     message="Update or delete not allowed by relationship"
                 )
 
         elif action == Action.VIEW:
             if not await self._validate_view(spec_type, user_id, entity_id, parent_id):
-                raise UnauthorizedError(message="View not allowed by relationship")
+                raise UnAuthorizedError(message="View not allowed by relationship")
 
 
 P = ParamSpec("P")

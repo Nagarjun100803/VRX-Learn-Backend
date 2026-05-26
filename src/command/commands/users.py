@@ -1,5 +1,5 @@
 from enum import StrEnum
-from typing import Annotated
+from typing import Annotated, Optional
 
 from pydantic import EmailStr, StringConstraints
 
@@ -24,11 +24,15 @@ class UserCreateCore(BaseCmd):
 
 
 class UserCreate(UserCreateCore):
-    created_by: UserID
+    created_by: Optional[UserID] = None
 
 
 class UserCreateWithConfirmPassword(UserCreate):
     confirm_password: str
+
+
+class VerifiedUserCreate(UserCreate):
+    email_verified: bool = True
 
 
 class UserGetByID(UserBase): ...
@@ -46,25 +50,8 @@ class UserDelete(UserBase):
     deleted_by: UserID
 
 
-class UserAuth(BaseCmd):
-    email: EmailStr
-    password: str
-
-
-class ForgetPassword(BaseCmd):
-    email: Email
-
-
-class ResetPassword(BaseCmd):
-    id: int
-    password: str
-
-
-class RequestResetPassword(BaseCmd):
-    token: str
-    password: str
-
-
 class User(AuditFields, UserCreateCore, UserBase):
+    email_verified: bool = False
+
     def is_manager(self) -> bool:
         return self.role in {UserRole.SUBADMIN, UserRole.TRAINER}

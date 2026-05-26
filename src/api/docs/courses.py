@@ -6,7 +6,7 @@ from src.exceptions import (
     CourseNotFoundError,
     InvalidRoleError,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
     UserNotFoundError,
 )
 
@@ -24,7 +24,7 @@ GET_COURSE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Course Not Found",
@@ -49,7 +49,7 @@ CREATE_COURSE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         409: _generate_error(
             description="Course Already Exists",
@@ -84,7 +84,7 @@ DELETE_COURSE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Course Not Found",
@@ -109,7 +109,7 @@ UPDATE_BASIC_INFO: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Course Not Found",
@@ -139,7 +139,7 @@ UPDATE_PRE_RECORDED_COURSE_INFO: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Course Not Found",

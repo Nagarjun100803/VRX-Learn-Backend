@@ -2,6 +2,7 @@ from src.command.repositories.assignment_submissions import (
     AssignmentSubmissionRepository,
 )
 from src.command.repositories.assignments import AssignmentRepository
+from src.command.repositories.authentication import AuthenticationRepository
 from src.command.repositories.courses import CourseRepository
 from src.command.repositories.enrollments import EnrollmentRepository
 from src.command.repositories.issues import IssueRepository
@@ -20,4 +21,5 @@ __all__ = [
     "AssignmentRepository",
     "AssignmentSubmissionRepository",
     "IssueRepository",
+    "AuthenticationRepository",
 ]

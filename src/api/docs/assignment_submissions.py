@@ -11,7 +11,7 @@ from src.exceptions import (
     AssignmentSubmissionNotFoundError,
     AssignmentSubmissionNotGraded,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
 )
 
 GET_ASSIGNMENT_SUBMISSION: EndpointDoc = {
@@ -31,7 +31,7 @@ GET_ASSIGNMENT_SUBMISSION: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Submission Not Found",
@@ -67,7 +67,7 @@ Create a new assignment submission with an attachment. This endpoint:
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Not Found",
@@ -128,7 +128,7 @@ VERIFY_ASSIGNMENT_SUBMISSION: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Submission Not Found",
@@ -197,7 +197,7 @@ UPDATE_FEEDBACK: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Assignment Submission Not Found",

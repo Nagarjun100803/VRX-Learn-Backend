@@ -6,7 +6,7 @@ from src.exceptions import (
     CourseModuleNotFoundError,
     CourseNotFoundError,
     UnAuthenticated,
-    UnauthorizedError,
+    UnAuthorizedError,
 )
 
 GET_MODULE: EndpointDoc = {
@@ -23,7 +23,7 @@ GET_MODULE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Module Not Found",
@@ -48,7 +48,7 @@ CREATE_MODULE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         409: _generate_error(
             description="Module Already Exists",
@@ -81,7 +81,7 @@ UPDATE_MODULE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Module Not Found",
@@ -111,7 +111,7 @@ DELETE_MODULE: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
         404: _generate_error(
             description="Module Not Found",
@@ -136,7 +136,7 @@ UPDATE_MODULE_POSITION: EndpointDoc = {
         403: _generate_error(
             description="Forbidden",
             message="Cannot perform this action.",
-            type=UnauthorizedError,
+            type=UnAuthorizedError,
         ),
     },
 }
