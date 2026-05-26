@@ -28,6 +28,7 @@ from src.command.services import (
     MediaService,
     ModuleService,
     PositioningService,
+    UserOnboardService,
     UserService,
 )
 from src.command.services.files import get_session
@@ -186,6 +187,8 @@ assignment_submission_service = AssignmentSubmissionService(
 issue_service = IssueService(
     repo=issue_repository, auth_service=auth_service, media_service=media_service
 )
+
+user_onboard_service = UserOnboardService(enrollment_service=enrollment_service)
 
 
 # Query services.

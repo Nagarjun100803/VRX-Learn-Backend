@@ -9,6 +9,7 @@ from src.command.services.lessons import LessonService
 from src.command.services.media import MediaService
 from src.command.services.modules import ModuleService
 from src.command.services.positioning import PositioningService
+from src.command.services.user_onboard import UserOnboardService
 from src.command.services.users import UserService
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "PositioningService",
     "IssueService",
     "AuthenticationService",
+    "UserOnboardService",
 ]

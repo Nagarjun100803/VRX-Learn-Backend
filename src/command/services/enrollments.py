@@ -42,14 +42,7 @@ class EnrollmentService(BaseService[Enrollment]):
     _entity: ClassVar[Entity] = Entity.ENROLLMENT
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = EnrollmentNotFoundError
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.ENROLLMENT,
-        user_id_field="created_by",
-        parent_id_field=None,  # Explicitly set to None, because it is a root.
-        object_name="cmd",
-    )
-    async def create(self, cmd: EnrollmentCreate) -> Enrollment:
+    async def create_enrollment(self, cmd: EnrollmentCreate) -> Enrollment:
         # Check for course existance and duplicate enrollments.
         # TODO: Look for anyio or TaskGroup to run these for better concurrency.
         course_exist, user, duplicate_enrollment_flag = await asyncio.gather(
@@ -76,6 +69,16 @@ class EnrollmentService(BaseService[Enrollment]):
             )
 
         return cast(Enrollment, await self.repo.add(cmd))
+
+    @require_authorization(
+        action=Action.CREATE,
+        entity=Entity.ENROLLMENT,
+        user_id_field="created_by",
+        parent_id_field=None,  # Explicitly set to None, because it is a root.
+        object_name="cmd",
+    )
+    async def create(self, cmd: EnrollmentCreate) -> Enrollment:
+        return await self.create_enrollment(cmd)
 
     @require_authorization(
         action=Action.UPDATE,

@@ -31,6 +31,7 @@ from src.dependencies import (
     TrainerCourseOverviewQueryService,
     TrainerDashboardQueryService,
     TrainerEntityListQueryService,
+    UserOnboardService,
     UserService,
     admin_dashboard_query_service,
     admin_entity_list_query_service,
@@ -55,6 +56,7 @@ from src.dependencies import (
     trainer_course_overview_query_service,
     trainer_dashboard_query_service,
     trainer_entity_list_query_service,
+    user_onboard_service,
     user_service,
 )
 from src.exceptions import UnAuthenticated, UnAuthorizedError
@@ -64,6 +66,10 @@ from src.exceptions import UnAuthenticated, UnAuthorizedError
 
 def get_authentication_service() -> AuthenticationService:
     return authentication_service
+
+
+def get_user_onboard_service() -> UserOnboardService:
+    return user_onboard_service
 
 
 def get_user_service() -> UserService:
@@ -165,6 +171,11 @@ def get_issue_query_service() -> IssueQueryService:
 type AuthenticationServiceDependency = Annotated[
     AuthenticationService, Depends(get_authentication_service)
 ]
+
+type UserOnboardServiceDependency = Annotated[
+    UserOnboardService, Depends(get_user_onboard_service)
+]
+
 type UserServiceDependency = Annotated[UserService, Depends(get_user_service)]
 type CourseServiceDependency = Annotated[CourseService, Depends(get_course_service)]
 type ModuleServiceDependency = Annotated[ModuleService, Depends(get_module_service)]

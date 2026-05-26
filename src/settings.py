@@ -1,4 +1,5 @@
-from typing import Annotated
+from datetime import datetime
+from typing import Annotated, Optional
 
 from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -88,6 +89,15 @@ class PasswordResetSettings(BaseSettings):
     )
 
 
+class FreeCourseSettings(BaseSettings):
+    ids: list[int]
+    expires_at: Optional[datetime] = None
+
+    model_config = SettingsConfigDict(
+        env_file="src/.env", extra="ignore", env_prefix="FREE_COURSE_"
+    )
+
+
 class Settings(BaseModel):
     database: Annotated[DatabaseSettings, Field(default_factory=DatabaseSettings)]  # type: ignore[arg-type]
     jwt: Annotated[JWTSettings, Field(default_factory=JWTSettings)]  # type: ignore[arg-type]
@@ -100,6 +110,9 @@ class Settings(BaseModel):
     ]
     password_reset: Annotated[
         PasswordResetSettings, Field(default_factory=PasswordResetSettings)  # type: ignore[arg-type]
+    ]
+    free_course: Annotated[
+        FreeCourseSettings, Field(default_factory=FreeCourseSettings)  # type: ignore[arg-type]
     ]
 
 

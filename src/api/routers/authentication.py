@@ -8,6 +8,7 @@ from src.api.dependencies import (
     AuthenticationServiceDependency,
     NotificationServiceDependency,
     UserContextDependency,
+    UserOnboardServiceDependency,
 )
 from src.api.docs.users import LOGIN, LOGOUT, ME
 from src.command.commands.authentication import (
@@ -49,11 +50,14 @@ async def signup(
 
 @router.post("/verify-email", response_class=JSONResponse)
 async def verify_email(
-    token: str, authentication_service: AuthenticationServiceDependency
+    token: str,
+    authentication_service: AuthenticationServiceDependency,
+    user_onboard_service: UserOnboardServiceDependency,
+    background_tasks: BackgroundTasks,
 ):
     user = await authentication_service.verify_email(VerifyEmailByToken(token=token))
 
-    # TODO: Need to add Onboarding process.
+    background_tasks.add_task(user_onboard_service.onboard_user, user.id)
 
     return JSONResponse(content={"message": "Email verified successfully"})
 
