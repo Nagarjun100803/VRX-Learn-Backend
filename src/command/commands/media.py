@@ -33,7 +33,7 @@ class MediaStatus(StrEnum):
 
 class MediaCreateCore(BaseCmd):
     filename: str
-    mime_type: AllowedContentTypes
+    mime_type: str
     file_size: Annotated[int, Field(gt=0, examples=[1024])]
     mediable_id: int
     mediable_type: MediableType
@@ -51,6 +51,13 @@ class MediaStatusUpdateCore(BaseCmd):
 
 
 class MediaStatusUpdate(MediaStatusUpdateCore, MediaBase):
+    updated_by: UserID
+
+
+class MediaStatusUpdateByMediable(BaseCmd):
+    mediable_id: int
+    mediable_type: MediableType
+    status: MediaStatus = MediaStatus.UPLOADED
     updated_by: UserID
 
 

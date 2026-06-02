@@ -11,16 +11,16 @@ from src.api.docs.lessons import (
 from src.api.schemas.lessons import LessonCreateSchema, LessonUpdateSchema
 from src.command.commands.base import LessonID
 from src.command.commands.lessons import (
+    LessonAttachmentStatusUpdate,
+    LessonAttachmentUploadContext,
     LessonCreate,
     LessonDelete,
     LessonGetQuery,
     LessonReorderParticipants,
     LessonReorderParticipantsCore,
     LessonUpdate,
-    LessonUpload,
     LessonWithMedia,
 )
-from src.command.services.files import FileMetadata
 
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
 
@@ -39,7 +39,7 @@ async def get_lesson(
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    response_model=LessonUpload,
+    response_model=LessonAttachmentUploadContext,
     **CREATE_LESSON,
 )
 async def create_lesson(
@@ -48,18 +48,9 @@ async def create_lesson(
     current_user: CurrentUser,
 ):
 
-    return await lesson_service.init_lesson_create(
-        LessonCreate(
-            title=lesson.title,
-            description=lesson.description,
-            module_id=lesson.module_id,
-            created_by=current_user,
-        ),
-        FileMetadata(
-            filename=lesson.filename,
-            content_type=lesson.content_type,
-            size=lesson.file_size,
-        ),
+    return await lesson_service.create(
+        cmd=LessonCreate(**lesson.lesson.model_dump(), created_by=current_user),
+        attachment=lesson.attachment,
     )
 
 
@@ -75,7 +66,7 @@ async def delete_lesson(
     )
 
 
-@router.patch("/{lesson_id}/update", response_model=LessonUpdateSchema, **LESSON_UPDATE)
+@router.patch("/{lesson_id}", response_model=LessonUpdateSchema, **LESSON_UPDATE)
 async def lesson_update(
     lesson_id: LessonID,
     lesson: LessonUpdateSchema,
@@ -92,9 +83,7 @@ async def lesson_update(
     )
 
 
-@router.patch(
-    "/{lesson_id}/update-position", response_model=str, **UPDATE_LESSON_POSITION
-)
+@router.patch("/{lesson_id}/position", response_model=str, **UPDATE_LESSON_POSITION)
 async def update_lesson_position(
     lesson_id: LessonID,
     participants: LessonReorderParticipantsCore,
@@ -109,4 +98,28 @@ async def update_lesson_position(
             succeeding_id=participants.succeeding_id,
             updated_by=current_user,
         )
+    )
+
+
+@router.patch(
+    "/{lesson_id}/attachment/uploaded", status_code=status.HTTP_204_NO_CONTENT
+)
+async def update_attachment_status(
+    lesson_id: LessonID,
+    lesson_service: LessonServiceDependency,
+    current_user: CurrentUser,
+):
+    await lesson_service.mark_attachment_as_uploaded(
+        LessonAttachmentStatusUpdate(id=lesson_id, updated_by=current_user)
+    )
+
+
+@router.get("/{lesson_id}/attachment/view-url", response_model=str)
+async def get_view_url(
+    lesson_id: LessonID,
+    lesson_service: LessonServiceDependency,
+    current_user: CurrentUser,
+):
+    return await lesson_service.get_attachment_view_url(
+        LessonGetQuery(id=lesson_id, viewer_id=current_user)
     )

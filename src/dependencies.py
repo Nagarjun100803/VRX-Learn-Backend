@@ -17,7 +17,6 @@ from src.command.repositories import (
 
 # Service Imports.
 from src.command.services import (
-    S3,
     AssignmentService,
     AssignmentSubmissionService,
     AuthenticationService,
@@ -31,9 +30,10 @@ from src.command.services import (
     UserOnboardService,
     UserService,
 )
-from src.command.services.files import get_session
 from src.core.security.jwt import JWTHandler
 from src.core.security.password import PasswordHasher
+from src.core.storage.files import S3Bucket
+from src.core.storage.files import get_session as get_s3_session
 from src.database import AsyncPgDBManager
 from src.notifications import SES, EmailTemplates, NotificationSender
 from src.notifications import get_session as get_ses_session
@@ -142,12 +142,12 @@ module_service = ModuleService(
     positioning_service=positioning_service,
 )
 
-session = get_session()
+session = get_s3_session()
 ses_session = get_ses_session()
 
-file_service = S3(bucket="vrx-learn", session=session)
+file_service = S3Bucket(bucket_name="vrx-learn", session=session)
 
-media_service = MediaService(file_service=file_service, repo=media_repository)
+media_service = MediaService(repo=media_repository)
 
 email_service = SES(session=ses_session)
 email_templates = EmailTemplates()
@@ -160,6 +160,7 @@ lesson_service = LessonService(
     module_repo=module_repository,
     media_service=media_service,
     auth_service=auth_service,
+    file_service=file_service,
     positioning_service=positioning_service,
 )
 

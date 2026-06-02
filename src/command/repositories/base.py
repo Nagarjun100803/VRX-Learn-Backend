@@ -223,6 +223,8 @@ class BaseRepository[T](ABC):
         for idx, col in enumerate(filters, start=1):
             sql = sql.where(table.field(col) == Parameter(f"${idx}"))
 
+        sql = sql.where(table.deleted_at.isnull())
+
         executable = ExecutableSQL(sql=sql.get_sql(), values=tuple(filters.values()))
         result = await self.db.execute(
             executable,

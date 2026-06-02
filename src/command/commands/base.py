@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import partial
-from typing import Annotated, ClassVar, Optional, Type, Union
+from typing import Annotated, ClassVar, Optional, Type, TypeVar, Union
 
 from pydantic import (
     BaseModel,
@@ -310,3 +310,12 @@ class AuditFields(DeleteAuditField, UpdateAuditFields, CreateAuditFields):
 
 
 NullField = Field(default=None, examples=[None])
+
+
+ContentTypeT = TypeVar("ContentTypeT", bound=str)
+
+
+class BaseAttachmentMetadata[ContentTypeT](BaseCmd):
+    filename: str
+    content_type: ContentTypeT
+    size: int

@@ -18,3 +18,4 @@ tests
 cache.py
 qb
 *.pem
+old*

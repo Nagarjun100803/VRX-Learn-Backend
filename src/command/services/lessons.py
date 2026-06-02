@@ -1,37 +1,40 @@
 import asyncio
-from typing import ClassVar, Optional, Type, cast
+from typing import ClassVar, Type
 from uuid import uuid4
 
-from asyncpg import Connection
-from slugify import slugify
+from slugify.slugify import slugify
 
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.lessons import (
     Lesson,
+    LessonAttachmentMetadata,
+    LessonAttachmentStatusUpdate,
+    LessonAttachmentUploadContext,
     LessonCreate,
     LessonCreateWithPosition,
     LessonDelete,
-    LessonDetail,
     LessonGetQuery,
     LessonReorderParticipants,
     LessonUpdate,
-    LessonUpload,
     LessonWithMedia,
-    MediaDetail,
 )
-from src.command.commands.media import MediableType, MediaCreate, MediaStatus
-from src.command.commands.modules import Module, ModuleGet
-from src.command.repositories.lessons import LessonRepository
-from src.command.repositories.modules import ModuleRepository
+from src.command.commands.media import (
+    MediableType,
+    MediaCreate,
+    MediaStatus,
+    MediaStatusUpdateByMediable,
+)
+from src.command.repositories import LessonRepository, ModuleRepository
 from src.command.services.base import BaseService
-from src.command.services.files import FileMetadata
 from src.command.services.media import MediaService
 from src.command.services.positioning import PositioningService, ReorderParticipants
+from src.core.storage.files import FileMetadata, S3Bucket
 from src.exceptions import (
     CourseModuleNotFoundError,
     EntityNotFoundError,
     LessonAlreadyExistsError,
     LessonNotFoundError,
+    MediaNotFoundError,
 )
 
 
@@ -44,59 +47,107 @@ class LessonService(BaseService[Lesson]):
         repo: LessonRepository,
         module_repo: ModuleRepository,
         media_service: MediaService,
+        file_service: S3Bucket,
         auth_service: AuthService,
         positioning_service: PositioningService,
     ) -> None:
-
         self.repo = repo
         self.module_repo = module_repo
         self.media_service = media_service
+        self.file_service = file_service
         self.auth_service = auth_service
         self.positioning_service = positioning_service
 
-    async def _validate_module(self, module_id: int) -> Module:
-
-        module = await self.module_repo.get(ModuleGet(id=module_id))
-
-        if module is None:
-            raise CourseModuleNotFoundError(value=module_id)
-
-        return module
-
     async def _check_duplicate_lesson_title(self, title: str, module_id: int) -> None:
-
         duplicate_title_flag = await self.repo.exists_by(
             title=title, module_id=module_id
         )
-
         if duplicate_title_flag:
             raise LessonAlreadyExistsError(value=title, identifier="title")
 
-        return None
+    async def _validate_lesson_create(self, cmd: LessonCreate) -> None:
+        module_exists, _ = await asyncio.gather(
+            self.module_repo.exists_by(id=cmd.module_id),
+            self._check_duplicate_lesson_title(
+                title=cmd.title, module_id=cmd.module_id
+            ),
+        )
+        if not module_exists:
+            raise CourseModuleNotFoundError(value=cmd.module_id)
+
+    async def _generate_storage_key(self, filename: str, module_id: int) -> str:
+        # Pick course id from the module id.
+        course_id = await self.module_repo.pick(
+            columns=["course_id"], fetch_all=False, id=module_id
+        )
+        if course_id is None:
+            raise CourseModuleNotFoundError(value=module_id)
+
+        course_id = dict(course_id)["course_id"]
+
+        slugged_filename = slugify(text=filename)
+
+        return f"courses/C-{course_id}/modules/{module_id}/lessons/{str(uuid4())}/{slugged_filename}"
+
+    async def _prepare_media_create_payload(
+        self, lesson_id: int, cmd: LessonCreate, attachment: LessonAttachmentMetadata
+    ):
+        key = await self._generate_storage_key(
+            filename=attachment.filename, module_id=cmd.module_id
+        )
+        return MediaCreate(
+            filename=attachment.filename,
+            mime_type=attachment.content_type,
+            file_size=attachment.size,
+            mediable_id=lesson_id,
+            mediable_type=MediableType.LESSON,
+            key=key,
+            created_by=cmd.created_by,
+        )
 
     @require_authorization(
         action=Action.CREATE,
         entity=Entity.LESSON,
         user_id_field="created_by",
         parent_id_field="module_id",
-        object_name="cmd",
     )
     async def create(
-        self, cmd: LessonCreate, connection: Optional[Connection] = None
-    ) -> Lesson:
+        self, cmd: LessonCreate, attachment: LessonAttachmentMetadata
+    ) -> LessonAttachmentUploadContext:
+
+        await self._validate_lesson_create(cmd)
 
         position_string = await self.positioning_service.generate_position(
             tablename=self.repo.tablename, scope="module_id", scope_id=cmd.module_id
         )
 
-        return cast(
-            Lesson,
-            await self.repo.add(
-                LessonCreateWithPosition(
+        async with self.repo.db.transaction() as tconn:
+            lesson = await self.repo.add(
+                cmd=LessonCreateWithPosition(
                     **cmd.model_dump(), position_string=position_string
                 ),
-                connection=connection,
-            ),
+                connection=tconn,
+            )
+            media_cmd = await self._prepare_media_create_payload(
+                lesson.id, cmd, attachment
+            )
+            media = await self.media_service.create(cmd=media_cmd, connection=tconn)
+
+        url = await self.file_service.get_upload_url(
+            metadata=FileMetadata(
+                key=media.key,
+                content_type=media.mime_type,
+                filename=attachment.filename,
+            )
+        )
+        return LessonAttachmentUploadContext(
+            id=lesson.id,
+            title=lesson.title,
+            description=lesson.description,
+            created_by=lesson.created_by,
+            created_at=lesson.created_at,
+            media_id=media.id,
+            url=url,
         )
 
     @require_authorization(
@@ -104,7 +155,6 @@ class LessonService(BaseService[Lesson]):
         entity=Entity.LESSON,
         user_id_field="updated_by",
         entity_id_field="id",
-        object_name="cmd",
     )
     async def update(self, cmd: LessonUpdate) -> Lesson:
 
@@ -128,13 +178,10 @@ class LessonService(BaseService[Lesson]):
         entity=Entity.LESSON,
         user_id_field="deleted_by",
         entity_id_field="id",
-        object_name="cmd",
     )
     async def delete(self, cmd: LessonDelete) -> Lesson:
-        # TODO: Need to delete the actual file from the object storage also.
         return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
 
-    # NOTE: This is not going to use in API Layer.
     @require_authorization(
         action=Action.VIEW,
         entity=Entity.LESSON,
@@ -142,7 +189,7 @@ class LessonService(BaseService[Lesson]):
         entity_id_field="id",
         object_name="query",
     )
-    async def get(self, query: LessonGetQuery):
+    async def get(self, query: LessonGetQuery) -> Lesson:
         return self._require_entity(await self.repo.get(query), value=query.id)
 
     @require_authorization(
@@ -159,11 +206,51 @@ class LessonService(BaseService[Lesson]):
         return result
 
     @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.LESSON,
+        user_id_field="viewer_id",
+        entity_id_field="id",
+        object_name="query",
+    )
+    async def get_attachment_view_url(self, query: LessonGetQuery) -> str:
+
+        # NOTE: If get_by_mediable returns None, it guarantees both the
+        # lesson and the media do not exist.
+        media = await self.media_service.get_by_mediable(
+            mediable_id=query.id, mediable_type=MediableType.LESSON
+        )
+
+        if media.status != MediaStatus.UPLOADED:
+            raise MediaNotFoundError(value=media.id, identifier="Lesson Attachment.")
+
+        return await self.file_service.get_view_url(
+            metadata=FileMetadata(
+                key=media.key, filename=media.filename, content_type=media.mime_type
+            )
+        )
+
+    @require_authorization(
         action=Action.UPDATE,
         entity=Entity.LESSON,
         user_id_field="updated_by",
-        entity_id_field="target_id",
-        object_name="cmd",
+        entity_id_field="id",
+    )
+    async def mark_attachment_as_uploaded(
+        self, cmd: LessonAttachmentStatusUpdate
+    ) -> None:
+        await self.media_service.update(
+            cmd=MediaStatusUpdateByMediable(
+                mediable_id=cmd.id,
+                mediable_type=MediableType.LESSON,
+                updated_by=cmd.updated_by,
+            )
+        )
+
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.LESSON,
+        user_id_field="updated_by",
+        entity_id_field="id",
     )
     async def reorder(self, cmd: LessonReorderParticipants) -> str:
         return await self.positioning_service.reorder(
@@ -174,54 +261,4 @@ class LessonService(BaseService[Lesson]):
             ),
             tablename="lessons",
             scope="module_id",
-        )
-
-    async def init_lesson_create(
-        self, cmd: LessonCreate, file_cmd: FileMetadata
-    ) -> LessonUpload:
-
-        async with self.repo.db.transaction() as connection:
-            module, _ = await asyncio.gather(
-                self._validate_module(module_id=cmd.module_id),
-                self._check_duplicate_lesson_title(
-                    title=cmd.title, module_id=cmd.module_id
-                ),
-            )
-
-            lesson = await self.create(cmd, connection=connection)
-
-            slugged_filename = slugify(file_cmd.filename)
-
-            key = f"courses/C-{module.course_id}/modules/{module.id}/lessons/{str(uuid4())}/{slugged_filename}"
-
-            media = MediaCreate(
-                filename=file_cmd.filename,
-                mime_type=file_cmd.content_type,
-                file_size=file_cmd.size,
-                mediable_id=lesson.id,
-                mediable_type=MediableType.LESSON,
-                created_by=lesson.created_by,  # type: ignore[arg-type]
-                is_private=True,
-                status=MediaStatus.PENDING,
-                key=key,
-            )
-
-            media_id, upload_url = await self.media_service.prepare_upload_url(
-                media, expire_mins=120, connection=connection
-            )
-
-        return LessonUpload(
-            lesson=LessonDetail(
-                id=lesson.id,
-                title=lesson.title,
-                description=lesson.description,
-                created_by=lesson.created_by,  # type: ignore[arg-type]
-                created_at=lesson.created_at,  # type: ignore[arg-type]
-            ),
-            media=MediaDetail(
-                media_id=media_id,
-                filename=file_cmd.filename,
-                mime_type=file_cmd.content_type,
-                upload_url=upload_url,
-            ),
         )

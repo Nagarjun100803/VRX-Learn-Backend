@@ -1,28 +1,50 @@
 from datetime import datetime
-from typing import Annotated, Optional
+from enum import StrEnum
+from typing import Annotated, Optional, Self
 
-from pydantic import StringConstraints
+from pydantic import StringConstraints, model_validator
 
 from src.command.commands.base import (
-    AuditFields,
+    BaseAttachmentMetadata,
     BaseCmd,
+    DeleteAuditField,
     LessonBase,
     LessonID,
     MediaID,
     ModuleID,
     NullField,
+    UpdateAuditFields,
     UserID,
 )
-from src.command.commands.media import AllowedContentTypes, MediaDetail
+from src.command.commands.media import AllowedContentTypes
 from src.command.commands.validator import UpdateValidatorMixin
+from src.exceptions import FileSizeExceededError
 
-LessonTitle = Annotated[
+type LessonTitle = Annotated[
     str,
     StringConstraints(
         min_length=1, max_length=200, strip_whitespace=True, to_upper=True
     ),
 ]
-LessonDescription = Annotated[str, StringConstraints(max_length=5000)]
+type LessonDescription = Annotated[str, StringConstraints(max_length=5000)]
+
+
+class AllowedLessonAttachmentContentTypes(StrEnum):
+    PDF = "application/pdf"
+    MP4 = "video/mp4"
+
+
+MAX_BYTES = int(2.5 * 1024 * 1024 * 1024)
+
+
+class LessonAttachmentMetadata(
+    BaseAttachmentMetadata[AllowedLessonAttachmentContentTypes]
+):
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        if self.size > MAX_BYTES:
+            raise FileSizeExceededError(max_size=MAX_BYTES)
+        return self
 
 
 class LessonCreateCore(BaseCmd):
@@ -39,12 +61,26 @@ class LessonCreateWithPosition(LessonCreate):
     position_string: str
 
 
+class LessonAttachmentUploadContext(BaseCmd):
+    id: LessonID
+    title: LessonTitle
+    description: Optional[LessonDescription] = None
+    created_by: UserID
+    created_at: datetime
+    media_id: MediaID
+    url: str
+
+
 class LessonUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[LessonTitle], NullField]
     description: Annotated[Optional[LessonDescription], NullField]
 
 
 class LessonUpdate(LessonUpdateCore, LessonBase):
+    updated_by: UserID
+
+
+class LessonAttachmentStatusUpdate(LessonBase):
     updated_by: UserID
 
 
@@ -59,20 +95,9 @@ class LessonGetQuery(LessonGet):
     viewer_id: UserID
 
 
-class Lesson(AuditFields, LessonCreateCore, LessonBase): ...
-
-
-class LessonDetail(BaseCmd):
-    id: LessonID
-    title: LessonTitle
-    description: Optional[LessonDescription] = None
+class Lesson(DeleteAuditField, UpdateAuditFields, LessonCreateCore, LessonBase):
     created_by: UserID
     created_at: datetime
-
-
-class LessonUpload(BaseCmd):
-    lesson: LessonDetail
-    media: MediaDetail
 
 
 class LessonReorderParticipantsCore(UpdateValidatorMixin, BaseCmd):
