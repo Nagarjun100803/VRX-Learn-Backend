@@ -36,7 +36,6 @@ from src.api.routers.entity_list import trainee_router as TraineeEntityListAPIRo
 from src.api.routers.entity_list import trainer_router as TrainerEntityListAPIRouter
 from src.api.routers.issues import router as IssueAPIRouter
 from src.api.routers.lessons import router as LessonAPIRouter
-from src.api.routers.media import router as MediaAPIRouter
 from src.api.routers.modules import router as ModuleAPIRouter
 from src.api.routers.users import router as UserAPIRouter
 
@@ -48,7 +47,6 @@ ROUTERS: list[APIRouter] = [
     EnrollmentAPIRouter,
     ModuleAPIRouter,
     LessonAPIRouter,
-    MediaAPIRouter,
     AssignmentAPIRouter,
     AssignmentSubmissionAPIRouter,
     IssueAPIRouter,
@@ -75,7 +73,6 @@ __all__ = [
     "EnrollmentAPIRouter",
     "ModuleAPIRouter",
     "LessonAPIRouter",
-    "MediaAPIRouter",
     "AssignmentAPIRouter",
     "AssignmentSubmissionAPIRouter",
     "IssueAPIRouter",

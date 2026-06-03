@@ -1,7 +1,6 @@
 from src.api.docs._responses import _generate_error
 from src.api.docs._type import EndpointDoc
-from src.api.schemas.assignments import AssignmentUpdateSchema
-from src.command.commands.assignments import AssignmentDetail
+from src.api.schemas.assignments import AssignmentOut, AssignmentUpdateSchema
 from src.exceptions import (
     AssignmentAlreadyExistsError,
     AssignmentNotFoundError,
@@ -15,7 +14,7 @@ GET_ASSIGNMENT: EndpointDoc = {
     "description": "Retrieve an assignment's details by its ID.",
     "response_description": "Returns the assignment's details.",
     "responses": {
-        200: {"model": AssignmentDetail, "description": "Assignment details"},
+        200: {"model": AssignmentOut, "description": "Assignment details"},
         401: _generate_error(
             description="Unauthenticated",
             message="User is not authenticated.",
@@ -42,7 +41,7 @@ Create a new assignment. This endpoint supports two scenarios:
 
 1. **Without Attachment**:
    - Only requires `title`, `instructions`, and other assignment details.
-   - Returns the created assignment details (`AssignmentDetail`).
+   - Returns the created assignment details (`AssignmentOut`).
 
 2. **With Attachment**:
    - Requires `title`, `file_metadata` (filename, content_type, size), and other assignment details.

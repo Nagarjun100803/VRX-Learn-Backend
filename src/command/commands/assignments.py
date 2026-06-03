@@ -1,33 +1,47 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Self
 
-from pydantic import Field, StringConstraints
+from pydantic import Field, StringConstraints, model_validator
 
 from src.command.commands.base import (
     AssignmentBase,
     AssignmentID,
     AuditFields,
+    BaseAttachmentMetadata,
     BaseCmd,
     CourseID,
+    MediaID,
     NullField,
     UserID,
 )
-from src.command.commands.media import MediaDetail
 from src.command.commands.validator import UpdateValidatorMixin
+from src.exceptions import FileSizeExceededError
 
-AssignmentTitle = Annotated[
+# Types
+type AssignmentTitle = Annotated[
     str, StringConstraints(min_length=1, max_length=250, to_upper=True)
 ]
-AssignmentInstruction = Annotated[str, Field(max_length=5000)]
-NumberOfAttempts = Annotated[int, Field(le=3, gt=0)]
-MaxScore = Annotated[int, Field(ge=5, le=100)]
+type AssignmentInstruction = Annotated[str, Field(max_length=5000)]
+type NumberOfAttempts = Annotated[int, Field(le=3, gt=0)]
+type MaxScore = Annotated[int, Field(ge=5, le=100)]
 
 
-class AllowedAssignmentFileType(StrEnum):
+MAX_BYTES = int(2.5 * 1024 * 1024 * 1024)
+
+
+class AllowedAssignmentAttachmentContentTypes(StrEnum):
     PDF = "application/pdf"
-    DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    DOC = "application/msword"
+
+
+class AssignmentAttachmentMetadata(
+    BaseAttachmentMetadata[AllowedAssignmentAttachmentContentTypes]
+):
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        if self.size > MAX_BYTES:
+            raise FileSizeExceededError(max_size=MAX_BYTES)
+        return self
 
 
 class AssignmentCreateCore(BaseCmd):
@@ -43,8 +57,15 @@ class AssignmentCreate(AssignmentCreateCore):
     created_by: UserID
 
 
-class AssignmentCreateWithPosition(AssignmentCreate):
-    position_string: str
+class AssignmentAttachmentUploadContext(AssignmentCreate):
+    id: AssignmentID
+    created_at: datetime
+    media_id: MediaID
+    url: str
+
+
+class AssignmentAttachmentStatusUpdate(AssignmentBase):
+    updated_by: UserID
 
 
 class AssignmentUpdateCore(UpdateValidatorMixin, BaseCmd):
@@ -66,25 +87,6 @@ class AssignmentGet(AssignmentBase): ...
 
 class AssignmentGetQuery(AssignmentGet):
     viewer_id: UserID
-
-
-class AssignmentReArrangeCore(UpdateValidatorMixin, BaseCmd):
-    preceding_id: Annotated[Optional[AssignmentID], NullField]
-    succeeding_id: Annotated[Optional[AssignmentID], NullField]
-
-
-class AssignmentReArrange(AssignmentReArrangeCore):
-    target_id: AssignmentID
-    updated_by: UserID
-
-
-class AssignmentDetail(AssignmentBase, AssignmentCreate):
-    created_at: datetime
-
-
-class AssignmentUpload(BaseCmd):
-    assignment: AssignmentDetail
-    media: MediaDetail
 
 
 class Assignment(AuditFields, AssignmentCreateCore, AssignmentBase): ...

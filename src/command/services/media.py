@@ -8,10 +8,12 @@ from src.command.commands.media import (
     MediaCreate,
     MediaDelete,
     MediaGet,
+    MediaStatus,
     MediaStatusUpdate,
     MediaStatusUpdateByMediable,
 )
 from src.command.repositories import MediaRepository
+from src.core.storage.files import FileMetadata, S3Bucket
 from src.exceptions import MediaAlreadyExistsError, MediaNotFoundError
 
 
@@ -78,5 +80,31 @@ class MediaService:
         )
 
         return self._require_entity(
-            media, value=mediable_id, alias=mediable_type.title()
+            media,
+            value=mediable_id,
+            alias=f"{mediable_type.title()} Attachment.",
+            identifier="mediable_id",
+        )
+
+
+class AttachmentResolver:
+    """Helper class to resolve presigned URLs for media attachments."""
+
+    def __init__(self, media_service: MediaService, file_service: S3Bucket) -> None:
+        self.media_service = media_service
+        self.file_service = file_service
+
+    async def get_attachment_url(
+        self, mediable_id: int, mediable_type: MediableType
+    ) -> str:
+        media = await self.media_service.get_by_mediable(mediable_id, mediable_type)
+        if media.status != MediaStatus.UPLOADED:
+            raise MediaNotFoundError(
+                message=f"Media not found for mediable_id={mediable_id} and mediable_type={mediable_type}"
+            )
+
+        return await self.file_service.get_view_url(
+            metadata=FileMetadata(
+                key=media.key, filename=media.filename, content_type=media.mime_type
+            )
         )

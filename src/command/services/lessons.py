@@ -21,12 +21,11 @@ from src.command.commands.lessons import (
 from src.command.commands.media import (
     MediableType,
     MediaCreate,
-    MediaStatus,
     MediaStatusUpdateByMediable,
 )
 from src.command.repositories import LessonRepository, ModuleRepository
 from src.command.services.base import BaseService
-from src.command.services.media import MediaService
+from src.command.services.media import AttachmentResolver, MediaService
 from src.command.services.positioning import PositioningService, ReorderParticipants
 from src.core.storage.files import FileMetadata, S3Bucket
 from src.exceptions import (
@@ -34,7 +33,6 @@ from src.exceptions import (
     EntityNotFoundError,
     LessonAlreadyExistsError,
     LessonNotFoundError,
-    MediaNotFoundError,
 )
 
 
@@ -50,6 +48,7 @@ class LessonService(BaseService[Lesson]):
         file_service: S3Bucket,
         auth_service: AuthService,
         positioning_service: PositioningService,
+        attachment_resolver: AttachmentResolver,
     ) -> None:
         self.repo = repo
         self.module_repo = module_repo
@@ -57,6 +56,7 @@ class LessonService(BaseService[Lesson]):
         self.file_service = file_service
         self.auth_service = auth_service
         self.positioning_service = positioning_service
+        self.attachment_resolver = attachment_resolver
 
     async def _check_duplicate_lesson_title(self, title: str, module_id: int) -> None:
         duplicate_title_flag = await self.repo.exists_by(
@@ -213,20 +213,8 @@ class LessonService(BaseService[Lesson]):
         object_name="query",
     )
     async def get_attachment_view_url(self, query: LessonGetQuery) -> str:
-
-        # NOTE: If get_by_mediable returns None, it guarantees both the
-        # lesson and the media do not exist.
-        media = await self.media_service.get_by_mediable(
+        return await self.attachment_resolver.get_attachment_url(
             mediable_id=query.id, mediable_type=MediableType.LESSON
-        )
-
-        if media.status != MediaStatus.UPLOADED:
-            raise MediaNotFoundError(value=media.id, identifier="Lesson Attachment.")
-
-        return await self.file_service.get_view_url(
-            metadata=FileMetadata(
-                key=media.key, filename=media.filename, content_type=media.mime_type
-            )
         )
 
     @require_authorization(

@@ -1,105 +1,148 @@
 import asyncio
-from typing import ClassVar, Optional, Type, cast
+from typing import ClassVar, Type
 from uuid import uuid4
 
-from asyncpg import Connection
 from slugify import slugify
 
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.assignments import (
-    AllowedAssignmentFileType,
     Assignment,
+    AssignmentAttachmentMetadata,
+    AssignmentAttachmentStatusUpdate,
+    AssignmentAttachmentUploadContext,
     AssignmentCreate,
     AssignmentDelete,
-    AssignmentDetail,
     AssignmentGet,
     AssignmentGetQuery,
     AssignmentUpdate,
-    AssignmentUpload,
 )
 from src.command.commands.media import (
     MediableType,
     MediaCreate,
-    MediaDetail,
-    MediaStatus,
+    MediaStatusUpdateByMediable,
 )
-from src.command.repositories.assignments import AssignmentRepository
-from src.command.repositories.courses import CourseRepository
+from src.command.repositories import AssignmentRepository, CourseRepository
 from src.command.services.base import BaseService
-from src.command.services.files import FileMetadata
-from src.command.services.media import MediaService
+from src.command.services.media import AttachmentResolver, MediaService
+from src.core.storage.files import FileMetadata, S3Bucket
 from src.exceptions import (
     AssignmentAlreadyExistsError,
     AssignmentNotFoundError,
     CourseNotFoundError,
     EntityNotFoundError,
-    FileSizeExceededError,
-    InvalidContentTypeError,
 )
-
-MAX_FILE_SIZE_FOR_ASSIGNMENT = 5 * 1024 * 1024  # 5 Mega Bytes.
 
 
 class AssignmentService(BaseService[Assignment]):
+    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = AssignmentNotFoundError
+    _entity: ClassVar[Entity] = Entity.ASSIGNMENT
+
     def __init__(
         self,
         repo: AssignmentRepository,
         course_repo: CourseRepository,
         media_service: MediaService,
         auth_service: AuthService,
+        file_service: S3Bucket,
+        attachment_resolver: AttachmentResolver,
     ) -> None:
-
         self.repo = repo
         self.course_repo = course_repo
         self.media_service = media_service
         self.auth_service = auth_service
+        self.file_service = file_service
+        self.attachment_resolver = attachment_resolver
 
-    _not_found_exc: ClassVar[Type[EntityNotFoundError]] = AssignmentNotFoundError
-    _entity: ClassVar[Entity] = Entity.ASSIGNMENT
-
-    async def _raise_if_duplicate_title(self, title: str, course_id: int) -> None:
-        duplicate_flag = await self.repo.exists_by(title=title, course_id=course_id)
-        if duplicate_flag:
+    async def _validate_title(self, title: str, course_id: int) -> None:
+        if await self.repo.exists_by(title=title, course_id=course_id):
             raise AssignmentAlreadyExistsError(value=title, identifier="title")
+
+    async def _validate_assignment_create(self, cmd: AssignmentCreate) -> None:
+        course_exists, _ = await asyncio.gather(
+            self.course_repo.exists_by(id=cmd.course_id),
+            self._validate_title(title=cmd.title, course_id=cmd.course_id),
+        )
+        if not course_exists:
+            raise CourseNotFoundError(value=cmd.course_id, identifier="course_id")
+        # Later can add more validation here.
+
+    def _generate_storage_key(self, filename: str, course_id: int) -> str:
+        slugged_filename = slugify(filename)
+        return f"courses/C-{course_id}/assignments/{str(uuid4())}/{slugged_filename}"
+
+    def _prepare_media_create_payload(
+        self,
+        assignment_id: int,
+        cmd: AssignmentCreate,
+        attachment: AssignmentAttachmentMetadata,
+    ) -> MediaCreate:
+        key = self._generate_storage_key(
+            filename=attachment.filename, course_id=cmd.course_id
+        )
+        return MediaCreate(
+            filename=attachment.filename,
+            mime_type=attachment.content_type,
+            file_size=attachment.size,
+            mediable_id=assignment_id,
+            mediable_type=MediableType.ASSIGNMENT,
+            key=key,
+            created_by=cmd.created_by,
+        )
 
     @require_authorization(
         action=Action.CREATE,
         entity=Entity.ASSIGNMENT,
         user_id_field="created_by",
+        entity_id_field=None,
         parent_id_field="course_id",
-        object_name="cmd",
     )
-    async def create(
-        self, cmd: AssignmentCreate, connection: Optional[Connection] = None
-    ) -> Assignment:
-        # Check if the Assignment title is exist within a course.
-        course_id_exist_flag, _ = await asyncio.gather(
-            self.course_repo.exists_by(id=cmd.course_id),
-            self._raise_if_duplicate_title(title=cmd.title, course_id=cmd.course_id),
+    async def create(self, cmd: AssignmentCreate) -> Assignment:
+        await self._validate_assignment_create(cmd=cmd)
+        return await self.repo.add(cmd=cmd)
+
+    @require_authorization(
+        action=Action.CREATE,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="created_by",
+        entity_id_field=None,
+        parent_id_field="course_id",
+    )
+    async def create_with_attachment(
+        self, cmd: AssignmentCreate, attachment: AssignmentAttachmentMetadata
+    ) -> AssignmentAttachmentUploadContext:
+
+        await self._validate_assignment_create(cmd=cmd)
+
+        async with self.repo.db.transaction() as tconn:
+            assignment = await self.repo.add(cmd=cmd, connection=tconn)
+            media_cmd = self._prepare_media_create_payload(
+                assignment_id=assignment.id, cmd=cmd, attachment=attachment
+            )
+            media = await self.media_service.create(cmd=media_cmd, connection=tconn)
+
+        url = await self.file_service.get_upload_url(
+            metadata=FileMetadata(
+                key=media.key, filename=media.filename, content_type=media.mime_type
+            )
         )
-
-        if not course_id_exist_flag:
-            raise CourseNotFoundError(value=cmd.course_id)
-
-        return cast(Assignment, await self.repo.add(cmd, connection=connection))
+        return AssignmentAttachmentUploadContext(
+            **assignment.model_dump(), media_id=media.id, url=url
+        )
 
     @require_authorization(
         action=Action.UPDATE,
         entity=Entity.ASSIGNMENT,
         user_id_field="updated_by",
         entity_id_field="id",
-        object_name="cmd",
     )
     async def update(self, cmd: AssignmentUpdate) -> Assignment:
-
-        assignment = await self.repo.get(AssignmentGet(id=cmd.id))
-
+        assignment = await self.repo.get(query=AssignmentGet(id=cmd.id))
         if assignment is None:
             raise AssignmentNotFoundError(value=cmd.id)
 
-        if cmd.title and cmd.title != assignment.title:
-            await self._raise_if_duplicate_title(
-                title=cmd.title, course_id=assignment.course_id
+        if assignment.title != cmd.title:
+            await self._validate_title(
+                title=str(cmd.title), course_id=assignment.course_id
             )
 
         return self._require_entity(await self.repo.update(cmd), value=cmd.id)
@@ -109,9 +152,8 @@ class AssignmentService(BaseService[Assignment]):
         entity=Entity.ASSIGNMENT,
         user_id_field="deleted_by",
         entity_id_field="id",
-        object_name="cmd",
     )
-    async def delete(self, cmd: AssignmentDelete) -> Assignment:
+    async def delete(self, cmd: AssignmentDelete):
         return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
 
     @require_authorization(
@@ -121,71 +163,36 @@ class AssignmentService(BaseService[Assignment]):
         entity_id_field="id",
         object_name="query",
     )
-    async def get(self, query: AssignmentGetQuery) -> Assignment:
+    async def get(self, query: AssignmentGetQuery):
         return self._require_entity(
             await self.repo.get(AssignmentGet(id=query.id)), value=query.id
         )
 
-    async def init_assignment_create(
-        self, cmd: AssignmentCreate, file_cmd: FileMetadata
-    ) -> AssignmentUpload:
-
-        # Check for file size.
-        if file_cmd.size > MAX_FILE_SIZE_FOR_ASSIGNMENT:
-            raise FileSizeExceededError(max_size=MAX_FILE_SIZE_FOR_ASSIGNMENT)
-
-        # Check for content type.
-        if file_cmd.content_type not in AllowedAssignmentFileType:
-            raise InvalidContentTypeError(
-                content_type=file_cmd.content_type,
-                allowed_types=AllowedAssignmentFileType,
-            )
-
-        # Create an assignment and media in a transaction.
-        # So if any of the operation fails, the transaction will be rolled back and
-        # we won't have an orphan media or assignment.
-        async with self.repo.db.transaction() as connection:
-            assignment = await self.create(cmd, connection=connection)
-
-            # Generate a s3 key for this assignment.
-            slugged_filename = slugify(file_cmd.filename)
-
-            key = f"courses/C-{cmd.course_id}/assignments/{str(uuid4())}/{slugged_filename}"
-
-            # Create a media with Assignment Mediable Type and
-            # Pass mediable_id = new assignment id.
-            media = MediaCreate(
-                filename=file_cmd.filename,
-                mime_type=file_cmd.content_type,
-                file_size=file_cmd.size,
-                mediable_id=assignment.id,
+    @require_authorization(
+        action=Action.UPDATE,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="updated_by",
+        entity_id_field="id",
+    )
+    async def mark_attachment_as_uploaded(
+        self, cmd: AssignmentAttachmentStatusUpdate
+    ) -> None:
+        await self.media_service.update(
+            cmd=MediaStatusUpdateByMediable(
+                mediable_id=cmd.id,
                 mediable_type=MediableType.ASSIGNMENT,
-                is_private=True,
-                status=MediaStatus.PENDING,
-                created_by=cmd.created_by,
-                key=key,
+                updated_by=cmd.updated_by,
             )
+        )
 
-            # presigned url.
-            media_id, url = await self.media_service.prepare_upload_url(
-                media, connection=connection
-            )
-
-        return AssignmentUpload(
-            assignment=AssignmentDetail(
-                id=assignment.id,
-                title=assignment.title,
-                instructions=assignment.instructions,
-                created_at=assignment.created_at,  # type: ignore
-                created_by=assignment.created_by,  # type: ignore
-                course_id=assignment.course_id,
-                max_score=assignment.max_score,
-                number_of_attempts=assignment.number_of_attempts,
-            ),
-            media=MediaDetail(
-                media_id=media_id,
-                filename=media.filename,
-                mime_type=media.mime_type,
-                upload_url=url,
-            ),
+    @require_authorization(
+        action=Action.VIEW,
+        entity=Entity.ASSIGNMENT,
+        user_id_field="viewer_id",
+        entity_id_field="id",
+        object_name="query",
+    )
+    async def get_attachment_view_url(self, query: AssignmentGetQuery) -> str:
+        return await self.attachment_resolver.get_attachment_url(
+            mediable_id=query.id, mediable_type=MediableType.ASSIGNMENT
         )

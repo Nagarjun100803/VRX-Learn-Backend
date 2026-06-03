@@ -30,6 +30,7 @@ from src.command.services import (
     UserOnboardService,
     UserService,
 )
+from src.command.services.media import AttachmentResolver
 from src.core.security.jwt import JWTHandler
 from src.core.security.password import PasswordHasher
 from src.core.storage.files import S3Bucket
@@ -155,6 +156,11 @@ notification_service = NotificationSender(
     provider=email_service, template=email_templates
 )
 
+attachment_resolver = AttachmentResolver(
+    media_service=media_service, file_service=file_service
+)
+
+
 lesson_service = LessonService(
     repo=lesson_repository,
     module_repo=module_repository,
@@ -162,6 +168,7 @@ lesson_service = LessonService(
     auth_service=auth_service,
     file_service=file_service,
     positioning_service=positioning_service,
+    attachment_resolver=attachment_resolver,
 )
 
 assignment_service = AssignmentService(
@@ -169,6 +176,8 @@ assignment_service = AssignmentService(
     course_repo=course_repository,
     media_service=media_service,
     auth_service=auth_service,
+    file_service=file_service,
+    attachment_resolver=attachment_resolver,
 )
 
 enrollment_service = EnrollmentService(
