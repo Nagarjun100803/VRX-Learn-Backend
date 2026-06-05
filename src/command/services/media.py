@@ -99,9 +99,7 @@ class AttachmentResolver:
     ) -> str:
         media = await self.media_service.get_by_mediable(mediable_id, mediable_type)
         if media.status != MediaStatus.UPLOADED:
-            raise MediaNotFoundError(
-                message=f"Media not found for mediable_id={mediable_id} and mediable_type={mediable_type}"
-            )
+            raise MediaNotFoundError(message="Attachment upload not completed.")
 
         return await self.file_service.get_view_url(
             metadata=FileMetadata(

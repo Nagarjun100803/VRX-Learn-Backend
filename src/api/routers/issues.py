@@ -1,6 +1,4 @@
-from typing import Union
-
-from fastapi import APIRouter
+from fastapi import APIRouter, status
 
 from src.api.dependencies import (
     CurrentAdmin,
@@ -8,16 +6,20 @@ from src.api.dependencies import (
     IssueQueryServiceDependency,
     IssueServiceDependency,
 )
-from src.api.schemas.issues import IssueCreateSchema, IssueOutSchema
+from src.api.schemas.issues import (
+    IssueCreateSchema,
+    IssueCreateWithAttachmentSchema,
+    IssueOutSchema,
+)
 from src.command.commands.base import IssueID
 from src.command.commands.issues import (
-    AllowedIssueFileType,
+    IssueAttachmentStatusUpdate,
+    IssueAttachmentUploadContext,
     IssueCreate,
+    IssueGet,
     IssueStatus,
     IssueStatusUpdate,
-    IssueUpload,
 )
-from src.exceptions import InvalidContentTypeError
 from src.query.dto.issues import IssueDetail
 
 router = APIRouter(prefix="/issues", tags=["Issues"])
@@ -32,23 +34,26 @@ async def get_issue(
     return await issue_service.get_issue(issue_id)
 
 
-@router.post("/", response_model=Union[IssueOutSchema, IssueUpload])
+@router.post("/", response_model=IssueOutSchema)
 async def create_issue(
     issue: IssueCreateSchema,
     issue_service: IssueServiceDependency,
     current_user: CurrentUser,
 ):
-
-    if issue.file_metadata is not None:
-        if issue.file_metadata.content_type not in list(AllowedIssueFileType):
-            raise InvalidContentTypeError(
-                content_type=issue.file_metadata.content_type,
-                allowed_types=AllowedIssueFileType,
-            )
-
     return await issue_service.create(
-        file_cmd=issue.file_metadata,
+        cmd=IssueCreate(**issue.model_dump(), created_by=current_user)
+    )
+
+
+@router.post("/with-attachment", response_model=IssueAttachmentUploadContext)
+async def create_issue_with_attachment(
+    issue: IssueCreateWithAttachmentSchema,
+    issue_service: IssueServiceDependency,
+    current_user: CurrentUser,
+):
+    return await issue_service.create_with_attachment(
         cmd=IssueCreate(**issue.issue.model_dump(), created_by=current_user),
+        attachment=issue.attachment,
     )
 
 
@@ -61,4 +66,22 @@ async def update_status(
 ):
     return await issue_service.update(
         IssueStatusUpdate(id=issue_id, status=status, updated_by=current_user)
+    )
+
+
+@router.patch("/{issue_id}/uploaded", status_code=status.HTTP_204_NO_CONTENT)
+async def update_attachment_status(
+    issue_id: IssueID, issue_service: IssueServiceDependency, current_user: CurrentUser
+):
+    await issue_service.mark_attachment_as_uploaded(
+        cmd=IssueAttachmentStatusUpdate(id=issue_id, updated_by=current_user)
+    )
+
+
+@router.get("/{issue_id}/attachment/view-url", response_model=str)
+async def get_view_url(
+    issue_id: IssueID, issue_service: IssueServiceDependency, current_user: CurrentAdmin
+):
+    return await issue_service.get_attachment_view_url(
+        IssueGet(id=issue_id, viewer_id=current_user)
     )

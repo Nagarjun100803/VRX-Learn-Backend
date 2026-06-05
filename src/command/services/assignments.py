@@ -2,8 +2,6 @@ import asyncio
 from typing import ClassVar, Type
 from uuid import uuid4
 
-from slugify import slugify
-
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.assignments import (
     Assignment,
@@ -67,8 +65,7 @@ class AssignmentService(BaseService[Assignment]):
         # Later can add more validation here.
 
     def _generate_storage_key(self, filename: str, course_id: int) -> str:
-        slugged_filename = slugify(filename)
-        return f"courses/C-{course_id}/assignments/{str(uuid4())}/{slugged_filename}"
+        return f"courses/C-{course_id}/assignments/{str(uuid4())}/{filename}"
 
     def _prepare_media_create_payload(
         self,

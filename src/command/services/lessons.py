@@ -2,8 +2,6 @@ import asyncio
 from typing import ClassVar, Type
 from uuid import uuid4
 
-from slugify.slugify import slugify
-
 from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.lessons import (
     Lesson,
@@ -85,9 +83,7 @@ class LessonService(BaseService[Lesson]):
 
         course_id = dict(course_id)["course_id"]
 
-        slugged_filename = slugify(text=filename)
-
-        return f"courses/C-{course_id}/modules/{module_id}/lessons/{str(uuid4())}/{slugged_filename}"
+        return f"courses/C-{course_id}/modules/{module_id}/lessons/{str(uuid4())}/{filename}"
 
     async def _prepare_media_create_payload(
         self, lesson_id: int, cmd: LessonCreate, attachment: LessonAttachmentMetadata

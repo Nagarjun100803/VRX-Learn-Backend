@@ -1,18 +1,19 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Self
 
-from pydantic import StringConstraints
+from pydantic import StringConstraints, model_validator
 
-from src.command.commands.base import AuditFields, BaseCmd, IssueBase, IssueID, UserID
-from src.command.commands.media import MediaDetail
-
-
-class AllowedIssueFileType(StrEnum):
-    PDF = "application/pdf"
-    JPEG = "image/jpeg"
-    JPG = "image/jpg"
-    PNG = "image/png"
+from src.command.commands.base import (
+    AuditFields,
+    BaseAttachmentMetadata,
+    BaseCmd,
+    IssueBase,
+    IssueID,
+    MediaID,
+    UserID,
+)
+from src.exceptions import FileSizeExceededError
 
 
 class IssueCategory(StrEnum):
@@ -28,8 +29,8 @@ class IssueStatus(StrEnum):
     RESOLVED = "resolved"
 
 
-type IssueSubject = Annotated[str, StringConstraints(min_length=10, max_length=100)]
-type IssueDescription = Annotated[str, StringConstraints(max_length=2000)]
+type IssueSubject = Annotated[str, StringConstraints(min_length=1, max_length=2000)]
+type IssueDescription = Annotated[str, StringConstraints(max_length=5000)]
 
 
 class IssueCreateCore(BaseCmd):
@@ -43,17 +44,43 @@ class IssueCreate(IssueCreateCore):
     created_by: UserID
 
 
+class AllowedIssueAttachmentContentTypes(StrEnum):
+    PDF = "application/pdf"
+    PNG = "image/png"
+    JPG = "image/jpg"
+    JPEG = "image/jpeg"
+
+
+MAX_BYTES = 5 * 1024 * 1024
+
+
+class IssueAttachmentMetadata(
+    BaseAttachmentMetadata[AllowedIssueAttachmentContentTypes]
+):
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        if self.size > MAX_BYTES:
+            raise FileSizeExceededError(max_size=MAX_BYTES)
+        return self
+
+
+class IssueAttachmentUploadContext(IssueCreate):
+    id: IssueID
+    created_at: datetime
+    media_id: MediaID
+    url: str
+
+
 class IssueDetail(IssueCreate, IssueBase):
     created_at: datetime
 
 
-class IssueUpload(BaseCmd):
-    issue: IssueDetail
-    media: MediaDetail
-
-
 class IssueStatusUpdateCore(BaseCmd):
     status: IssueStatus
+
+
+class IssueAttachmentStatusUpdate(IssueBase):
+    updated_by: UserID
 
 
 class IssueStatusUpdate(IssueStatusUpdateCore):

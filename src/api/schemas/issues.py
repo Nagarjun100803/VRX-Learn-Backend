@@ -1,14 +1,18 @@
-from typing import Optional
-
 from src.command.commands.base import BaseCmd, IssueBase
-from src.command.commands.issues import IssueCreateCore, IssueStatus
-from src.command.services.files import FileMetadata
+from src.command.commands.issues import (
+    IssueAttachmentMetadata,
+    IssueCreateCore,
+    IssueStatus,
+)
 
 
 class IssueOutSchema(IssueCreateCore, IssueBase):
     status: IssueStatus
 
 
-class IssueCreateSchema(BaseCmd):
+class IssueCreateSchema(IssueCreateCore): ...
+
+
+class IssueCreateWithAttachmentSchema(BaseCmd):
     issue: IssueCreateCore
-    file_metadata: Optional[FileMetadata]
+    attachment: IssueAttachmentMetadata

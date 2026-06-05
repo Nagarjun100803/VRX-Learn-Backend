@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import partial
+from pathlib import Path
 from typing import Annotated, ClassVar, Optional, Type, TypeVar, Union
 
 from pydantic import (
@@ -13,6 +14,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic.alias_generators import to_camel
+from slugify.slugify import slugify
 
 ID = Union[int, str]
 
@@ -315,7 +317,10 @@ NullField = Field(default=None, examples=[None])
 ContentTypeT = TypeVar("ContentTypeT", bound=str)
 
 
+type Filename = Annotated[str, BeforeValidator(func=lambda x: slugify(Path(x).name))]
+
+
 class BaseAttachmentMetadata[ContentTypeT](BaseCmd):
-    filename: str
+    filename: Filename
     content_type: ContentTypeT
     size: int

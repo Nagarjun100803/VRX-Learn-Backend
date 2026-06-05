@@ -195,7 +195,10 @@ assignment_submission_service = AssignmentSubmissionService(
 )
 
 issue_service = IssueService(
-    repo=issue_repository, auth_service=auth_service, media_service=media_service
+    repo=issue_repository,
+    media_service=media_service,
+    file_service=file_service,
+    attachment_resolver=attachment_resolver,
 )
 
 user_onboard_service = UserOnboardService(enrollment_service=enrollment_service)
