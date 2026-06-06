@@ -26,18 +26,18 @@ from src.command.services import (
     LessonService,
     MediaService,
     ModuleService,
-    PositioningService,
     UserOnboardService,
     UserService,
 )
 from src.command.services.media import AttachmentResolver
+from src.core.notifications import SES, EmailTemplates, NotificationSender
+from src.core.notifications import get_session as get_ses_session
+from src.core.positioning import PositioningService
 from src.core.security.jwt import JWTHandler
 from src.core.security.password import PasswordHasher
-from src.core.storage.files import S3Bucket
-from src.core.storage.files import get_session as get_s3_session
+from src.core.storage import S3Bucket
+from src.core.storage import get_session as get_s3_session
 from src.database import AsyncPgDBManager
-from src.notifications import SES, EmailTemplates, NotificationSender
-from src.notifications import get_session as get_ses_session
 
 # Query Repository imports.
 from src.query.repositories import (

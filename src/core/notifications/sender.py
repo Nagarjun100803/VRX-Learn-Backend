@@ -1,5 +1,9 @@
-from src.notifications.provider import BaseEmailServiceProvider, EmailBody, EmailMessage
-from src.notifications.renderer import render_template
+from src.core.notifications.provider import (
+    BaseEmailServiceProvider,
+    EmailBody,
+    EmailMessage,
+)
+from src.core.notifications.renderer import render_template
 from src.settings import settings
 
 

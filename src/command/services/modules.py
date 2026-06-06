@@ -14,7 +14,7 @@ from src.command.commands.modules import (
 from src.command.repositories.courses import CourseRepository
 from src.command.repositories.modules import ModuleRepository
 from src.command.services.base import BaseService
-from src.command.services.positioning import PositioningService, ReorderParticipants
+from src.core.positioning import PositioningService, ReorderParticipants
 from src.exceptions import (
     CourseModuleAlreadyExistsError,
     CourseModuleNotFoundError,

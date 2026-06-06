@@ -24,8 +24,8 @@ from src.command.commands.media import (
 from src.command.repositories import LessonRepository, ModuleRepository
 from src.command.services.base import BaseService
 from src.command.services.media import AttachmentResolver, MediaService
-from src.command.services.positioning import PositioningService, ReorderParticipants
-from src.core.storage.files import FileMetadata, S3Bucket
+from src.core.positioning import PositioningService, ReorderParticipants
+from src.core.storage import FileMetadata, S3Bucket
 from src.exceptions import (
     CourseModuleNotFoundError,
     EntityNotFoundError,

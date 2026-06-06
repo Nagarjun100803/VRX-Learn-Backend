@@ -35,7 +35,7 @@ from src.command.repositories import (
 )
 from src.command.services.base import BaseService
 from src.command.services.media import AttachmentResolver, MediaService
-from src.core.storage.files import FileMetadata, S3Bucket
+from src.core.storage import FileMetadata, S3Bucket
 from src.exceptions import (
     AssignmentNotFoundError,
     AssignmentSubmissionAlreadyVerified,
