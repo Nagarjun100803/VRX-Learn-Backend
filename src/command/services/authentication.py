@@ -12,6 +12,7 @@ from src.command.commands.authentication import (
     SignUp,
     UserContext,
     VerifyEmailByToken,
+    VerifyEmailContext,
 )
 from src.command.commands.users import User, UserCreate, UserGetByEmail, UserGetByID
 from src.command.repositories import AuthenticationRepository, UserRepository
@@ -120,7 +121,7 @@ class AuthenticationService:
     def generate_email_verification_token(self, email: str) -> str:
         return verify_email_serializer.dumps({"email": email})
 
-    async def verify_email(self, cmd: VerifyEmailByToken) -> User:
+    async def verify_email(self, cmd: VerifyEmailByToken) -> VerifyEmailContext:
 
         try:
             payload = verify_email_serializer.loads(
@@ -132,14 +133,16 @@ class AuthenticationService:
                 raise UserNotFoundError(value=payload.get("email"), identifier="email")
 
             # If already verified.
-            if user.email_verified:
-                return user
+            if not user.email_verified:
+                await self.repo.update_email_verified(user_id=user.id)
 
-            verified_user = await self.repo.update_email_verified(user_id=user.id)
+            await self.repo.update_last_login(user_id=user.id)
 
-            return self._require_entity(
-                verified_user, value=user.email, identifier="email"
+            jwt_token = self.jwt_handler.create_jwt_token(
+                payload=JWTPayloadCreate(user_id=user.id, role=user.role)
             )
+
+            return VerifyEmailContext(jwt_token=jwt_token, user=user)
 
         except SignatureExpired:
             raise ExpiredEmailVerificationTokenError()

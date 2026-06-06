@@ -55,11 +55,20 @@ async def verify_email(
     user_onboard_service: UserOnboardServiceDependency,
     background_tasks: BackgroundTasks,
 ):
-    user = await authentication_service.verify_email(VerifyEmailByToken(token=token))
+    context = await authentication_service.verify_email(VerifyEmailByToken(token=token))
+    response = JSONResponse(content={"message": "Email verified successfully"})
+    response.set_cookie(
+        key="access_token",
+        value=context.jwt_token,
+        samesite="none",
+        httponly=True,
+        secure=True,
+        expires=datetime.now(tz=UTC) + timedelta(days=2),
+    )
 
-    background_tasks.add_task(user_onboard_service.onboard_user, user.id)
+    background_tasks.add_task(user_onboard_service.onboard_user, context.user.id)
 
-    return JSONResponse(content={"message": "Email verified successfully"})
+    return response
 
 
 @router.post("/login", **LOGIN, response_class=JSONResponse)

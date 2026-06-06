@@ -3,7 +3,7 @@ from typing import Annotated, Self
 from pydantic import Field, StringConstraints, model_validator
 
 from src.command.commands.base import BaseCmd, UserID
-from src.command.commands.users import Email, UserRole
+from src.command.commands.users import Email, User, UserRole
 from src.exceptions import UnAuthorizedError
 
 
@@ -84,6 +84,18 @@ class VerifyEmailByToken(BaseCmd):
     """Verify email by token"""
 
     token: Annotated[str, Field(description="Verification token")]
+
+
+class VerifyEmailContext(BaseCmd):
+    """Context of verified email"""
+
+    user: Annotated[User, Field(description="User who verified the email.")]
+    jwt_token: Annotated[
+        str,
+        Field(
+            description="JWT token that is used for authentication, No need to login again."
+        ),
+    ]
 
 
 class JWTToken(BaseCmd):
