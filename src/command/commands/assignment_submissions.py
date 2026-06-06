@@ -1,28 +1,44 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from src.command.commands.assignments import Assignment, NumberOfAttempts
 from src.command.commands.base import (
     AssignmentBase,
     AssignmentID,
     AssignmentSubmissionBase,
+    AssignmentSubmissionID,
     AuditFields,
+    BaseAttachmentMetadata,
     BaseCmd,
     MediaID,
     UserID,
 )
-from src.command.commands.media import AllowedContentTypes, Media, MediaDetail
+from src.command.commands.media import Media
+from src.exceptions import FileSizeExceededError
 
 Feedback = Annotated[str, Field(max_length=2000)]
 Score = int  # Temporary Fix
 Attempt = NumberOfAttempts
 
 
-class AllowedAssignmentSubmissionFileType(StrEnum):
+MAX_BYTES = int(5 * 1024 * 1024)  # 5MB
+
+
+class AllowedAssignmentSubmissionAttachmentContentTypes(StrEnum):
     PDF = "application/pdf"
+
+
+class AssignmentSubmissionAttachmentMetadata(
+    BaseAttachmentMetadata[AllowedAssignmentSubmissionAttachmentContentTypes]
+):
+    @model_validator(mode="after")
+    def validate_model(self) -> Self:
+        if self.size > MAX_BYTES:
+            raise FileSizeExceededError(max_size=MAX_BYTES)
+        return self
 
 
 class AssignmentSubmissionStatus(StrEnum):
@@ -43,6 +59,15 @@ class AssignmentSubmissionCreateWithAttemptAndStatus(AssignmentSubmissionCreate)
     # We change the status with `done_late` if late submission.
     status: AssignmentSubmissionStatus = AssignmentSubmissionStatus.SUBMITTED
     attempt: Attempt
+
+
+class AssignmentSubmissionAttachmentUploadContext(
+    AssignmentSubmissionCreateWithAttemptAndStatus
+):
+    id: AssignmentSubmissionID
+    created_at: datetime
+    media_id: MediaID
+    url: str
 
 
 class AssignmentSubmissionVerifyCore(BaseCmd):
@@ -75,6 +100,10 @@ class AssignmentSubmissionGet(AssignmentSubmissionGetCore):
     viewer_id: UserID
 
 
+class AssignmentSubmissionAttachmentStatusUpdate(AssignmentSubmissionBase):
+    updated_by: UserID
+
+
 class AssignmentSubmission(
     AuditFields, AssignmentSubmissionCreateCore, AssignmentSubmissionBase
 ):
@@ -96,18 +125,13 @@ class AssignmentSubmissionWithMedia(
     submitted_by: UserID
     submitter_name: str
     media_id: MediaID
-    mime_type: AllowedContentTypes
+    mime_type: AllowedAssignmentSubmissionAttachmentContentTypes
     filename: str
 
 
 class AssignmentSubmissionDetail(
     AssignmentSubmissionCreateWithAttemptAndStatus, AssignmentSubmissionBase
 ): ...
-
-
-class AssignmentSubmissionUpload(BaseCmd):
-    assignment_submission: AssignmentSubmissionDetail
-    media: MediaDetail
 
 
 # NOTE: Delete is not in scope. Will implement later if required.

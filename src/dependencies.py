@@ -192,6 +192,8 @@ assignment_submission_service = AssignmentSubmissionService(
     assignment_repo=assignment_repository,
     media_service=media_service,
     auth_service=auth_service,
+    file_service=file_service,
+    attachment_resolver=attachment_resolver,
 )
 
 issue_service = IssueService(

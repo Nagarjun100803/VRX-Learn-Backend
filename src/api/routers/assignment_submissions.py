@@ -10,13 +10,15 @@ from src.api.docs.assignment_submissions import (
 from src.api.schemas.assignment_submissions import (
     AssignmentSubmissionCreateSchema,
     AssignmentSubmissionFeedbackUpdateSchema,
+    AssignmentSubmissionOut,
     AssignmentSubmissionVerifySchema,
 )
 from src.command.commands.assignment_submissions import (
+    AssignmentSubmissionAttachmentStatusUpdate,
+    AssignmentSubmissionAttachmentUploadContext,
     AssignmentSubmissionCreate,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionGet,
-    AssignmentSubmissionUpload,
     AssignmentSubmissionVerify,
     AssignmentSubmissionWithMedia,
 )
@@ -44,7 +46,7 @@ async def get_assignment_submission(
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    response_model=AssignmentSubmissionUpload,
+    response_model=AssignmentSubmissionAttachmentUploadContext,
     **CREATE_ASSIGNMENT_SUBMISSION,
 )
 async def create_assignment_submission(
@@ -53,18 +55,18 @@ async def create_assignment_submission(
     current_user: CurrentUser,
 ):
 
-    return await assignment_submission_service.create_with_attachment(
+    return await assignment_submission_service.create(
         cmd=AssignmentSubmissionCreate(
             **assignment_submission.assignment_submission.model_dump(),
             created_by=current_user,
         ),
-        file_cmd=assignment_submission.file_metadata,
+        attachment=assignment_submission.attachment,
     )
 
 
 @router.patch(
     "/{assignment_submission_id}/verify",
-    response_model=AssignmentSubmissionVerify,
+    response_model=AssignmentSubmissionOut,
     **VERIFY_ASSIGNMENT_SUBMISSION,
 )
 async def verify_assignment_submission(
@@ -73,8 +75,8 @@ async def verify_assignment_submission(
     assignment_submission_service: AssignmentSubmissionServiceDependency,
     current_user: CurrentUser,
 ):
-    return await assignment_submission_service.update(
-        AssignmentSubmissionVerify(
+    return await assignment_submission_service.grade(
+        cmd=AssignmentSubmissionVerify(
             **assignment_verify_payload.model_dump(),
             id=assignment_submission_id,
             updated_by=current_user,
@@ -84,7 +86,7 @@ async def verify_assignment_submission(
 
 @router.patch(
     "/{assignment_submission_id}/update-feedback",
-    response_model=AssignmentSubmissionFeedbackUpdate,
+    response_model=AssignmentSubmissionOut,
     **UPDATE_FEEDBACK,
 )
 async def update_feedback(
@@ -94,10 +96,39 @@ async def update_feedback(
     current_user: CurrentUser,
 ):
 
-    return await assignment_submission_service.update(
-        AssignmentSubmissionFeedbackUpdate(
+    return await assignment_submission_service.update_feedback(
+        cmd=AssignmentSubmissionFeedbackUpdate(
             **feedback_payload.model_dump(),
             id=assignment_submission_id,
             updated_by=current_user,
+        )
+    )
+
+
+@router.patch(
+    "/{assignment_submission_id}/attachment/uploaded",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def update_attachment_status(
+    assignment_submission_id: AssignmentSubmissionID,
+    assignment_submission_service: AssignmentSubmissionServiceDependency,
+    current_user: CurrentUser,
+):
+    await assignment_submission_service.mark_attachment_as_uploaded(
+        cmd=AssignmentSubmissionAttachmentStatusUpdate(
+            id=assignment_submission_id, updated_by=current_user
+        )
+    )
+
+
+@router.get("/{assignment_submission_id}/attachment/view-url", response_model=str)
+async def get_attachment_view_url(
+    assignment_submission_id: AssignmentSubmissionID,
+    assignment_submission_service: AssignmentSubmissionServiceDependency,
+    current_user: CurrentUser,
+):
+    return await assignment_submission_service.get_attachment_view_url(
+        query=AssignmentSubmissionGet(
+            id=assignment_submission_id, viewer_id=current_user
         )
     )

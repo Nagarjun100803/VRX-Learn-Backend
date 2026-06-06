@@ -83,7 +83,7 @@ class LessonService(BaseService[Lesson]):
 
         course_id = dict(course_id)["course_id"]
 
-        return f"courses/C-{course_id}/modules/{module_id}/lessons/{str(uuid4())}/{filename}"
+        return f"courses/C-{course_id}/modules/M-{module_id}/lessons/{str(uuid4())}/{filename}"
 
     async def _prepare_media_create_payload(
         self, lesson_id: int, cmd: LessonCreate, attachment: LessonAttachmentMetadata
