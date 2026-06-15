@@ -10,10 +10,10 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmission,
     AssignmentSubmissionAttachmentMetadata,
     AssignmentSubmissionAttachmentStatusUpdate,
-    AssignmentSubmissionAttachmentUploadContext,
     AssignmentSubmissionContext,
     AssignmentSubmissionCreate,
     AssignmentSubmissionCreateWithAttemptAndStatus,
+    AssignmentSubmissionDetailContext,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionGet,
     AssignmentSubmissionGetCore,
@@ -23,6 +23,7 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionWithMedia,
 )
 from src.command.commands.assignments import AssignmentGet
+from src.command.commands.base import AttachmentUploadContext, MediaContext
 from src.command.commands.media import (
     MediableType,
     MediaCreate,
@@ -145,7 +146,7 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         self,
         cmd: AssignmentSubmissionCreate,
         attachment: AssignmentSubmissionAttachmentMetadata,
-    ) -> AssignmentSubmissionAttachmentUploadContext:
+    ) -> AttachmentUploadContext[AssignmentSubmissionContext]:
 
         async with self.repo.db.transaction() as tconn:
             submission = await self._create_submission(cmd=cmd, connection=tconn)
@@ -159,8 +160,15 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
                 key=media.key, filename=media.filename, content_type=media.mime_type
             )
         )
-        return AssignmentSubmissionAttachmentUploadContext(
-            **submission.model_dump(), media_id=media.id, url=url
+        return AttachmentUploadContext[AssignmentSubmissionContext](
+            data=AssignmentSubmissionContext(**submission.model_dump()),
+            media=MediaContext(
+                id=media.id,
+                url=url,
+                filename=media.filename,
+                content_type=media.mime_type,
+                size=media.file_size,
+            ),
         )
 
     @require_authorization(
@@ -172,7 +180,7 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
     )
     async def grade(self, cmd: AssignmentSubmissionVerify) -> AssignmentSubmission:
         submission_context: Optional[
-            AssignmentSubmissionContext
+            AssignmentSubmissionDetailContext
         ] = await self.repo.submission_context(submission_id=cmd.id)
 
         if submission_context is None:

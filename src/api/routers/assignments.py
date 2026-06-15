@@ -14,13 +14,13 @@ from src.api.schemas.assignments import (
 )
 from src.command.commands.assignments import (
     AssignmentAttachmentStatusUpdate,
-    AssignmentAttachmentUploadContext,
+    AssignmentContext,
     AssignmentCreate,
     AssignmentDelete,
     AssignmentGetQuery,
     AssignmentUpdate,
 )
-from src.command.commands.base import AssignmentID
+from src.command.commands.base import AssignmentID, AttachmentUploadContext
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
 
@@ -56,7 +56,7 @@ async def create_assignment(
 @router.post(
     "/with-attachment",
     status_code=status.HTTP_201_CREATED,
-    response_model=AssignmentAttachmentUploadContext,
+    response_model=AttachmentUploadContext[AssignmentContext],
 )
 async def create_assignment_with_attachment(
     assignment_payload: AssignmentCreateWithAttachmentSchema,

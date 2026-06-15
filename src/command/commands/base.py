@@ -324,3 +324,16 @@ class BaseAttachmentMetadata[ContentTypeT](BaseCmd):
     filename: Filename
     content_type: ContentTypeT
     size: int
+
+
+class MediaContext(BaseCmd):
+    id: MediaID
+    filename: str
+    content_type: str
+    size: int
+    url: str
+
+
+class AttachmentUploadContext[T](BaseCmd):
+    data: T
+    media: MediaContext

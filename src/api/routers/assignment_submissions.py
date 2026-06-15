@@ -15,14 +15,14 @@ from src.api.schemas.assignment_submissions import (
 )
 from src.command.commands.assignment_submissions import (
     AssignmentSubmissionAttachmentStatusUpdate,
-    AssignmentSubmissionAttachmentUploadContext,
+    AssignmentSubmissionContext,
     AssignmentSubmissionCreate,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionGet,
     AssignmentSubmissionVerify,
     AssignmentSubmissionWithMedia,
 )
-from src.command.commands.base import AssignmentSubmissionID
+from src.command.commands.base import AssignmentSubmissionID, AttachmentUploadContext
 
 router = APIRouter(prefix="/assignment-submission", tags=["Assignment Submissions"])
 
@@ -46,7 +46,7 @@ async def get_assignment_submission(
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    response_model=AssignmentSubmissionAttachmentUploadContext,
+    response_model=AttachmentUploadContext[AssignmentSubmissionContext],
     **CREATE_ASSIGNMENT_SUBMISSION,
 )
 async def create_assignment_submission(

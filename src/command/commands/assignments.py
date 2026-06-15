@@ -11,7 +11,6 @@ from src.command.commands.base import (
     BaseAttachmentMetadata,
     BaseCmd,
     CourseID,
-    MediaID,
     NullField,
     UserID,
 )
@@ -57,11 +56,8 @@ class AssignmentCreate(AssignmentCreateCore):
     created_by: UserID
 
 
-class AssignmentAttachmentUploadContext(AssignmentCreate):
+class AssignmentContext(AssignmentCreate):
     id: AssignmentID
-    created_at: datetime
-    media_id: MediaID
-    url: str
 
 
 class AssignmentAttachmentStatusUpdate(AssignmentBase):

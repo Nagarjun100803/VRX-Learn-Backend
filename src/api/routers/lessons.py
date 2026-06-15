@@ -9,10 +9,10 @@ from src.api.docs.lessons import (
     UPDATE_LESSON_POSITION,
 )
 from src.api.schemas.lessons import LessonCreateSchema, LessonUpdateSchema
-from src.command.commands.base import LessonID
+from src.command.commands.base import AttachmentUploadContext, LessonID
 from src.command.commands.lessons import (
     LessonAttachmentStatusUpdate,
-    LessonAttachmentUploadContext,
+    LessonContext,
     LessonCreate,
     LessonDelete,
     LessonGetQuery,
@@ -39,7 +39,7 @@ async def get_lesson(
 @router.post(
     "/",
     status_code=status.HTTP_201_CREATED,
-    response_model=LessonAttachmentUploadContext,
+    response_model=AttachmentUploadContext[LessonContext],
     **CREATE_LESSON,
 )
 async def create_lesson(

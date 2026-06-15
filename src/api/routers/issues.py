@@ -11,10 +11,10 @@ from src.api.schemas.issues import (
     IssueCreateWithAttachmentSchema,
     IssueOutSchema,
 )
-from src.command.commands.base import IssueID
+from src.command.commands.base import AttachmentUploadContext, IssueID
 from src.command.commands.issues import (
     IssueAttachmentStatusUpdate,
-    IssueAttachmentUploadContext,
+    IssueContext,
     IssueCreate,
     IssueGet,
     IssueStatus,
@@ -45,7 +45,7 @@ async def create_issue(
     )
 
 
-@router.post("/with-attachment", response_model=IssueAttachmentUploadContext)
+@router.post("/with-attachment", response_model=AttachmentUploadContext[IssueContext])
 async def create_issue_with_attachment(
     issue: IssueCreateWithAttachmentSchema,
     issue_service: IssueServiceDependency,
@@ -69,7 +69,7 @@ async def update_status(
     )
 
 
-@router.patch("/{issue_id}/uploaded", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{issue_id}/attachment/uploaded", status_code=status.HTTP_204_NO_CONTENT)
 async def update_attachment_status(
     issue_id: IssueID, issue_service: IssueServiceDependency, current_user: CurrentUser
 ):

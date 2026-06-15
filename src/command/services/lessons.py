@@ -3,11 +3,12 @@ from typing import ClassVar, Type
 from uuid import uuid4
 
 from src.auth import Action, AuthService, Entity, require_authorization
+from src.command.commands.base import AttachmentUploadContext, MediaContext
 from src.command.commands.lessons import (
     Lesson,
     LessonAttachmentMetadata,
     LessonAttachmentStatusUpdate,
-    LessonAttachmentUploadContext,
+    LessonContext,
     LessonCreate,
     LessonCreateWithPosition,
     LessonDelete,
@@ -109,7 +110,7 @@ class LessonService(BaseService[Lesson]):
     )
     async def create(
         self, cmd: LessonCreate, attachment: LessonAttachmentMetadata
-    ) -> LessonAttachmentUploadContext:
+    ) -> AttachmentUploadContext[LessonContext]:
 
         await self._validate_lesson_create(cmd)
 
@@ -136,14 +137,15 @@ class LessonService(BaseService[Lesson]):
                 filename=attachment.filename,
             )
         )
-        return LessonAttachmentUploadContext(
-            id=lesson.id,
-            title=lesson.title,
-            description=lesson.description,
-            created_by=lesson.created_by,
-            created_at=lesson.created_at,
-            media_id=media.id,
-            url=url,
+        return AttachmentUploadContext[LessonContext](
+            data=LessonContext(**lesson.model_dump()),
+            media=MediaContext(
+                id=media.id,
+                filename=attachment.filename,
+                content_type=media.mime_type,
+                size=attachment.size,
+                url=url,
+            ),
         )
 
     @require_authorization(

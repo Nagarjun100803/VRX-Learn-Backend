@@ -10,7 +10,6 @@ from src.command.commands.base import (
     BaseCmd,
     IssueBase,
     IssueID,
-    MediaID,
     UserID,
 )
 from src.exceptions import FileSizeExceededError
@@ -64,11 +63,8 @@ class IssueAttachmentMetadata(
         return self
 
 
-class IssueAttachmentUploadContext(IssueCreate):
+class IssueContext(IssueCreate):
     id: IssueID
-    created_at: datetime
-    media_id: MediaID
-    url: str
 
 
 class IssueDetail(IssueCreate, IssueBase):

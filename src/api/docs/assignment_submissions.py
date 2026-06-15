@@ -1,11 +1,12 @@
 from src.api.docs._responses import _generate_error
 from src.api.docs._type import EndpointDoc
 from src.command.commands.assignment_submissions import (
-    AssignmentSubmissionAttachmentUploadContext,
+    AssignmentSubmissionContext,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionVerify,
     AssignmentSubmissionWithMedia,
 )
+from src.command.commands.base import AttachmentUploadContext
 from src.exceptions import (
     AssignmentNotFoundError,
     AssignmentSubmissionNotFoundError,
@@ -56,7 +57,7 @@ Create a new assignment submission with an attachment. This endpoint:
     "response_description": "Returns the created assignment submission and upload URL for the attachment.",
     "responses": {
         201: {
-            "model": AssignmentSubmissionAttachmentUploadContext,
+            "model": AttachmentUploadContext[AssignmentSubmissionContext],
             "description": "Assignment submission created and upload URL generated",
         },
         401: _generate_error(

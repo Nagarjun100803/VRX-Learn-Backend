@@ -2,11 +2,12 @@ from typing import ClassVar, Type
 from uuid import uuid4
 
 from src.auth import Entity
+from src.command.commands.base import AttachmentUploadContext, MediaContext
 from src.command.commands.issues import (
     Issue,
     IssueAttachmentMetadata,
     IssueAttachmentStatusUpdate,
-    IssueAttachmentUploadContext,
+    IssueContext,
     IssueCreate,
     IssueGet,
     IssueStatusUpdate,
@@ -62,7 +63,7 @@ class IssueService(BaseService[Issue]):
 
     async def create_with_attachment(
         self, cmd: IssueCreate, attachment: IssueAttachmentMetadata
-    ) -> IssueAttachmentUploadContext:
+    ) -> AttachmentUploadContext[IssueContext]:
 
         async with self.repo.db.transaction() as tconn:
             issue = await self.repo.add(cmd, connection=tconn)
@@ -77,8 +78,15 @@ class IssueService(BaseService[Issue]):
             )
         )
 
-        return IssueAttachmentUploadContext(
-            **issue.model_dump(), media_id=media.id, url=url
+        return AttachmentUploadContext[IssueContext](
+            data=IssueContext(**issue.model_dump()),
+            media=MediaContext(
+                id=media.id,
+                url=url,
+                filename=media.filename,
+                content_type=media.mime_type,
+                size=media.file_size,
+            ),
         )
 
     async def update(self, cmd: IssueStatusUpdate) -> Issue:

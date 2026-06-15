@@ -1,7 +1,8 @@
 from src.api.docs._responses import _generate_error
 from src.api.docs._type import EndpointDoc
 from src.api.schemas.lessons import LessonUpdateSchema
-from src.command.commands.lessons import LessonAttachmentUploadContext, LessonWithMedia
+from src.command.commands.base import AttachmentUploadContext
+from src.command.commands.lessons import LessonContext, LessonWithMedia
 from src.exceptions import (
     CourseModuleNotFoundError,
     LessonAlreadyExistsError,
@@ -41,7 +42,7 @@ CREATE_LESSON: EndpointDoc = {
     "response_description": "Returns the created lesson and upload URL for media.",
     "responses": {
         201: {
-            "model": LessonAttachmentUploadContext,
+            "model": AttachmentUploadContext[LessonContext],
             "description": "Lesson created and upload URL generated",
         },
         401: _generate_error(

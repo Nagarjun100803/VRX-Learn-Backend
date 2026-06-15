@@ -8,8 +8,8 @@ from pypika.terms import Criterion, ExistsCriterion, ValueWrapper
 
 from src.command.commands.assignment_submissions import (
     AssignmentSubmission,
-    AssignmentSubmissionContext,
     AssignmentSubmissionCreateWithAttemptAndStatus,
+    AssignmentSubmissionDetailContext,
     AssignmentSubmissionFeedbackUpdate,
     AssignmentSubmissionGet,
     AssignmentSubmissionGetCore,
@@ -253,7 +253,7 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
 
     async def submission_context(
         self, submission_id: int
-    ) -> Optional[AssignmentSubmissionContext]:
+    ) -> Optional[AssignmentSubmissionDetailContext]:
         """
         Get submission with assignment and media context.
 
@@ -308,4 +308,4 @@ class AssignmentSubmissionRepository(BaseRepository[AssignmentSubmission]):
         if result is None:
             return None
 
-        return AssignmentSubmissionContext.model_validate(dict(result))
+        return AssignmentSubmissionDetailContext.model_validate(dict(result))

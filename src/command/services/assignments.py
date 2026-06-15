@@ -7,13 +7,14 @@ from src.command.commands.assignments import (
     Assignment,
     AssignmentAttachmentMetadata,
     AssignmentAttachmentStatusUpdate,
-    AssignmentAttachmentUploadContext,
+    AssignmentContext,
     AssignmentCreate,
     AssignmentDelete,
     AssignmentGet,
     AssignmentGetQuery,
     AssignmentUpdate,
 )
+from src.command.commands.base import AttachmentUploadContext, MediaContext
 from src.command.commands.media import (
     MediableType,
     MediaCreate,
@@ -106,7 +107,7 @@ class AssignmentService(BaseService[Assignment]):
     )
     async def create_with_attachment(
         self, cmd: AssignmentCreate, attachment: AssignmentAttachmentMetadata
-    ) -> AssignmentAttachmentUploadContext:
+    ) -> AttachmentUploadContext[AssignmentContext]:
 
         await self._validate_assignment_create(cmd=cmd)
 
@@ -122,8 +123,15 @@ class AssignmentService(BaseService[Assignment]):
                 key=media.key, filename=media.filename, content_type=media.mime_type
             )
         )
-        return AssignmentAttachmentUploadContext(
-            **assignment.model_dump(), media_id=media.id, url=url
+        return AttachmentUploadContext[AssignmentContext](
+            data=AssignmentContext(**assignment.model_dump()),
+            media=MediaContext(
+                id=media.id,
+                filename=media.filename,
+                content_type=media.mime_type,
+                size=media.file_size,
+                url=url,
+            ),
         )
 
     @require_authorization(

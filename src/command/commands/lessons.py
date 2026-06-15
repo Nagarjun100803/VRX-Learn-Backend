@@ -61,14 +61,8 @@ class LessonCreateWithPosition(LessonCreate):
     position_string: str
 
 
-class LessonAttachmentUploadContext(BaseCmd):
+class LessonContext(LessonCreate):
     id: LessonID
-    title: LessonTitle
-    description: Optional[LessonDescription] = None
-    created_by: UserID
-    created_at: datetime
-    media_id: MediaID
-    url: str
 
 
 class LessonUpdateCore(UpdateValidatorMixin, BaseCmd):

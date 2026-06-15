@@ -61,13 +61,8 @@ class AssignmentSubmissionCreateWithAttemptAndStatus(AssignmentSubmissionCreate)
     attempt: Attempt
 
 
-class AssignmentSubmissionAttachmentUploadContext(
-    AssignmentSubmissionCreateWithAttemptAndStatus
-):
+class AssignmentSubmissionContext(AssignmentSubmissionCreateWithAttemptAndStatus):
     id: AssignmentSubmissionID
-    created_at: datetime
-    media_id: MediaID
-    url: str
 
 
 class AssignmentSubmissionVerifyCore(BaseCmd):
@@ -137,7 +132,7 @@ class AssignmentSubmissionDetail(
 # NOTE: Delete is not in scope. Will implement later if required.
 
 
-class AssignmentSubmissionContext(BaseCmd):
+class AssignmentSubmissionDetailContext(BaseCmd):
     assignment: Assignment
     submission: AssignmentSubmission
     media: Optional[Media] = None
