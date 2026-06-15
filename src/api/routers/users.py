@@ -2,7 +2,7 @@ from fastapi import APIRouter, status
 from fastapi.background import BackgroundTasks
 
 from src.api.dependencies import (
-    CurrentUser,
+    CurrentAdmin,
     UserOnboardServiceDependency,
     UserServiceDependency,
 )
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/users", tags=["Users"])
 
 @router.get("/{user_id}", response_model=UserOutSchema, **GET_USER)
 async def get_user(
-    user_id: UserID, user_service: UserServiceDependency, current_user: CurrentUser
+    user_id: UserID, user_service: UserServiceDependency, current_user: CurrentAdmin
 ):
     return await user_service.get(UserGetByIDQuery(id=user_id, viewer_id=current_user))
 
@@ -36,7 +36,7 @@ async def create_user(
     user: UserCreateSchema,
     user_service: UserServiceDependency,
     user_onboard_service: UserOnboardServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
     background_tasks: BackgroundTasks,
 ):
 
@@ -52,6 +52,6 @@ async def create_user(
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT, **DELETE_USER)
 async def delete_user(
-    user_id: UserID, user_service: UserServiceDependency, current_user: CurrentUser
+    user_id: UserID, user_service: UserServiceDependency, current_user: CurrentAdmin
 ):
     await user_service.delete(UserDelete(id=user_id, deleted_by=current_user))

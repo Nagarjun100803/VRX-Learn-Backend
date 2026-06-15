@@ -128,13 +128,9 @@ authentication_service = AuthenticationService(
 
 positioning_service = PositioningService(db=db)
 
-user_service = UserService(
-    repo=user_repository, password_hasher=password_hasher, auth_service=auth_service
-)
+user_service = UserService(repo=user_repository, password_hasher=password_hasher)
 
-course_service = CourseService(
-    user_repo=user_repository, repo=course_repository, auth_service=auth_service
-)
+course_service = CourseService(user_repo=user_repository, repo=course_repository)
 
 module_service = ModuleService(
     course_repo=course_repository,
@@ -181,10 +177,7 @@ assignment_service = AssignmentService(
 )
 
 enrollment_service = EnrollmentService(
-    user_repo=user_repository,
-    repo=enrollment_repository,
-    course_repo=course_repository,
-    auth_service=auth_service,
+    user_repo=user_repository, repo=enrollment_repository, course_repo=course_repository
 )
 
 assignment_submission_service = AssignmentSubmissionService(

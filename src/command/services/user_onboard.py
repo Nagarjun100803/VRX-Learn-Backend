@@ -18,7 +18,7 @@ class UserOnboardService:
         try:
             free_course_ids = settings.free_course.ids
             enrollment_create_tasks = [
-                self.enrollment_service.create_enrollment(
+                self.enrollment_service.create(
                     EnrollmentCreate(
                         user_id=user_id,
                         course_id=course_id,

@@ -1,7 +1,7 @@
 import asyncio
 from typing import ClassVar, Type, cast
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import Entity
 from src.command.commands.enrollments import (
     Enrollment,
     EnrollmentCreate,
@@ -30,20 +30,18 @@ class EnrollmentService(BaseService[Enrollment]):
         repo: EnrollmentRepository,
         user_repo: UserRepository,
         course_repo: CourseRepository,
-        auth_service: AuthService,
     ) -> None:
 
         self.repo = repo
         self.user_repo = user_repo
         self.course_repo = course_repo
-        self.auth_service = auth_service
 
     # Class Variables.
     _entity: ClassVar[Entity] = Entity.ENROLLMENT
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = EnrollmentNotFoundError
 
-    async def create_enrollment(self, cmd: EnrollmentCreate) -> Enrollment:
-        # Check for course existance and duplicate enrollments.
+    async def create(self, cmd: EnrollmentCreate) -> Enrollment:
+        # Check for course existence and duplicate enrollments.
         # TODO: Look for anyio or TaskGroup to run these for better concurrency.
         course_exist, user, duplicate_enrollment_flag = await asyncio.gather(
             self.course_repo.exists_by(id=cmd.course_id),
@@ -70,44 +68,13 @@ class EnrollmentService(BaseService[Enrollment]):
 
         return cast(Enrollment, await self.repo.add(cmd))
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.ENROLLMENT,
-        user_id_field="created_by",
-        parent_id_field=None,  # Explicitly set to None, because it is a root.
-        object_name="cmd",
-    )
-    async def create(self, cmd: EnrollmentCreate) -> Enrollment:
-        return await self.create_enrollment(cmd)
-
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.ENROLLMENT,
-        user_id_field="updated_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def update(self, cmd: EnrollmentUpdate) -> Enrollment:
         # NOTE: No checks added.
         return self._require_entity(await self.repo.update(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.DELETE,
-        entity=Entity.ENROLLMENT,
-        user_id_field="deleted_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def delete(self, cmd: EnrollmentDelete) -> Enrollment:
         # NOTE:  No checks added
         return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ENROLLMENT,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: EnrollmentGet) -> Enrollment:
         return self._require_entity(await self.repo.get(query), value=query.id)

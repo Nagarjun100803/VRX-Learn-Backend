@@ -1,7 +1,7 @@
 import asyncio
 from typing import ClassVar, Type, Union, cast
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import Entity
 from src.command.commands.courses import (
     Course,
     CourseCreate,
@@ -28,16 +28,10 @@ class CourseService(BaseService[Course]):
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = CourseNotFoundError
     _entity: ClassVar[Entity] = Entity.COURSE
 
-    def __init__(
-        self,
-        repo: CourseRepository,
-        user_repo: UserRepository,
-        auth_service: AuthService,
-    ) -> None:
+    def __init__(self, repo: CourseRepository, user_repo: UserRepository) -> None:
 
         self.repo = repo
         self.user_repo = user_repo
-        self.auth_service = auth_service
 
     async def _validate_trainer(self, trainer_id: int) -> None:
 
@@ -53,13 +47,6 @@ class CourseService(BaseService[Course]):
         if await self.repo.exists_by(title=title):
             raise CourseAlreadyExistsError(value=title, identifier="title")
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.COURSE,
-        user_id_field="created_by",
-        parent_id_field=None,  # Explicity set None, bacause course is the root.
-        object_name="cmd",
-    )
     async def create(self, cmd: CourseCreate) -> Course:
         # Check if course already exists and validate trainer
         await asyncio.gather(
@@ -69,13 +56,6 @@ class CourseService(BaseService[Course]):
 
         return cast(Course, await self.repo.add(cmd))
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.COURSE,
-        user_id_field="updated_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def update(
         self, cmd: Union[RecordedCourseDetailsUpdate, CourseInfoUpdate]
     ) -> Course:
@@ -95,24 +75,10 @@ class CourseService(BaseService[Course]):
             course = await self.repo.update(cmd)
             return self._require_entity(course, value=cmd.id)
 
-    @require_authorization(
-        action=Action.DELETE,
-        entity=Entity.COURSE,
-        user_id_field="deleted_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def delete(self, cmd: CourseDelete):
         course = await self.repo.delete(cmd)
         return self._require_entity(course, value=cmd.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.COURSE,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: CourseGetByIDQuery):
         course = await self.repo.get(CourseGet(id=query.id))
         return self._require_entity(course, value=query.id)

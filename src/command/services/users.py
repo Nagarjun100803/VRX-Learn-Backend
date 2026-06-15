@@ -1,6 +1,6 @@
 from typing import ClassVar, Type, cast
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import Entity
 from src.command.commands.users import (
     User,
     UserCreateWithConfirmPassword,
@@ -24,24 +24,11 @@ class UserService(BaseService[User]):
     _not_found_exc: ClassVar[Type[EntityNotFoundError]] = UserNotFoundError
     _entity: ClassVar[Entity] = Entity.USER
 
-    def __init__(
-        self,
-        repo: UserRepository,
-        password_hasher: PasswordHasher,
-        auth_service: AuthService,
-    ) -> None:
+    def __init__(self, repo: UserRepository, password_hasher: PasswordHasher) -> None:
 
         self.repo = repo
         self.password_hasher = password_hasher
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.USER,
-        user_id_field="created_by",
-        parent_id_field=None,  # Explicitly set None, because it is root.
-        object_name="cmd",
-    )
     async def create(self, cmd: UserCreateWithConfirmPassword) -> User:
 
         # Check for the password match.
@@ -65,24 +52,10 @@ class UserService(BaseService[User]):
 
         return cast(User, user)
 
-    @require_authorization(
-        action=Action.DELETE,
-        entity=Entity.USER,
-        user_id_field="deleted_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def delete(self, cmd: UserDelete) -> User:
         user = await self.repo.delete(cmd)
         return self._require_entity(user, value=cmd.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.USER,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: UserGetByIDQuery) -> User:
 
         user = await self.repo.get(UserGetByID(id=query.id))

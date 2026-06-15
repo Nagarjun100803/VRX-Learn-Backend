@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from src.api.dependencies import CurrentUser, EnrollmentServiceDependency
+from src.api.dependencies import CurrentAdmin, EnrollmentServiceDependency
 from src.api.docs.enrollments import (
     CREATE_ENROLLMENT,
     DELETE_ENROLLMENT,
@@ -27,7 +27,7 @@ router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
 async def get_enrollment(
     enrollment_id: EnrollmentID,
     enrollment_service: EnrollmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
     return await enrollment_service.get(
         EnrollmentGet(id=enrollment_id, viewer_id=current_user)
@@ -43,7 +43,7 @@ async def get_enrollment(
 async def create_enrollment(
     enrollment: EnrollmentCreateSchema,
     enrollment_service: EnrollmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
     return await enrollment_service.create(
         EnrollmentCreate(**enrollment.model_dump(), created_by=current_user)
@@ -59,7 +59,7 @@ async def update_status(
     enrollment_id: EnrollmentID,
     enrollment: EnrollmentUpdateSchema,
     enrollment_service: EnrollmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
 
     return await enrollment_service.update(
@@ -78,7 +78,7 @@ async def update_status(
 async def delete_enrollment(
     enrollment_id: EnrollmentID,
     enrollment_service: EnrollmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
 
     return await enrollment_service.delete(

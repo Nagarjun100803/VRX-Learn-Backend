@@ -1,6 +1,6 @@
 from fastapi import APIRouter, status
 
-from src.api.dependencies import CourseServiceDependency, CurrentUser
+from src.api.dependencies import CourseServiceDependency, CurrentAdmin
 from src.api.docs.courses import (
     CREATE_COURSE,
     DELETE_COURSE,
@@ -30,7 +30,7 @@ router = APIRouter(prefix="/courses", tags=["Courses"])
 async def get_course(
     course_id: CourseID,
     course_service: CourseServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
 
     return await course_service.get(
@@ -47,7 +47,7 @@ async def get_course(
 async def create_course(
     course: CourseCreateSchema,
     course_service: CourseServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
     return await course_service.create(
         CourseCreate(**course.model_dump(), created_by=current_user)
@@ -58,7 +58,7 @@ async def create_course(
 async def delete_course(
     course_id: CourseID,
     course_service: CourseServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
     return await course_service.delete(
         CourseDelete(id=course_id, deleted_by=current_user)
@@ -74,7 +74,7 @@ async def update_basic_info(
     course_id: CourseID,
     course: CourseInfoUpdateSchema,
     course_service: CourseServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
 
     return await course_service.update(
@@ -91,7 +91,7 @@ async def update_pre_recorded_course_info(
     course_id: CourseID,
     course: RecordedCourseDetailsUpdateSchema,
     course_service: CourseServiceDependency,
-    current_user: CurrentUser,
+    current_user: CurrentAdmin,
 ):
 
     updated_course = await course_service.update(
