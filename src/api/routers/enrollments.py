@@ -11,12 +11,14 @@ from src.api.schemas.enrollments import (
     EnrollmentCreateSchema,
     EnrollmentOut,
     EnrollmentUpdateSchema,
+    RestrictedModuleIds,
 )
 from src.command.commands.base import EnrollmentID
 from src.command.commands.enrollments import (
-    EnrollmentCreate,
+    EnrollmentCreateWithRestrictions,
     EnrollmentDelete,
     EnrollmentGet,
+    EnrollmentModuleRestrictionSync,
     EnrollmentUpdate,
 )
 
@@ -46,7 +48,9 @@ async def create_enrollment(
     current_user: CurrentAdmin,
 ):
     return await enrollment_service.create(
-        EnrollmentCreate(**enrollment.model_dump(), created_by=current_user)
+        EnrollmentCreateWithRestrictions(
+            **enrollment.model_dump(), created_by=current_user
+        )
     )
 
 
@@ -67,6 +71,24 @@ async def update_status(
             id=enrollment_id,
             status=enrollment.status,
             expire_at=enrollment.expire_at,
+            updated_by=current_user,
+        )
+    )
+
+
+@router.patch(
+    "/{enrollment_id}/sync-restriction", status_code=status.HTTP_204_NO_CONTENT
+)
+async def sync_module_restriction(
+    enrollment_id: EnrollmentID,
+    module_ids: RestrictedModuleIds,
+    enrollment_service: EnrollmentServiceDependency,
+    current_user: CurrentAdmin,
+):
+    await enrollment_service.sync_module_restriction(
+        cmd=EnrollmentModuleRestrictionSync(
+            enrollment_id=enrollment_id,
+            module_ids=module_ids.module_ids,
             updated_by=current_user,
         )
     )

@@ -8,6 +8,7 @@ from src.command.repositories.enrollments import EnrollmentRepository
 from src.command.repositories.issues import IssueRepository
 from src.command.repositories.lessons import LessonRepository
 from src.command.repositories.media import MediaRepository
+from src.command.repositories.module_restrictions import ModuleRestrictionRepository
 from src.command.repositories.modules import ModuleRepository
 from src.command.repositories.users import UserRepository
 
@@ -16,6 +17,7 @@ __all__ = [
     "CourseRepository",
     "EnrollmentRepository",
     "ModuleRepository",
+    "ModuleRestrictionRepository",
     "LessonRepository",
     "MediaRepository",
     "AssignmentRepository",

@@ -122,6 +122,17 @@ class AsyncPgDBManager:
             async with conn.transaction():
                 yield cast(Connection, conn)
 
+    @contextlib.asynccontextmanager
+    async def scoped_transaction(
+        self, connection: Optional[Connection] = None
+    ) -> AsyncGenerator[Connection, None]:
+
+        if connection is not None:
+            yield connection
+        else:
+            async with self.transaction() as tconn:
+                yield tconn
+
     @overload
     async def execute(
         self,
