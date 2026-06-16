@@ -20,18 +20,21 @@ from src.command.commands.enrollments import (
     EnrollmentGet,
     EnrollmentModuleRestrictionSync,
     EnrollmentUpdate,
+    EnrollmentWithRestriction,
 )
 
 router = APIRouter(prefix="/enrollments", tags=["Enrollments"])
 
 
-@router.get("/{enrollment_id}", response_model=EnrollmentOut, **GET_ENROLLMENT)
+@router.get(
+    "/{enrollment_id}", response_model=EnrollmentWithRestriction, **GET_ENROLLMENT
+)
 async def get_enrollment(
     enrollment_id: EnrollmentID,
     enrollment_service: EnrollmentServiceDependency,
     current_user: CurrentAdmin,
 ):
-    return await enrollment_service.get(
+    return await enrollment_service.get_with_restriction(
         EnrollmentGet(id=enrollment_id, viewer_id=current_user)
     )
 
