@@ -1,4 +1,4 @@
-# Database initalization.
+# Database initialization.
 from src.auth.auth import AuthService
 
 # Repository Imports.

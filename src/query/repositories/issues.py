@@ -4,14 +4,14 @@ from pypika import Case, Criterion, Parameter, PostgreSQLQuery
 
 from src.command.commands.media import MediableType, MediaStatus
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query.dto.issues import IssueDetail
+from src.query.repositories.base import BaseQueryRepository, map_to_dto
+from src.query_builder import (
     JsonbBuildObject,
     issue_table,
     media_asset_table,
     user_table,
 )
-from src.query.dto.issues import IssueDetail
-from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
 class IssueQueryRepository(BaseQueryRepository):

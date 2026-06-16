@@ -10,7 +10,7 @@ from pypika.terms import ValueWrapper
 from src.command.commands.base import BaseCmd
 from src.database import AsyncPgDBManager, ExecutableSQL
 from src.exceptions import EntityNotFoundError, ValidationError
-from src.pypika_query_builder import PGSqlTypes, RowToJson
+from src.query_builder import PGSqlTypes, RowToJson
 
 
 class ReorderParticipants(BaseCmd):

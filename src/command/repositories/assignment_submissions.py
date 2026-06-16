@@ -19,7 +19,7 @@ from src.command.commands.assignment_submissions import (
 from src.command.commands.media import MediableType, MediaStatus
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query_builder import (
     PGSqlTypes,
     RowToJson,
     assignment_submission_table,

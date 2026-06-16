@@ -14,7 +14,7 @@ from src.command.commands.modules import (
 )
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import lesson_table, media_asset_table, module_table
+from src.query_builder import lesson_table, media_asset_table, module_table
 
 
 class ModuleRepository(BaseRepository[Module]):

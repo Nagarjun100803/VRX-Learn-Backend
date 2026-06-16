@@ -16,7 +16,7 @@ from src.command.commands.enrollments import (
 )
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query_builder import (
     JsonbAgg,
     JsonbBuildObject,
     PGSqlTypes,

@@ -6,7 +6,9 @@ from pypika.terms import Criterion
 
 from src.command.commands.media import MediableType, MediaStatus
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
+from src.query.repositories.base import BaseQueryRepository, map_to_dto
+from src.query_builder import (
     assignment_table,
     course_table,
     enrollment_table,
@@ -15,8 +17,6 @@ from src.pypika_query_builder import (
     module_table,
     user_table,
 )
-from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
-from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
 class QueryFactory:

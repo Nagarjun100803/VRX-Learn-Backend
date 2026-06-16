@@ -16,7 +16,7 @@ from src.command.commands.users import (
 )
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query_builder import (
     assignment_submission_table,
     enrollment_table,
     media_asset_table,

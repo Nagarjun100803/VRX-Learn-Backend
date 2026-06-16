@@ -16,7 +16,7 @@ from src.command.commands.lessons import (
 from src.command.commands.media import MediableType, MediaStatus
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import lesson_table, media_asset_table
+from src.query_builder import lesson_table, media_asset_table
 
 
 class LessonRepository(BaseRepository[Lesson]):

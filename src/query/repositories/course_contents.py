@@ -5,7 +5,9 @@ from pypika.terms import ValueWrapper
 
 from src.command.commands.media import MediableType, MediaStatus
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query.dto.course_contents import TraineeCourseContent, TrainerCourseContent
+from src.query.repositories.base import BaseQueryRepository, map_to_dto
+from src.query_builder import (
     JsonbAgg,
     JsonbBuildObject,
     LateralQuery,
@@ -17,8 +19,6 @@ from src.pypika_query_builder import (
     module_table,
     user_table,
 )
-from src.query.dto.course_contents import TraineeCourseContent, TrainerCourseContent
-from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
 class TraineeCourseContentQueryRepository(BaseQueryRepository):

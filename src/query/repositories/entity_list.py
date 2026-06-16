@@ -10,18 +10,6 @@ from typing_extensions import AsyncGenerator
 from src.command.commands.media import MediableType, MediaStatus
 from src.command.commands.users import UserRole
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
-    CustomOrder,
-    assignment_submission_table,
-    assignment_table,
-    course_table,
-    enrollment_table,
-    issue_table,
-    lesson_table,
-    media_asset_table,
-    module_table,
-    user_table,
-)
 from src.query.dto.base import PageMeta, Paginated, get_sort_order
 from src.query.dto.entity_list import (
     AssignmentDetailWithDue,
@@ -44,6 +32,18 @@ from src.query.dto.entity_list import (
 )
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
 from src.query.repositories.mixins import ExportMixin, PaginatorMixin
+from src.query_builder import (
+    CustomOrder,
+    assignment_submission_table,
+    assignment_table,
+    course_table,
+    enrollment_table,
+    issue_table,
+    lesson_table,
+    media_asset_table,
+    module_table,
+    user_table,
+)
 
 
 class EntityListQueryRepository(BaseQueryRepository, PaginatorMixin, ExportMixin):
