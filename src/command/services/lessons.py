@@ -236,7 +236,7 @@ class LessonService(BaseService[Lesson]):
         action=Action.UPDATE,
         entity=Entity.LESSON,
         user_id_field="updated_by",
-        entity_id_field="id",
+        entity_id_field="target_id",
     )
     async def reorder(self, cmd: LessonReorderParticipants) -> str:
         return await self.positioning_service.reorder(
