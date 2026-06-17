@@ -179,6 +179,7 @@ lesson_service = LessonService(
     file_service=file_service,
     positioning_service=positioning_service,
     attachment_resolver=attachment_resolver,
+    module_access_service=module_access_service,
 )
 
 assignment_service = AssignmentService(

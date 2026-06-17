@@ -25,6 +25,7 @@ from src.command.commands.media import (
 from src.command.repositories import LessonRepository, ModuleRepository
 from src.command.services.base import BaseService
 from src.command.services.media import AttachmentResolver, MediaService
+from src.command.services.module_restrictions import ModuleAccessService
 from src.core.positioning import PositioningService, ReorderParticipants
 from src.core.storage import FileMetadata, S3Bucket
 from src.exceptions import (
@@ -48,6 +49,7 @@ class LessonService(BaseService[Lesson]):
         auth_service: AuthService,
         positioning_service: PositioningService,
         attachment_resolver: AttachmentResolver,
+        module_access_service: ModuleAccessService,
     ) -> None:
         self.repo = repo
         self.module_repo = module_repo
@@ -56,6 +58,7 @@ class LessonService(BaseService[Lesson]):
         self.auth_service = auth_service
         self.positioning_service = positioning_service
         self.attachment_resolver = attachment_resolver
+        self.module_access_service = module_access_service
 
     async def _check_duplicate_lesson_title(self, title: str, module_id: int) -> None:
         duplicate_title_flag = await self.repo.exists_by(
@@ -211,6 +214,14 @@ class LessonService(BaseService[Lesson]):
         object_name="query",
     )
     async def get_attachment_view_url(self, query: LessonGetQuery) -> str:
+        lesson = await self.repo.pick(
+            columns=["id", "module_id"], fetch_all=False, id=query.id
+        )
+        if lesson is None:
+            raise LessonNotFoundError(value=query.id)
+        await self.module_access_service.validate_access(
+            user_id=query.viewer_id, module_id=lesson["module_id"]
+        )
         return await self.attachment_resolver.get_attachment_url(
             mediable_id=query.id, mediable_type=MediableType.LESSON
         )
