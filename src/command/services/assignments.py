@@ -2,7 +2,7 @@ import asyncio
 from typing import ClassVar, Type
 from uuid import uuid4
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import Entity
 from src.command.commands.assignments import (
     Assignment,
     AssignmentAttachmentMetadata,
@@ -41,14 +41,12 @@ class AssignmentService(BaseService[Assignment]):
         repo: AssignmentRepository,
         course_repo: CourseRepository,
         media_service: MediaService,
-        auth_service: AuthService,
         file_service: S3Bucket,
         attachment_resolver: AttachmentResolver,
     ) -> None:
         self.repo = repo
         self.course_repo = course_repo
         self.media_service = media_service
-        self.auth_service = auth_service
         self.file_service = file_service
         self.attachment_resolver = attachment_resolver
 
@@ -87,24 +85,10 @@ class AssignmentService(BaseService[Assignment]):
             created_by=cmd.created_by,
         )
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="created_by",
-        entity_id_field=None,
-        parent_id_field="course_id",
-    )
     async def create(self, cmd: AssignmentCreate) -> Assignment:
         await self._validate_assignment_create(cmd=cmd)
         return await self.repo.add(cmd=cmd)
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="created_by",
-        entity_id_field=None,
-        parent_id_field="course_id",
-    )
     async def create_with_attachment(
         self, cmd: AssignmentCreate, attachment: AssignmentAttachmentMetadata
     ) -> AttachmentUploadContext[AssignmentContext]:
@@ -134,12 +118,6 @@ class AssignmentService(BaseService[Assignment]):
             ),
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="updated_by",
-        entity_id_field="id",
-    )
     async def update(self, cmd: AssignmentUpdate) -> Assignment:
         assignment = await self.repo.get(query=AssignmentGet(id=cmd.id))
         if assignment is None:
@@ -152,33 +130,14 @@ class AssignmentService(BaseService[Assignment]):
 
         return self._require_entity(await self.repo.update(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.DELETE,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="deleted_by",
-        entity_id_field="id",
-    )
     async def delete(self, cmd: AssignmentDelete):
         return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: AssignmentGetQuery):
         return self._require_entity(
             await self.repo.get(AssignmentGet(id=query.id)), value=query.id
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="updated_by",
-        entity_id_field="id",
-    )
     async def mark_attachment_as_uploaded(
         self, cmd: AssignmentAttachmentStatusUpdate
     ) -> None:
@@ -190,13 +149,6 @@ class AssignmentService(BaseService[Assignment]):
             )
         )
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get_attachment_view_url(self, query: AssignmentGetQuery) -> str:
         return await self.attachment_resolver.get_attachment_url(
             mediable_id=query.id, mediable_type=MediableType.ASSIGNMENT

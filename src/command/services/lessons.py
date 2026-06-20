@@ -2,7 +2,7 @@ import asyncio
 from typing import ClassVar, Type
 from uuid import uuid4
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import Entity
 from src.command.commands.base import AttachmentUploadContext, MediaContext
 from src.command.commands.lessons import (
     Lesson,
@@ -46,7 +46,6 @@ class LessonService(BaseService[Lesson]):
         module_repo: ModuleRepository,
         media_service: MediaService,
         file_service: S3Bucket,
-        auth_service: AuthService,
         positioning_service: PositioningService,
         attachment_resolver: AttachmentResolver,
         module_access_service: ModuleAccessService,
@@ -55,7 +54,6 @@ class LessonService(BaseService[Lesson]):
         self.module_repo = module_repo
         self.media_service = media_service
         self.file_service = file_service
-        self.auth_service = auth_service
         self.positioning_service = positioning_service
         self.attachment_resolver = attachment_resolver
         self.module_access_service = module_access_service
@@ -105,12 +103,6 @@ class LessonService(BaseService[Lesson]):
             created_by=cmd.created_by,
         )
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.LESSON,
-        user_id_field="created_by",
-        parent_id_field="module_id",
-    )
     async def create(
         self, cmd: LessonCreate, attachment: LessonAttachmentMetadata
     ) -> AttachmentUploadContext[LessonContext]:
@@ -151,12 +143,6 @@ class LessonService(BaseService[Lesson]):
             ),
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.LESSON,
-        user_id_field="updated_by",
-        entity_id_field="id",
-    )
     async def update(self, cmd: LessonUpdate) -> Lesson:
 
         lesson = await self.repo.pick(
@@ -174,45 +160,18 @@ class LessonService(BaseService[Lesson]):
 
         return self._require_entity(await self.repo.update(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.DELETE,
-        entity=Entity.LESSON,
-        user_id_field="deleted_by",
-        entity_id_field="id",
-    )
     async def delete(self, cmd: LessonDelete) -> Lesson:
         return self._require_entity(await self.repo.delete(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.LESSON,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: LessonGetQuery) -> Lesson:
         return self._require_entity(await self.repo.get(query), value=query.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.LESSON,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get_with_media(self, query: LessonGetQuery) -> LessonWithMedia:
         result = await self.repo.get_with_media(query)
         if result is None:
             raise LessonNotFoundError(value=query.id)
         return result
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.LESSON,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get_attachment_view_url(self, query: LessonGetQuery) -> str:
         lesson = await self.repo.pick(
             columns=["id", "module_id"], fetch_all=False, id=query.id
@@ -226,12 +185,6 @@ class LessonService(BaseService[Lesson]):
             mediable_id=query.id, mediable_type=MediableType.LESSON
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.LESSON,
-        user_id_field="updated_by",
-        entity_id_field="id",
-    )
     async def mark_attachment_as_uploaded(
         self, cmd: LessonAttachmentStatusUpdate
     ) -> None:
@@ -243,12 +196,6 @@ class LessonService(BaseService[Lesson]):
             )
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.LESSON,
-        user_id_field="updated_by",
-        entity_id_field="id",
-    )
     async def reorder(self, cmd: LessonReorderParticipants) -> str:
         return await self.positioning_service.reorder(
             participants=ReorderParticipants(

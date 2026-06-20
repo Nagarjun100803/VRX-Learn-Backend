@@ -1,6 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from typing import Annotated, Union
 
-from src.api.dependencies import AssignmentServiceDependency, CurrentUser
+from fastapi import APIRouter, Depends, HTTPException, status
+
+from src.api.authorize import Authorize, AuthorizeOn
+from src.api.dependencies import AssignmentServiceDependency
 from src.api.docs.assignments import (
     DELETE_ASSIGNMENT,
     GET_ASSIGNMENT,
@@ -20,16 +23,69 @@ from src.command.commands.assignments import (
     AssignmentGetQuery,
     AssignmentUpdate,
 )
-from src.command.commands.base import AssignmentID, AttachmentUploadContext
+from src.command.commands.base import (
+    AssignmentID,
+    AttachmentUploadContext,
+    CourseID,
+    UserID,
+)
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
+
+
+def get_parent_id(
+    assignment: Union[AssignmentCreateSchema, AssignmentCreateWithAttachmentSchema],
+) -> CourseID:
+    """Extracts the parent ID from the assignment create schema."""
+    if isinstance(assignment, AssignmentCreateWithAttachmentSchema):
+        return assignment.assignment.course_id
+    return assignment.course_id
+
+
+type AuthorizeAssignmentCreate = Annotated[
+    UserID,
+    Depends(
+        Authorize(
+            on=AuthorizeOn.ASSIGNMENT_CREATE,
+            parent_id=Depends(get_parent_id),
+            allowed_user_roles={"admin", "trainer"},
+        )
+    ),
+]
+
+type AuthorizeAssignmentUpdate = Annotated[
+    UserID,
+    Depends(
+        Authorize(
+            on=AuthorizeOn.ASSIGNMENT_UPDATE,
+            entity_id_field="assignment_id",
+            allowed_user_roles={"admin", "trainer"},
+        )
+    ),
+]
+
+type AuthorizeAssignmentDelete = Annotated[
+    UserID,
+    Depends(
+        Authorize(
+            on=AuthorizeOn.ASSIGNMENT_DELETE,
+            entity_id_field="assignment_id",
+            allowed_user_roles={"admin", "trainer"},
+        )
+    ),
+]
+
+type AuthorizeAssignmentView = Annotated[
+    UserID,
+    Depends(Authorize(on=AuthorizeOn.ASSIGNMENT_VIEW, entity_id_field="assignment_id")),
+]
 
 
 @router.get("/{assignment_id}", response_model=AssignmentOut, **GET_ASSIGNMENT)
 async def get_assignment(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentView,
 ):
 
     return await assignment_service.get(
@@ -41,7 +97,7 @@ async def get_assignment(
 async def create_assignment(
     assignment_payload: AssignmentCreateSchema,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentCreate,
 ):
     if (
         assignment_payload.instructions is None
@@ -61,7 +117,7 @@ async def create_assignment(
 async def create_assignment_with_attachment(
     assignment_payload: AssignmentCreateWithAttachmentSchema,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentCreate,
 ):
     return await assignment_service.create_with_attachment(
         AssignmentCreate(
@@ -78,7 +134,7 @@ async def update_assignment(
     assignment_id: AssignmentID,
     assignment: AssignmentUpdateSchema,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentUpdate,
 ):
     return await assignment_service.update(
         AssignmentUpdate(
@@ -93,7 +149,7 @@ async def update_assignment(
 async def delete_assignment(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentDelete,
 ):
 
     return await assignment_service.delete(
@@ -107,7 +163,7 @@ async def delete_assignment(
 async def update_attachment_status(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentUpdate,
 ):
     await assignment_service.mark_attachment_as_uploaded(
         AssignmentAttachmentStatusUpdate(id=assignment_id, updated_by=current_user)
@@ -118,7 +174,7 @@ async def update_attachment_status(
 async def get_view_url(
     assignment_id: AssignmentID,
     assignment_service: AssignmentServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentView,
 ):
     return await assignment_service.get_attachment_view_url(
         AssignmentGetQuery(id=assignment_id, viewer_id=current_user)

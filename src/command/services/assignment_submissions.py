@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from asyncpg import Connection
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import Entity
 from src.command.commands.assignment_submissions import (
     AssignmentSubmission,
     AssignmentSubmissionAttachmentMetadata,
@@ -63,14 +63,12 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
         media_service: MediaService,
         file_service: S3Bucket,
         attachment_resolver: AttachmentResolver,
-        auth_service: AuthService,
     ) -> None:
         self.repo = repo
         self.assignment_repo = assignment_repo
         self.media_service = media_service
         self.file_service = file_service
         self.attachment_resolver = attachment_resolver
-        self.auth_service = auth_service
 
     async def _create_submission(
         self, cmd: AssignmentSubmissionCreate, connection: Optional[Connection] = None
@@ -135,13 +133,6 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
             created_by=cmd.created_by,
         )
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="created_by",
-        entity_id_field=None,
-        parent_id_field="assignment_id",
-    )
     async def create(
         self,
         cmd: AssignmentSubmissionCreate,
@@ -171,13 +162,6 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
             ),
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="updated_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def grade(self, cmd: AssignmentSubmissionVerify) -> AssignmentSubmission:
         submission_context: Optional[
             AssignmentSubmissionDetailContext
@@ -206,13 +190,6 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
             )
         )
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="updated_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def update_feedback(
         self, cmd: AssignmentSubmissionFeedbackUpdate
     ) -> AssignmentSubmission:
@@ -228,23 +205,9 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
 
         return self._require_entity(await self.repo.update(cmd))
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: AssignmentSubmissionGet) -> AssignmentSubmission:
         return self._require_entity(await self.repo.get(query), value=query.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get_with_media(
         self, query: AssignmentSubmissionGet
     ) -> AssignmentSubmissionWithMedia:
@@ -269,13 +232,6 @@ class AssignmentSubmissionService(BaseService[AssignmentSubmission]):
             )
         )
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get_attachment_view_url(self, query: AssignmentSubmissionGet) -> str:
         return await self.attachment_resolver.get_attachment_url(
             mediable_id=query.id, mediable_type=MediableType.ASSIGNMENT_SUBMISSION

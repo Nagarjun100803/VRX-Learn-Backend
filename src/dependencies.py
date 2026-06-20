@@ -175,7 +175,6 @@ lesson_service = LessonService(
     repo=lesson_repository,
     module_repo=module_repository,
     media_service=media_service,
-    auth_service=auth_service,
     file_service=file_service,
     positioning_service=positioning_service,
     attachment_resolver=attachment_resolver,
@@ -186,7 +185,6 @@ assignment_service = AssignmentService(
     repo=assignment_repository,
     course_repo=course_repository,
     media_service=media_service,
-    auth_service=auth_service,
     file_service=file_service,
     attachment_resolver=attachment_resolver,
 )
@@ -202,7 +200,6 @@ assignment_submission_service = AssignmentSubmissionService(
     repo=assignment_submission_repository,
     assignment_repo=assignment_repository,
     media_service=media_service,
-    auth_service=auth_service,
     file_service=file_service,
     attachment_resolver=attachment_resolver,
 )
@@ -231,13 +228,11 @@ trainer_dashboard_query_service = TrainerDashboardQueryService(
 )
 
 trainee_course_content_query_service = TraineeCourseContentQueryService(
-    trainee_course_content_repo=trainee_course_content_query_repository,
-    auth_service=auth_service,
+    trainee_course_content_repo=trainee_course_content_query_repository
 )
 
 trainer_course_content_query_service = TrainerCourseContentQueryService(
-    trainer_course_content_repo=trainer_course_content_query_repository,
-    auth_service=auth_service,
+    trainer_course_content_repo=trainer_course_content_query_repository
 )
 
 admin_entity_list_query_service = AdminEntityListQueryService(
@@ -245,33 +240,29 @@ admin_entity_list_query_service = AdminEntityListQueryService(
 )
 
 trainee_entity_list_query_service = TraineeEntityListQueryService(
-    entity_list_query_repo=entity_list_query_repository, auth_service=auth_service
+    entity_list_query_repo=entity_list_query_repository
 )
 
 trainer_entity_list_query_service = TrainerEntityListQueryService(
-    entity_list_query_repo=entity_list_query_repository, auth_service=auth_service
+    entity_list_query_repo=entity_list_query_repository
 )
 
 
 trainee_assignment_content_query_service = TraineeAssignmentContentQueryService(
-    trainee_assignment_query_repo=trainee_assignment_content_query_repository,
-    auth_service=auth_service,
+    trainee_assignment_query_repo=trainee_assignment_content_query_repository
 )
 
 trainer_assignment_content_query_service = TrainerAssignmentContentQueryService(
     trainer_assignment_content_repo=trainer_assignment_content_query_repository,
     entity_list_query_repo=entity_list_query_repository,
-    auth_service=auth_service,
 )
 
 trainee_course_overview_query_service = TraineeCourseOverviewQueryService(
-    trainee_course_overview_query_repo=trainee_course_overview_query_repository,
-    auth_service=auth_service,
+    trainee_course_overview_query_repo=trainee_course_overview_query_repository
 )
 
 trainer_course_overview_query_service = TrainerCourseOverviewQueryService(
-    trainer_course_overview_query_repo=trainer_course_overview_query_repository,
-    auth_service=auth_service,
+    trainer_course_overview_query_repo=trainer_course_overview_query_repository
 )
 
 issue_query_service = IssueQueryService(issue_query_repo=issue_query_repository)
