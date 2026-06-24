@@ -15,7 +15,7 @@ class EnrollmentCreateSchema(EnrollmentCreateCore):
 
 
 class RestrictedModuleIds(BaseCmd):
-    module_ids: set[int]
+    module_ids: set[ModuleID]
 
 
 class EnrollmentUpdateSchema(EnrollmentUpdateCore): ...
