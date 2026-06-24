@@ -29,13 +29,17 @@ class LessonDetail(BaseDTO):
     filename: str
 
 
-class TrainerModuleDetail(BaseDTO):
+class BaseModuleDetail(BaseDTO):
     id: ModuleID
     title: ModuleTitile
     description: Optional[ModuleDescription] = None
 
 
-class TraineeModuleDetail(TrainerModuleDetail):
+class TrainerModuleDetail(BaseModuleDetail): ...
+
+
+class TraineeModuleDetail(BaseModuleDetail):
+    restricted: bool
     lessons: list[LessonDetail]
 
 

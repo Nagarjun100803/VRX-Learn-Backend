@@ -15,7 +15,7 @@ from src.command.commands.assignments import (
 from src.command.commands.media import MediableType
 from src.command.repositories.base import BaseRepository
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query_builder import (
     assignment_submission_table,
     assignment_table,
     media_asset_table,

@@ -4,7 +4,7 @@ from typing import Annotated, Literal, TypeVar
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, computed_field
 from pydantic.alias_generators import to_camel
 
-from src.pypika_query_builder import CustomOrder
+from src.query_builder import CustomOrder
 
 
 class BaseDTO(BaseModel):

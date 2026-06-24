@@ -34,7 +34,7 @@ class TraineeCourseContentQueryService:
         self, query: CourseContentRequestSchema
     ) -> Optional[TraineeCourseContent]:
         return await self.trainee_course_content_repo.course_contents(
-            course_id=query.course_id
+            course_id=query.course_id, user_id=query.viewer_id
         )
 
 

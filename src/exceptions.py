@@ -125,6 +125,10 @@ class EmailNotVerifiedError(SecurityError):
     _default = "Email not verified."
 
 
+class ModuleAccessRestrictedError(SecurityError):
+    _default = "Module access is restricted."
+
+
 """
 ======================================
 Already Exists Errors

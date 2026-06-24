@@ -5,12 +5,6 @@ from pypika import functions as fn
 from pypika.terms import ValueWrapper
 
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
-    CustomOrder,
-    course_table,
-    enrollment_table,
-    user_table,
-)
 from src.query.dto.dashboards import (
     AdminCourseCard,
     AdminKPI,
@@ -19,6 +13,7 @@ from src.query.dto.dashboards import (
     TrainerKPI,
 )
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
+from src.query_builder import CustomOrder, course_table, enrollment_table, user_table
 
 
 class TraineeDashboardQueryRepository(BaseQueryRepository):

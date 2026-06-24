@@ -6,6 +6,10 @@ from src.command.services.enrollments import EnrollmentService
 from src.command.services.issues import IssueService
 from src.command.services.lessons import LessonService
 from src.command.services.media import MediaService
+from src.command.services.module_restrictions import (
+    ModuleAccessResolver,
+    ModuleAccessService,
+)
 from src.command.services.modules import ModuleService
 from src.command.services.user_onboard import UserOnboardService
 from src.command.services.users import UserService
@@ -22,4 +26,6 @@ __all__ = [
     "IssueService",
     "AuthenticationService",
     "UserOnboardService",
+    "ModuleAccessService",
+    "ModuleAccessResolver",
 ]

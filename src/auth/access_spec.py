@@ -10,7 +10,7 @@ from pypika.terms import Criterion, ExistsCriterion, ValueWrapper
 from src.auth.permission_policy import Entity
 from src.command.commands.enrollments import EnrollmentStatus
 from src.database import AsyncPgDBManager, ExecutableSQL
-from src.pypika_query_builder import (
+from src.query_builder import (
     assignment_submission_table,
     assignment_table,
     course_table,

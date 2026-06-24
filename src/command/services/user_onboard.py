@@ -1,6 +1,6 @@
 import asyncio
 
-from src.command.commands.enrollments import EnrollmentCreate
+from src.command.commands.enrollments import EnrollmentCreateWithRestrictions
 from src.command.services.enrollments import EnrollmentService
 from src.settings import settings
 
@@ -19,11 +19,12 @@ class UserOnboardService:
             free_course_ids = settings.free_course.ids
             enrollment_create_tasks = [
                 self.enrollment_service.create(
-                    EnrollmentCreate(
+                    EnrollmentCreateWithRestrictions(
                         user_id=user_id,
                         course_id=course_id,
                         expire_at=settings.free_course.expires_at,
                         created_by=user_id,  # self-enrollment.
+                        restricted_module_ids=set(),  # No restrictions,
                     )
                 )
                 for course_id in free_course_ids

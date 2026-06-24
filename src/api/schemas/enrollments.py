@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 
+from src.command.commands.base import BaseCmd, ModuleID
 from src.command.commands.enrollments import (
     EnrollmentBase,
     EnrollmentCore,
@@ -9,7 +10,12 @@ from src.command.commands.enrollments import (
 )
 
 
-class EnrollmentCreateSchema(EnrollmentCreateCore): ...
+class EnrollmentCreateSchema(EnrollmentCreateCore):
+    restricted_module_ids: set[ModuleID]
+
+
+class RestrictedModuleIds(BaseCmd):
+    module_ids: set[ModuleID]
 
 
 class EnrollmentUpdateSchema(EnrollmentUpdateCore): ...

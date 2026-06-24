@@ -9,9 +9,14 @@ from src.command.commands.base import (
     BaseCmd,
     CourseID,
     EnrollmentBase,
+    EnrollmentID,
+    ModuleID,
     NullField,
     UserID,
 )
+from src.command.commands.courses import CourseTitle
+from src.command.commands.module_restrictions import ModuleRestrictionBase
+from src.command.commands.modules import ModuleTitile
 from src.command.commands.validator import UpdateValidatorMixin
 
 
@@ -37,6 +42,10 @@ class EnrollmentCreate(EnrollmentCreateCore):
     created_by: UserID
 
 
+class EnrollmentCreateWithRestrictions(EnrollmentCreate):
+    restricted_module_ids: set[ModuleID]
+
+
 class EnrollmentUpdateCore(UpdateValidatorMixin, BaseCmd):
     # NOTE: When updating expire_at it is not necessary to provide a future date,
     # because to make the enrollment expire, we can set expire_at to the current date or a past date.
@@ -46,6 +55,14 @@ class EnrollmentUpdateCore(UpdateValidatorMixin, BaseCmd):
 
 
 class EnrollmentUpdate(EnrollmentUpdateCore, EnrollmentBase):
+    updated_by: UserID
+
+
+class EnrollmentAuditUpdate(EnrollmentBase):
+    updated_by: UserID
+
+
+class EnrollmentModuleRestrictionSync(ModuleRestrictionBase):
     updated_by: UserID
 
 
@@ -59,3 +76,22 @@ class EnrollmentGet(EnrollmentBase):
 
 class Enrollment(AuditFields, EnrollmentCore, EnrollmentBase):
     expire_at: Optional[datetime] = None
+
+
+class EnrollmentModuleDetail(BaseCmd):
+    id: ModuleID
+    title: ModuleTitile
+    restricted: bool
+
+
+class EnrollmentWithRestriction(BaseCmd):
+    id: EnrollmentID
+    user_id: UserID
+    username: str
+    course_id: CourseID
+    course_title: CourseTitle
+    status: EnrollmentStatus
+    expire_at: Optional[datetime] = None
+    updated_by: str
+    updated_at: datetime
+    modules: list[EnrollmentModuleDetail]

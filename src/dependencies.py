@@ -1,4 +1,4 @@
-# Database initalization.
+# Database initialization.
 from src.auth.auth import AuthService
 
 # Repository Imports.
@@ -12,6 +12,7 @@ from src.command.repositories import (
     LessonRepository,
     MediaRepository,
     ModuleRepository,
+    ModuleRestrictionRepository,
     UserRepository,
 )
 
@@ -25,6 +26,8 @@ from src.command.services import (
     IssueService,
     LessonService,
     MediaService,
+    ModuleAccessResolver,
+    ModuleAccessService,
     ModuleService,
     UserOnboardService,
     UserService,
@@ -80,6 +83,7 @@ authentication_repository = AuthenticationRepository(db=db)
 user_repository = UserRepository(db=db)
 course_repository = CourseRepository(db=db)
 module_repository = ModuleRepository(db=db)
+module_restriction_repository = ModuleRestrictionRepository(db=db)
 media_repository = MediaRepository(db=db)
 lesson_repository = LessonRepository(db=db)
 assignment_repository = AssignmentRepository(db=db)
@@ -138,6 +142,16 @@ module_service = ModuleService(
     auth_service=auth_service,
     positioning_service=positioning_service,
 )
+module_access_resolver = ModuleAccessResolver(
+    repo=module_restriction_repository, enrollment_repo=enrollment_repository
+)
+
+module_access_service = ModuleAccessService(
+    repo=module_restriction_repository,
+    module_repo=module_repository,
+    enrollment_repo=enrollment_repository,
+    module_access_resolver=module_access_resolver,
+)
 
 session = get_s3_session()
 ses_session = get_ses_session()
@@ -165,6 +179,7 @@ lesson_service = LessonService(
     file_service=file_service,
     positioning_service=positioning_service,
     attachment_resolver=attachment_resolver,
+    module_access_service=module_access_service,
 )
 
 assignment_service = AssignmentService(
@@ -177,7 +192,10 @@ assignment_service = AssignmentService(
 )
 
 enrollment_service = EnrollmentService(
-    user_repo=user_repository, repo=enrollment_repository, course_repo=course_repository
+    user_repo=user_repository,
+    repo=enrollment_repository,
+    course_repo=course_repository,
+    module_access_service=module_access_service,
 )
 
 assignment_submission_service = AssignmentSubmissionService(

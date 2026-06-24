@@ -1,131 +1,142 @@
 from typing import Optional, cast
 
-from pypika import Criterion, Parameter, PostgreSQLQuery, functions
-from pypika.terms import ValueWrapper
+from pypika import Case, Criterion, Parameter, PostgreSQLQuery, functions
+from pypika.terms import ExistsCriterion, ValueWrapper
 
 from src.command.commands.media import MediableType, MediaStatus
 from src.database import ExecutableSQL
-from src.pypika_query_builder import (
+from src.query.dto.course_contents import TraineeCourseContent, TrainerCourseContent
+from src.query.repositories.base import BaseQueryRepository, map_to_dto
+from src.query_builder import (
     JsonbAgg,
     JsonbBuildObject,
     LateralQuery,
     PGJoinType,
+    PGSqlTypes,
     assignment_table,
     course_table,
+    enrollment_table,
     lesson_table,
     media_asset_table,
+    module_restriction_table,
     module_table,
     user_table,
 )
-from src.query.dto.course_contents import TraineeCourseContent, TrainerCourseContent
-from src.query.repositories.base import BaseQueryRepository, map_to_dto
 
 
 class TraineeCourseContentQueryRepository(BaseQueryRepository):
     @map_to_dto(dto=TraineeCourseContent, dto_mode="single")
-    async def course_contents(self, course_id: int) -> Optional[TraineeCourseContent]:
+    async def course_contents(
+        self, course_id: int, user_id: int
+    ) -> Optional[TraineeCourseContent]:
 
-        lesson_detail_subquery = (
+        lessons_subquery = (
             PostgreSQLQuery.from_(lesson_table)
             .join(media_asset_table)
             .on(
                 Criterion.all(
                     terms=[
                         lesson_table.id == media_asset_table.mediable_id,
-                        media_asset_table.mediable_type == Parameter("$1"),
+                        media_asset_table.mediable_type == MediableType.LESSON,
+                        media_asset_table.status == MediaStatus.UPLOADED,
                     ]
                 )
             )
             .where(
                 Criterion.all(
                     terms=[
+                        lesson_table.module_id == module_table.id,
                         lesson_table.deleted_at.isnull(),
                         media_asset_table.deleted_at.isnull(),
-                        media_asset_table.status == Parameter("$2"),
-                        # We only want any file with `uploaded` status
-                        lesson_table.module_id == module_table.id,
-                        # This is the reference for outer query.
                     ]
                 )
             )
             .select(
-                JsonbBuildObject(
-                    "id",
-                    lesson_table.id,
-                    "title",
-                    lesson_table.title,
-                    "description",
-                    lesson_table.description,
-                    "media_id",
-                    media_asset_table.id,
-                    "filename",
-                    media_asset_table.filename,
-                    "mime_type",
-                    media_asset_table.mime_type,
-                ).as_("lesson"),
-                lesson_table.position_string,
-                # This is for ordering.
+                functions.Coalesce(
+                    JsonbAgg(
+                        JsonbBuildObject(
+                            "id",
+                            lesson_table.id,
+                            "title",
+                            lesson_table.title,
+                            "description",
+                            lesson_table.description,
+                            "media_id",
+                            media_asset_table.id,
+                            "mime_type",
+                            media_asset_table.mime_type,
+                            "filename",
+                            media_asset_table.filename,
+                        )
+                    ).orderby(lesson_table.position_string),
+                    functions.Cast("[]", as_type=PGSqlTypes.JSONB),
+                ).as_("lessons")
             )
         )
 
-        lesson_detail = LateralQuery(lesson_detail_subquery, alias="ld")
-
-        module_detail_subquery = (
+        modules_subquery = (
             PostgreSQLQuery.from_(module_table)
-            .join(lesson_detail, how=PGJoinType.left_lateral)  # type: ignore
-            .on(ValueWrapper(True))  # type: ignore
             .where(
                 Criterion.all(
                     terms=[
                         module_table.deleted_at.isnull(),
-                        module_table.course_id == course_table.id,
-                        # This is the reference for outer course table[query].
+                        module_table.course_id
+                        == course_table.id,  # <- Call from outer query.
                     ]
                 )
             )
-            .groupby(
-                module_table.id,
-                module_table.title,
-                module_table.description,
-                module_table.position_string,
-            )
             .select(
-                JsonbBuildObject(
-                    "id",
-                    module_table.id,
-                    "title",
-                    module_table.title,
-                    "description",
-                    module_table.description,
-                    "lessons",
-                    functions.Coalesce(
-                        JsonbAgg(lesson_detail.lesson)
-                        .orderby(lesson_detail.position_string)
-                        .filter(lesson_detail.lesson.isnotnull()),
-                        ValueWrapper("[]"),
-                    ),
-                ).as_("module"),
-                module_table.position_string,
-                # This is for ordering.
+                functions.Coalesce(
+                    JsonbAgg(
+                        JsonbBuildObject(
+                            "id",
+                            module_table.id,
+                            "title",
+                            module_table.title,
+                            "description",
+                            module_table.description,
+                            "restricted",
+                            Case()
+                            .when(
+                                ExistsCriterion(
+                                    PostgreSQLQuery.select(ValueWrapper(1))
+                                    .from_(module_restriction_table)
+                                    .where(
+                                        Criterion.all(
+                                            terms=[
+                                                module_restriction_table.module_id
+                                                == module_table.id,
+                                                module_restriction_table.enrollment_id
+                                                == enrollment_table.id,
+                                            ]
+                                        )
+                                    )
+                                ),
+                                True,
+                            )
+                            .else_(False),
+                            "lessons",
+                            lessons_subquery,
+                        )
+                    ).orderby(module_table.position_string),
+                    functions.Cast("[]", as_type=PGSqlTypes.JSONB),
+                ).as_("modules")
             )
         )
 
-        module_detail = LateralQuery(module_detail_subquery, alias="md")
-
-        main_query = (
+        sql = (
             PostgreSQLQuery.from_(course_table)
-            .join(module_detail, how=PGJoinType.left_lateral)  # type: ignore
-            .on(ValueWrapper(True))  # type: ignore
+            .join(enrollment_table)
+            .on(enrollment_table.course_id == course_table.id)
             .where(
                 Criterion.all(
                     terms=[
-                        course_table.id == Parameter("$3"),
+                        course_table.id == Parameter("$1"),
+                        enrollment_table.user_id == Parameter("$2"),
                         course_table.deleted_at.isnull(),
+                        enrollment_table.deleted_at.isnull(),
                     ]
                 )
-            )
-            .groupby(
-                course_table.id, course_table.title, course_table.short_description
             )
             .select(
                 JsonbBuildObject(
@@ -136,21 +147,11 @@ class TraineeCourseContentQueryRepository(BaseQueryRepository):
                     "short_description",
                     course_table.short_description,
                 ).as_("course"),
-                functions.Coalesce(
-                    JsonbAgg(module_detail.module)
-                    .orderby(module_detail.position_string)
-                    .filter(module_detail.module.isnotnull()),
-                    ValueWrapper("[]"),
-                ).as_("modules"),
+                modules_subquery,
             )
-            .get_sql()
-            .replace("LATERAL JOIN", "LATERAL")
         )
 
-        executable = ExecutableSQL(
-            sql=main_query,
-            values=(MediableType.LESSON, MediaStatus.UPLOADED, course_id),
-        )
+        executable = ExecutableSQL(sql=sql.get_sql(), values=(course_id, user_id))
 
         return cast(
             Optional[TraineeCourseContent],
