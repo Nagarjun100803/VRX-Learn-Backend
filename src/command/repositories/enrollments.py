@@ -113,7 +113,7 @@ class EnrollmentRepository(BaseRepository[Enrollment]):
                             .when(module_restriction_table.module_id.isnull(), False)
                             .else_(True),
                         )
-                    ),
+                    ).orderby(module_table.position_string),
                     functions.Cast("[]", PGSqlTypes.JSONB),
                 ).as_("modules")
             )
