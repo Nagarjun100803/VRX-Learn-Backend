@@ -86,17 +86,15 @@ class Authorize:
         """
         Extract the entity ID from the request's path parameter.
         """
+        if self.entity_id_field is None:
+            return None
+
+        entity_id: str = request.path_params[self.entity_id_field]
+        entity_id = entity_id.split("-")[-1]
 
         adapter = TypeAdapter(int)
 
-        # Entity ID
-        entity_id = (
-            adapter.validate_python(request.path_params.get(self.entity_id_field))
-            if self.entity_id_field
-            else None
-        )
-
-        return entity_id
+        return adapter.validate_python(entity_id)
 
     def _validate_role(self, current_user: UserContext) -> None:
         """
@@ -117,7 +115,6 @@ class Authorize:
         self._validate_role(current_user)
 
         entity_id = await self._get_entity_id(request=request)
-
         await auth_service.authorize(
             entity=self.entity,
             action=self.action,
