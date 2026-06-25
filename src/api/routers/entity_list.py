@@ -5,15 +5,15 @@ from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from pydantic import StringConstraints
 
+from src.api.authorize import Authorize, AuthorizeOn
 from src.api.dependencies import (
     AdminEntityListQueryServiceDependency,
     CurrentAdmin,
     CurrentAdminOrTrainer,
-    CurrentTraineeOrTrainer,
     TraineeEntityListQueryServiceDependency,
     TrainerEntityListQueryServiceDependency,
 )
-from src.command.commands.base import CourseID, ModuleID
+from src.command.commands.base import CourseID, ModuleID, UserID
 from src.command.commands.users import UserRole
 from src.query.dto.base import PageMeta, Paginated
 from src.query.dto.entity_list import (
@@ -200,7 +200,7 @@ async def list_issues(
         filters=IssueFilters(
             category=filters.category, status=filters.status, role=filters.role
         ),
-        page_mata=PageMeta(page=filters.page, limit=filters.limit),
+        page_meta=PageMeta(page=filters.page, limit=filters.limit),
     )
 
 
@@ -243,7 +243,10 @@ trainee_router = APIRouter(
 async def list_assignments_for_trainee(
     course_id: CourseID,
     query_service: TraineeEntityListQueryServiceDependency,
-    current_user: CurrentTraineeOrTrainer,
+    current_user: Annotated[
+        UserID,
+        Depends(Authorize(on=AuthorizeOn.COURSE_VIEW, entity_id_field="course_id")),
+    ],
 ):
     return await query_service.list_assignments(
         CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
@@ -263,7 +266,7 @@ trainer_router = APIRouter(
 async def list_assignments_for_trainer(
     course_id: CourseID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentAdminOrTrainer,
+    current_user: CurrentAdminOrTrainer,  # No change since deprecated.
 ):
     return await query_service.list_assignments(
         CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
@@ -274,7 +277,16 @@ async def list_assignments_for_trainer(
 async def list_modules(
     course_id: CourseID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentAdminOrTrainer,
+    current_user: Annotated[
+        UserID,
+        Depends(
+            Authorize(
+                on=AuthorizeOn.COURSE_VIEW,
+                entity_id_field="course_id",
+                allowed_user_roles={"admin", "trainer"},
+            )
+        ),
+    ],
 ):
     return await query_service.list_modules(
         CourseViewRequestSchema(course_id=course_id, viewer_id=current_user)
@@ -285,7 +297,16 @@ async def list_modules(
 async def list_lessons(
     module_id: ModuleID,
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentAdminOrTrainer,
+    current_user: Annotated[
+        UserID,
+        Depends(
+            Authorize(
+                on=AuthorizeOn.MODULE_VIEW,
+                entity_id_field="module_id",
+                allowed_user_roles={"admin", "trainer"},
+            )
+        ),
+    ],
 ):
     return await query_service.list_lessons(
         ModuleViewRequestSchema(module_id=module_id, viewer_id=current_user)
@@ -297,7 +318,16 @@ async def list_trainees_for_trainer(
     course_id: CourseID,
     filters: Annotated[TraineeQueryParams, Depends()],
     query_service: TrainerEntityListQueryServiceDependency,
-    current_user: CurrentAdminOrTrainer,
+    current_user: Annotated[
+        UserID,
+        Depends(
+            Authorize(
+                on=AuthorizeOn.COURSE_VIEW,
+                entity_id_field="course_id",
+                allowed_user_roles={"admin", "trainer"},
+            )
+        ),
+    ],
 ):
 
     return await query_service.list_trainees(

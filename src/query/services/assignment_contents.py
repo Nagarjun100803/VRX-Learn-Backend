@@ -1,6 +1,5 @@
 from typing import Optional, cast
 
-from src.auth import Action, AuthService, Entity, require_authorization
 from src.query.dto.assignment_contents import (
     AssignmentSubmissionFilters,
     TraineeAssignmentContent,
@@ -23,21 +22,11 @@ from src.query.repositories.entity_list import EntityListQueryRepository
 
 class TraineeAssignmentContentQueryService:
     def __init__(
-        self,
-        trainee_assignment_query_repo: TraineeAssignmentContentQueryRepository,
-        auth_service: AuthService,
+        self, trainee_assignment_query_repo: TraineeAssignmentContentQueryRepository
     ) -> None:
 
         self.trainee_assignment_query_repo = trainee_assignment_query_repo
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        parent_id_field="course_id",
-        object_name="query",
-    )
     async def list_assignments(
         self, query: CourseViewRequestSchema
     ) -> list[TraineeAssignmentCore]:
@@ -45,13 +34,6 @@ class TraineeAssignmentContentQueryService:
             course_id=query.course_id, trainee_id=query.viewer_id
         )
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        entity_id_field="assignment_id",
-        object_name="query",
-    )
     async def get_assignment_contents(
         self, query: AssignmentViewRequestSchema
     ) -> Optional[TraineeAssignmentContent]:
@@ -65,20 +47,11 @@ class TrainerAssignmentContentQueryService:
         self,
         trainer_assignment_content_repo: TrainerAssignmentContentQueryRepository,
         entity_list_query_repo: EntityListQueryRepository,
-        auth_service: AuthService,
     ) -> None:
 
         self.trainer_assignment_content_repo = trainer_assignment_content_repo
         self.entity_list_query_repo = entity_list_query_repo
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        parent_id_field="course_id",
-        object_name="query",
-    )
     async def list_assignments(
         self, query: CourseViewRequestSchema
     ) -> list[TrainerAssignmentCore]:
@@ -86,13 +59,6 @@ class TrainerAssignmentContentQueryService:
             course_id=query.course_id
         )
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        entity_id_field="assignment_id",
-        object_name="query",
-    )
     async def get_assignment_contents(
         self, query: AssignmentViewRequestSchema
     ) -> Optional[TrainerAssignmentContent]:
@@ -100,13 +66,6 @@ class TrainerAssignmentContentQueryService:
             assignment_id=query.assignment_id
         )
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT_SUBMISSION,
-        user_id_field="viewer_id",
-        parent_id_field="assignment_id",
-        object_name="query",
-    )
     async def list_submissions(
         self,
         query: AssignmentViewRequestSchema,

@@ -2,11 +2,9 @@ import inspect
 from functools import wraps
 from typing import Any, Awaitable, Callable, Concatenate, Optional, ParamSpec, TypeVar
 
-from asyncpg import Connection
-
 from src.auth.access_spec import SpecType, get_spec_type
 from src.auth.permission_policy import Action, Entity, get_policy
-from src.command.commands.users import UserGetByID
+from src.command.commands.users import UserRole
 from src.command.repositories.users import UserRepository
 from src.database import AsyncPgDBManager
 from src.exceptions import UnAuthorizedError
@@ -86,30 +84,12 @@ class AuthService:
         entity: Entity,
         action: Action,
         user_id: int,
+        user_role: UserRole,
         entity_id: Optional[int] = None,
         parent_id: Optional[int] = None,
-        connection: Optional[Connection] = None,
     ) -> None:
         """
-        Orchestrates the two-tier authorization process for a specific request.
-
-        - Tier 1 (RBAC): Validates if the user's role is permitted to perform the
-        action on the entity type.
-        - Tier 2 (ReBAC): If the policy is 'contextual', evaluates the dynamic
-        relationship between the user and the specific resource (or its parent).
-
-        Args:
-            entity: The target entity type.
-            action: The operation being performed (CREATE, READ, etc.).
-            user_id: The ID of the user requesting access.
-            entity_id: The specific ID of the resource (required for non-CREATE actions).
-            parent_id: The ID of the parent resource (required for CREATE actions
-                within a hierarchy).
-            connection: Optional database connection for transactional integrity.
-
-        Raises:
-            UnauthorizedError: If the policy check fails or no valid relationship exists.
-            ValueError: If required IDs are missing for the specific action type.
+        Authorize the user to perform the specified action on the given entity.
         """
 
         # Validate required IDs for UPDATE/DELETE and VIEW actions
@@ -119,18 +99,13 @@ class AuthService:
         if action == Action.VIEW and entity_id is None and parent_id is None:
             raise ValueError("`VIEW` requires `entity_id` or `parent_id`")
 
-        # ===== Tier 1: RBAC (Role-Based Access Control) =====
-        user = await self.user_repo.get(UserGetByID(id=user_id))
-        if user is None:
-            raise UnAuthorizedError(message=f"User {user_id} not found")
-
-        policy = get_policy(user.role, entity)
+        policy = get_policy(user_role, entity)
         if not policy.allows(action):
             raise UnAuthorizedError(
-                message=f"Role '{user.role.value}' cannot {action.value} {entity.value}"
+                message=f"Role '{user_role.value}' cannot {action.value} {entity.value}"
             )
 
-        # ===== Tier 2: ReBAC (Relationship-Based Access Control) =====
+        # ===== ReBAC (Relationship-Based Access Control) =====
         if policy.scope != "contextual":
             # No relationship checks needed
             return

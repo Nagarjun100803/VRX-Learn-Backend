@@ -1,6 +1,9 @@
-from fastapi import APIRouter, status
+from typing import Annotated
 
-from src.api.dependencies import AssignmentSubmissionServiceDependency, CurrentUser
+from fastapi import APIRouter, Depends, status
+
+from src.api.authorize import Authorize, AuthorizeOn
+from src.api.dependencies import AssignmentSubmissionServiceDependency
 from src.api.docs.assignment_submissions import (
     CREATE_ASSIGNMENT_SUBMISSION,
     GET_ASSIGNMENT_SUBMISSION,
@@ -22,9 +25,54 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionVerify,
     AssignmentSubmissionWithMedia,
 )
-from src.command.commands.base import AssignmentSubmissionID, AttachmentUploadContext
+from src.command.commands.base import (
+    AssignmentID,
+    AssignmentSubmissionID,
+    AttachmentUploadContext,
+    UserID,
+)
 
 router = APIRouter(prefix="/assignment-submission", tags=["Assignment Submissions"])
+
+
+def get_parent_id(
+    assignment_submission: AssignmentSubmissionCreateSchema,
+) -> AssignmentID:
+    """Extracts the parent ID from the assignment submission create schema."""
+    return assignment_submission.assignment_submission.assignment_id
+
+
+type AuthorizeAssignmentSubmissionCreate = Annotated[
+    UserID,
+    Depends(
+        Authorize(
+            on=AuthorizeOn.ASSIGNMENT_SUBMISSION_CREATE,
+            parent_id=Depends(get_parent_id),
+            allowed_user_roles={"trainee"},
+        )
+    ),
+]
+
+type AuthorizeAssignmentSubmissionUpdate = Annotated[
+    UserID,
+    Depends(
+        Authorize(
+            on=AuthorizeOn.ASSIGNMENT_SUBMISSION_UPDATE,
+            entity_id_field="assignment_submission_id",
+            allowed_user_roles={"admin", "trainer"},
+        )
+    ),
+]
+
+type AuthorizeAssignmentSubmissionView = Annotated[
+    UserID,
+    Depends(
+        Authorize(
+            on=AuthorizeOn.ASSIGNMENT_SUBMISSION_VIEW,
+            entity_id_field="assignment_submission_id",
+        )
+    ),
+]
 
 
 @router.get(
@@ -35,7 +83,7 @@ router = APIRouter(prefix="/assignment-submission", tags=["Assignment Submission
 async def get_assignment_submission(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentSubmissionView,
 ):
 
     return await assignment_submission_service.get_with_media(
@@ -52,7 +100,7 @@ async def get_assignment_submission(
 async def create_assignment_submission(
     assignment_submission: AssignmentSubmissionCreateSchema,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentSubmissionCreate,
 ):
 
     return await assignment_submission_service.create(
@@ -73,7 +121,7 @@ async def verify_assignment_submission(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_verify_payload: AssignmentSubmissionVerifySchema,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentSubmissionUpdate,
 ):
     return await assignment_submission_service.grade(
         cmd=AssignmentSubmissionVerify(
@@ -93,7 +141,7 @@ async def update_feedback(
     assignment_submission_id: AssignmentSubmissionID,
     feedback_payload: AssignmentSubmissionFeedbackUpdateSchema,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentSubmissionUpdate,
 ):
 
     return await assignment_submission_service.update_feedback(
@@ -112,7 +160,7 @@ async def update_feedback(
 async def update_attachment_status(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentSubmissionUpdate,
 ):
     await assignment_submission_service.mark_attachment_as_uploaded(
         cmd=AssignmentSubmissionAttachmentStatusUpdate(
@@ -125,7 +173,7 @@ async def update_attachment_status(
 async def get_attachment_view_url(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: CurrentUser,
+    current_user: AuthorizeAssignmentSubmissionView,
 ):
     return await assignment_submission_service.get_attachment_view_url(
         query=AssignmentSubmissionGet(

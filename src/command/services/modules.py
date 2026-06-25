@@ -1,7 +1,7 @@
 import asyncio
 from typing import ClassVar, Type, cast
 
-from src.auth import Action, AuthService, Entity, require_authorization
+from src.auth import AuthService, Entity
 from src.command.commands.modules import (
     Module,
     ModuleCreate,
@@ -40,13 +40,6 @@ class ModuleService(BaseService[Module]):
         self.auth_service = auth_service
         self.positioning_service = positioning_service
 
-    @require_authorization(
-        action=Action.CREATE,
-        entity=Entity.MODULE,
-        user_id_field="created_by",
-        parent_id_field="course_id",
-        object_name="cmd",
-    )
     async def create(self, cmd: ModuleCreate) -> Module:
 
         # Conditions
@@ -54,7 +47,7 @@ class ModuleService(BaseService[Module]):
             self.course_repo.exists_by(id=cmd.course_id),
             self.repo.exists_by(title=cmd.title, course_id=cmd.course_id),
         )
-        # Check for course existance.
+        # Check for course existence.
         if not course_exist_flag:
             raise CourseNotFoundError(value=cmd.course_id)
 
@@ -73,13 +66,6 @@ class ModuleService(BaseService[Module]):
         )
         return cast(Module, module)
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.MODULE,
-        user_id_field="updated_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def update(self, cmd: ModuleUpdate) -> Module:
         # Get the module.
         module = await self.repo.pick(
@@ -101,34 +87,14 @@ class ModuleService(BaseService[Module]):
         # Update the fields.
         return self._require_entity(await self.repo.update(cmd), value=cmd.id)
 
-    @require_authorization(
-        action=Action.DELETE,
-        entity=Entity.MODULE,
-        user_id_field="deleted_by",
-        entity_id_field="id",
-        object_name="cmd",
-    )
     async def delete(self, cmd: ModuleDelete) -> Module:
         module = await self.repo.delete(cmd)
         return self._require_entity(module, value=cmd.id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.MODULE,
-        user_id_field="viewer_id",
-        entity_id_field="id",
-        object_name="query",
-    )
     async def get(self, query: ModuleGetQuery) -> Module:
         module = await self.repo.get(query)
         return self._require_entity(module, value=query.id)
 
-    @require_authorization(
-        action=Action.UPDATE,
-        entity=Entity.MODULE,
-        user_id_field="updated_by",
-        entity_id_field="target_id",
-    )
     async def reorder(self, cmd: ModuleReorderParticipants) -> str:
         return await self.positioning_service.reorder(
             participants=ReorderParticipants(

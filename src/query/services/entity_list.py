@@ -1,6 +1,5 @@
 from typing_extensions import AsyncGenerator
 
-from src.auth import Action, AuthService, Entity, require_authorization
 from src.command.commands.users import UserRole
 from src.query.dto.base import PageMeta, Paginated
 from src.query.dto.entity_list import (
@@ -31,22 +30,10 @@ from src.query.repositories.entity_list import EntityListQueryRepository
 # list_assignments that returns the list of assignment to trainee view.
 # But this is functionality also defined in `TraineeAssignmentContentQueryService`.
 class TraineeEntityListQueryService:
-    def __init__(
-        self,
-        entity_list_query_repo: EntityListQueryRepository,
-        auth_service: AuthService,
-    ) -> None:
+    def __init__(self, entity_list_query_repo: EntityListQueryRepository) -> None:
 
         self.entity_list_query_repo = entity_list_query_repo
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        parent_id_field="course_id",
-        object_name="query",
-    )
     async def list_assignments(
         self, query: CourseViewRequestSchema
     ) -> list[AssignmentDetail]:
@@ -60,44 +47,16 @@ class TraineeEntityListQueryService:
 
 
 class TrainerEntityListQueryService:
-    def __init__(
-        self,
-        entity_list_query_repo: EntityListQueryRepository,
-        auth_service: AuthService,
-    ) -> None:
+    def __init__(self, entity_list_query_repo: EntityListQueryRepository) -> None:
 
         self.entity_list_query_repo = entity_list_query_repo
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.MODULE,
-        user_id_field="viewer_id",
-        parent_id_field="course_id",
-        object_name="query",
-    )
     async def list_modules(self, query: CourseViewRequestSchema) -> list[ModuleDetail]:
         return await self.entity_list_query_repo.modules(course_id=query.course_id)
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.LESSON,
-        user_id_field="viewer_id",
-        parent_id_field="module_id",
-        object_name="query",
-    )
     async def list_lessons(self, query: ModuleViewRequestSchema) -> list[LessonDetail]:
         return await self.entity_list_query_repo.lessons(module_id=query.module_id)
 
-    # NOTE: Passed `entity=Entity.COURSE even though we get all trainees in a course.
-    # CourseAccessSpec will be executed to check the relationship between the user and course.
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.COURSE,
-        user_id_field="viewer_id",
-        entity_id_field="course_id",
-        object_name="query",
-    )
     async def list_trainees(
         self,
         query: CourseViewRequestSchema,
@@ -111,13 +70,6 @@ class TrainerEntityListQueryService:
     # NOTE: This method is not used in API Layer.
     # list_assignments() for Trainer View also defined in
     # TrainerAssignmentContentQueryService. Will be removed later.
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.ASSIGNMENT,
-        user_id_field="viewer_id",
-        parent_id_field="course_id",
-        object_name="query",
-    )
     async def list_assignments(
         self, query: CourseViewRequestSchema
     ) -> list[AssignmentDetailWithDue]:
@@ -126,7 +78,6 @@ class TrainerEntityListQueryService:
 
 class AdminEntityListQueryService:
     def __init__(self, entity_list_query_repo: EntityListQueryRepository) -> None:
-
         self.entity_list_query_repo = entity_list_query_repo
 
     async def list_users(
@@ -192,8 +143,8 @@ class AdminEntityListQueryService:
         return await self.entity_list_query_repo.search_courses(course_name=course_name)
 
     async def list_issues(
-        self, filters: IssueFilters, page_mata: PageMeta
+        self, filters: IssueFilters, page_meta: PageMeta
     ) -> Paginated[IssueDetail]:
         return await self.entity_list_query_repo.issues(
-            filters=filters, page_meta=page_mata
+            filters=filters, page_meta=page_meta
         )

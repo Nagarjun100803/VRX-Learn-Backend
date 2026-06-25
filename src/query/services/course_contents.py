@@ -1,7 +1,5 @@
 from typing import Optional
 
-from src.auth.auth import AuthService, require_authorization
-from src.auth.permission_policy import Action, Entity
 from src.query.dto.course_contents import (
     CourseContentRequestSchema,
     TraineeCourseContent,
@@ -15,21 +13,11 @@ from src.query.repositories.course_contents import (
 
 class TraineeCourseContentQueryService:
     def __init__(
-        self,
-        trainee_course_content_repo: TraineeCourseContentQueryRepository,
-        auth_service: AuthService,
+        self, trainee_course_content_repo: TraineeCourseContentQueryRepository
     ) -> None:
 
         self.trainee_course_content_repo = trainee_course_content_repo
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.COURSE,
-        user_id_field="viewer_id",
-        entity_id_field="course_id",
-        object_name="query",
-    )
     async def get_course_contents(
         self, query: CourseContentRequestSchema
     ) -> Optional[TraineeCourseContent]:
@@ -40,21 +28,11 @@ class TraineeCourseContentQueryService:
 
 class TrainerCourseContentQueryService:
     def __init__(
-        self,
-        trainer_course_content_repo: TrainerCourseContentQueryRepository,
-        auth_service: AuthService,
+        self, trainer_course_content_repo: TrainerCourseContentQueryRepository
     ) -> None:
 
         self.trainer_course_content_repo = trainer_course_content_repo
-        self.auth_service = auth_service
 
-    @require_authorization(
-        action=Action.VIEW,
-        entity=Entity.COURSE,
-        user_id_field="viewer_id",
-        entity_id_field="course_id",
-        object_name="query",
-    )
     async def get_course_contents(
         self, query: CourseContentRequestSchema
     ) -> Optional[TrainerCourseContent]:
