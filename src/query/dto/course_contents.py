@@ -16,7 +16,7 @@ from src.command.commands.courses import (
 )
 from src.command.commands.lessons import LessonDescription, LessonTitle
 from src.command.commands.media import AllowedContentTypes
-from src.command.commands.modules import ModuleDescription, ModuleTitile
+from src.command.commands.modules import ModuleDescription, ModuleTitle
 from src.query.dto.base import BaseDTO
 
 
@@ -31,7 +31,7 @@ class LessonDetail(BaseDTO):
 
 class BaseModuleDetail(BaseDTO):
     id: ModuleID
-    title: ModuleTitile
+    title: ModuleTitle
     description: Optional[ModuleDescription] = None
 
 

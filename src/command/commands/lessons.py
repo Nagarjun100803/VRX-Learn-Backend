@@ -51,6 +51,7 @@ class LessonCreateCore(BaseCmd):
     title: LessonTitle
     description: Optional[LessonDescription] = None
     module_id: ModuleID
+    is_preview: bool = False
 
 
 class LessonCreate(LessonCreateCore):
@@ -68,6 +69,7 @@ class LessonContext(LessonCreate):
 class LessonUpdateCore(UpdateValidatorMixin, BaseCmd):
     title: Annotated[Optional[LessonTitle], NullField]
     description: Annotated[Optional[LessonDescription], NullField]
+    is_preview: Annotated[Optional[bool], NullField]
 
 
 class LessonUpdate(LessonUpdateCore, LessonBase):

@@ -30,14 +30,14 @@ from src.command.commands.issues import (
 )
 from src.command.commands.lessons import LessonDescription, LessonTitle
 from src.command.commands.media import AllowedContentTypes
-from src.command.commands.modules import ModuleTitile
+from src.command.commands.modules import ModuleTitle
 from src.command.commands.users import Email, UserRole
 from src.query.dto.base import BaseDTO, PageMeta
 
 
 class ModuleDetail(BaseDTO):
     id: ModuleID
-    title: ModuleTitile
+    title: ModuleTitle
 
 
 class LessonDetail(BaseDTO):

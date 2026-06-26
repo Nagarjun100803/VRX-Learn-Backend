@@ -16,7 +16,7 @@ from src.command.commands.base import (
 )
 from src.command.commands.courses import CourseTitle
 from src.command.commands.module_restrictions import ModuleRestrictionBase
-from src.command.commands.modules import ModuleTitile
+from src.command.commands.modules import ModuleTitle
 from src.command.commands.validator import UpdateValidatorMixin
 
 
@@ -80,7 +80,7 @@ class Enrollment(AuditFields, EnrollmentCore, EnrollmentBase):
 
 class EnrollmentModuleDetail(BaseCmd):
     id: ModuleID
-    title: ModuleTitile
+    title: ModuleTitle
     restricted: bool
 
 

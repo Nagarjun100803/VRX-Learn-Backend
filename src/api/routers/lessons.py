@@ -128,6 +128,7 @@ async def lesson_update(
         LessonUpdate(
             title=lesson.title,
             description=lesson.description,
+            is_preview=lesson.is_preview,
             id=lesson_id,
             updated_by=current_user,
         )

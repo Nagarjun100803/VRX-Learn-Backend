@@ -1,11 +1,32 @@
 from typing import cast
 
-from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
+from src.exceptions import CourseNotFoundError
+from src.query.dto.course_overview import (
+    CoursePreview,
+    TraineeCourseOverview,
+    TrainerCourseOverview,
+)
 from src.query.dto.request_schemas import CourseViewRequestSchema
 from src.query.repositories.course_overview import (
     TraineeCourseOverviewQueryRepository,
+    TraineeCoursePreviewQueryRepository,
     TrainerCourseOverviewQueryRepository,
 )
+
+
+class TraineeCoursePreviewQueryService:
+    def __init__(
+        self, trainee_course_preview_query_repo: TraineeCoursePreviewQueryRepository
+    ) -> None:
+        self.trainee_course_preview_query_repo = trainee_course_preview_query_repo
+
+    async def get_preview(self, course_id: int) -> CoursePreview:
+        preview = await self.trainee_course_preview_query_repo.preview(
+            course_id=course_id
+        )
+        if preview is None:
+            raise CourseNotFoundError(value=course_id)
+        return preview
 
 
 class TraineeCourseOverviewQueryService:

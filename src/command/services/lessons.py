@@ -174,10 +174,18 @@ class LessonService(BaseService[Lesson]):
 
     async def get_attachment_view_url(self, query: LessonGetQuery) -> str:
         lesson = await self.repo.pick(
-            columns=["id", "module_id"], fetch_all=False, id=query.id
+            columns=["id", "module_id", "is_preview"], fetch_all=False, id=query.id
         )
         if lesson is None:
             raise LessonNotFoundError(value=query.id)
+
+        # If the lesson is a preview, return the attachment URL immediately.
+        if lesson["is_preview"]:
+            return await self.attachment_resolver.get_attachment_url(
+                mediable_id=query.id, mediable_type=MediableType.LESSON
+            )
+
+        # Otherwise, validate access and return the attachment URL.
         await self.module_access_service.validate_access(
             user_id=query.viewer_id, module_id=lesson["module_id"]
         )

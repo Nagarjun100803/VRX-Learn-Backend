@@ -24,6 +24,7 @@ from src.dependencies import (
     TraineeAssignmentContentQueryService,
     TraineeCourseContentQueryService,
     TraineeCourseOverviewQueryService,
+    TraineeCoursePreviewQueryService,
     TraineeDashboardQueryService,
     TraineeEntityListQueryService,
     TrainerAssignmentContentQueryService,
@@ -49,6 +50,7 @@ from src.dependencies import (
     trainee_assignment_content_query_service,
     trainee_course_content_query_service,
     trainee_course_overview_query_service,
+    trainee_course_preview_query_service,
     trainee_dashboard_query_service,
     trainee_entity_list_query_service,
     trainer_assignment_content_query_service,
@@ -61,7 +63,7 @@ from src.dependencies import (
 )
 from src.exceptions import UnAuthenticated, UnAuthorizedError
 
-# # Helper functions to build a Services used for Depedency Injection.
+# # Helper functions to build a Services used for Dependency Injection.
 
 
 def get_authentication_service() -> AuthenticationService:
@@ -122,6 +124,10 @@ def get_trainee_dashboard_query_service() -> TraineeDashboardQueryService:
 
 def get_trainer_dashboard_query_service() -> TrainerDashboardQueryService:
     return trainer_dashboard_query_service
+
+
+def get_trainee_course_preview_query_service() -> TraineeCoursePreviewQueryService:
+    return trainee_course_preview_query_service
 
 
 def get_trainee_course_content_query_service() -> TraineeCourseContentQueryService:
@@ -240,6 +246,10 @@ type TraineeAssignmentContentQueryServiceDependency = Annotated[
 type TrainerAssignmentContentQueryServiceDependency = Annotated[
     TrainerAssignmentContentQueryService,
     Depends(get_trainer_assignment_content_query_service),
+]
+
+type TraineeCoursePreviewQueryServiceDependency = Annotated[
+    TraineeCoursePreviewQueryService, Depends(get_trainee_course_preview_query_service)
 ]
 
 type TraineeCourseOverviewQueryServiceDependency = Annotated[

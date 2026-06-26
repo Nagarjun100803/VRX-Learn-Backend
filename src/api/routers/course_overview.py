@@ -5,11 +5,33 @@ from fastapi import APIRouter, Depends
 from src.api.authorize import Authorize, AuthorizeOn
 from src.api.dependencies import (
     TraineeCourseOverviewQueryServiceDependency,
+    TraineeCoursePreviewQueryServiceDependency,
     TrainerCourseOverviewQueryServiceDependency,
 )
 from src.command.commands.base import CourseID, UserID
-from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
+from src.query.dto.course_overview import (
+    CoursePreview,
+    TraineeCourseOverview,
+    TrainerCourseOverview,
+)
 from src.query.dto.request_schemas import CourseViewRequestSchema
+
+trainee_course_preview_router = APIRouter(
+    prefix="/trainee/course-preview", tags=["Course Preview", "Trainee Course Preview"]
+)
+
+
+@trainee_course_preview_router.get("/{course_id}", response_model=CoursePreview)
+async def get_course_preview_for_trainee(
+    course_id: CourseID,
+    query_service: TraineeCoursePreviewQueryServiceDependency,
+    current_user: Annotated[
+        UserID,
+        Depends(Authorize(on=AuthorizeOn.COURSE_VIEW, entity_id_field="course_id")),
+    ],
+):
+    return await query_service.get_preview(course_id=course_id)
+
 
 trainee_router = APIRouter(
     prefix="/trainee/course-overview",

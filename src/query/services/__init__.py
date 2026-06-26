@@ -8,6 +8,7 @@ from src.query.services.course_contents import (
 )
 from src.query.services.course_overview import (
     TraineeCourseOverviewQueryService,
+    TraineeCoursePreviewQueryService,
     TrainerCourseOverviewQueryService,
 )
 from src.query.services.dashboards import (
@@ -33,6 +34,7 @@ __all__ = [
     "TrainerEntityListQueryService",
     "TraineeAssignmentContentQueryService",
     "TrainerAssignmentContentQueryService",
+    "TraineeCoursePreviewQueryService",
     "TraineeCourseOverviewQueryService",
     "TrainerCourseOverviewQueryService",
     "IssueQueryService",

@@ -13,14 +13,14 @@ from src.command.commands.base import (
 )
 from src.command.commands.validator import UpdateValidatorMixin
 
-ModuleTitile = Annotated[
+ModuleTitle = Annotated[
     str, StringConstraints(to_upper=True, min_length=1, max_length=200)
 ]
 ModuleDescription = Annotated[str, StringConstraints(max_length=5000)]
 
 
 class ModuleCreateCore(BaseCmd):
-    title: ModuleTitile
+    title: ModuleTitle
     description: Optional[ModuleDescription] = None
     course_id: CourseID
 
@@ -36,7 +36,7 @@ class ModuleCreateWithPosition(ModuleCreate):
 
 
 class ModuleUpdateCore(UpdateValidatorMixin, BaseCmd):
-    title: Annotated[Optional[ModuleTitile], NullField]
+    title: Annotated[Optional[ModuleTitle], NullField]
     description: Annotated[Optional[ModuleDescription], NullField]
 
     model_config = ConfigDict(str_strip_whitespace=True)

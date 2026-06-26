@@ -8,6 +8,7 @@ from src.query.repositories.course_contents import (
 )
 from src.query.repositories.course_overview import (
     TraineeCourseOverviewQueryRepository,
+    TraineeCoursePreviewQueryRepository,
     TrainerCourseOverviewQueryRepository,
 )
 from src.query.repositories.dashboards import (
@@ -27,6 +28,7 @@ __all__ = [
     "EntityListQueryRepository",
     "TraineeAssignmentContentQueryRepository",
     "TrainerAssignmentContentQueryRepository",
+    "TraineeCoursePreviewQueryRepository",
     "TraineeCourseOverviewQueryRepository",
     "TrainerCourseOverviewQueryRepository",
     "IssueQueryRepository",

@@ -1,14 +1,21 @@
 from typing import Optional, cast
 
-from pypika import Parameter, PostgreSQLQuery, Table
+from pypika import Parameter, PostgreSQLQuery, Table, functions
 from pypika import functions as fn
 from pypika.terms import Criterion
 
 from src.command.commands.media import MediableType, MediaStatus
 from src.database import ExecutableSQL
-from src.query.dto.course_overview import TraineeCourseOverview, TrainerCourseOverview
+from src.query.dto.course_overview import (
+    CoursePreview,
+    TraineeCourseOverview,
+    TrainerCourseOverview,
+)
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
 from src.query_builder import (
+    JsonbAgg,
+    JsonbBuildObject,
+    PGSqlTypes,
     assignment_table,
     course_table,
     enrollment_table,
@@ -17,6 +24,110 @@ from src.query_builder import (
     module_table,
     user_table,
 )
+
+
+class TraineeCoursePreviewQueryRepository(BaseQueryRepository):
+    @map_to_dto(dto=CoursePreview, dto_mode="single")
+    async def preview(self, course_id: int) -> CoursePreview:
+        lessons_subquery = (
+            PostgreSQLQuery.from_(lesson_table)
+            .join(media_asset_table)
+            .on(
+                Criterion.all(
+                    terms=[
+                        media_asset_table.mediable_id == lesson_table.id,
+                        media_asset_table.mediable_type == MediableType.LESSON,
+                        media_asset_table.status == MediaStatus.UPLOADED,
+                    ]
+                )
+            )
+            .where(
+                Criterion.all(
+                    terms=[
+                        lesson_table.module_id
+                        == module_table.id,  # <= Refer from outer query.
+                        lesson_table.deleted_at.isnull(),
+                        media_asset_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+            .select(
+                JsonbAgg(
+                    JsonbBuildObject(
+                        "id",
+                        lesson_table.id,
+                        "title",
+                        lesson_table.title,
+                        "is_preview",
+                        lesson_table.is_preview,
+                        "mime_type",
+                        media_asset_table.mime_type,
+                    )
+                ).orderby(module_table.position_string)
+            )
+        )
+
+        modules_subquery = (
+            PostgreSQLQuery.from_(module_table)
+            .where(
+                Criterion.all(
+                    terms=[
+                        module_table.course_id
+                        == course_table.id,  # <= Refer from outer query.
+                        module_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+            .select(
+                JsonbAgg(
+                    JsonbBuildObject(
+                        "id",
+                        module_table.id,
+                        "title",
+                        module_table.title,
+                        "lessons",
+                        functions.Coalesce(
+                            lessons_subquery, functions.Cast("[]", PGSqlTypes.JSONB)
+                        ),
+                    )
+                )
+            )
+        )
+
+        course_preview_query = (
+            PostgreSQLQuery.from_(course_table)
+            .join(user_table)
+            .on(user_table.id == course_table.trainer_id)
+            .where(
+                Criterion.all(
+                    terms=[
+                        course_table.id == Parameter("$1"),
+                        course_table.deleted_at.isnull(),
+                    ]
+                )
+            )
+            .select(
+                JsonbBuildObject(
+                    "id",
+                    course_table.id,
+                    "title",
+                    course_table.title,
+                    "description",
+                    course_table.short_description,
+                    "trainer",
+                    user_table.username,
+                ).as_("course"),
+                functions.Coalesce(
+                    modules_subquery, functions.Cast("[]", PGSqlTypes.JSONB)
+                ).as_("modules"),
+            )
+        ).get_sql()
+
+        executable = ExecutableSQL(sql=course_preview_query, values=(course_id,))
+
+        return cast(
+            CoursePreview, await self.db.execute(executable, fetch_returns="one")
+        )
 
 
 class QueryFactory:

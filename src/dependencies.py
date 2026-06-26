@@ -50,6 +50,7 @@ from src.query.repositories import (
     TraineeAssignmentContentQueryRepository,
     TraineeCourseContentQueryRepository,
     TraineeCourseOverviewQueryRepository,
+    TraineeCoursePreviewQueryRepository,
     TraineeDashboardQueryRepository,
     TrainerAssignmentContentQueryRepository,
     TrainerCourseContentQueryRepository,
@@ -65,6 +66,7 @@ from src.query.services import (
     TraineeAssignmentContentQueryService,
     TraineeCourseContentQueryService,
     TraineeCourseOverviewQueryService,
+    TraineeCoursePreviewQueryService,
     TraineeDashboardQueryService,
     TraineeEntityListQueryService,
     TrainerAssignmentContentQueryService,
@@ -109,6 +111,7 @@ trainer_assignment_content_query_repository = TrainerAssignmentContentQueryRepos
     db=db
 )
 
+trainee_course_preview_query_repository = TraineeCoursePreviewQueryRepository(db=db)
 trainee_course_overview_query_repository = TraineeCourseOverviewQueryRepository(db=db)
 trainer_course_overview_query_repository = TrainerCourseOverviewQueryRepository(db=db)
 issue_query_repository = IssueQueryRepository(db=db)
@@ -255,6 +258,10 @@ trainee_assignment_content_query_service = TraineeAssignmentContentQueryService(
 trainer_assignment_content_query_service = TrainerAssignmentContentQueryService(
     trainer_assignment_content_repo=trainer_assignment_content_query_repository,
     entity_list_query_repo=entity_list_query_repository,
+)
+
+trainee_course_preview_query_service = TraineeCoursePreviewQueryService(
+    trainee_course_preview_query_repo=trainee_course_preview_query_repository
 )
 
 trainee_course_overview_query_service = TraineeCourseOverviewQueryService(
