@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from src.api.authorize import Authorize, AuthorizeOn
-from src.api.dependencies import AssignmentSubmissionServiceDependency
+from src.api.dependencies import AssignmentSubmissionServiceDependency, CurrentUser
 from src.api.docs.assignment_submissions import (
     CREATE_ASSIGNMENT_SUBMISSION,
     GET_ASSIGNMENT_SUBMISSION,
@@ -26,7 +26,6 @@ from src.command.commands.assignment_submissions import (
     AssignmentSubmissionWithMedia,
 )
 from src.command.commands.base import (
-    AssignmentID,
     AssignmentSubmissionID,
     AttachmentUploadContext,
     UserID,
@@ -35,19 +34,12 @@ from src.command.commands.base import (
 router = APIRouter(prefix="/assignment-submission", tags=["Assignment Submissions"])
 
 
-def get_parent_id(
-    assignment_submission: AssignmentSubmissionCreateSchema,
-) -> AssignmentID:
-    """Extracts the parent ID from the assignment submission create schema."""
-    return assignment_submission.assignment_submission.assignment_id
-
-
 type AuthorizeAssignmentSubmissionCreate = Annotated[
     UserID,
     Depends(
         Authorize(
             on=AuthorizeOn.ASSIGNMENT_SUBMISSION_CREATE,
-            parent_id=Depends(get_parent_id),
+            parent_id_field="assignment_id",
             allowed_user_roles={"trainee"},
         )
     ),
@@ -63,6 +55,7 @@ type AuthorizeAssignmentSubmissionUpdate = Annotated[
         )
     ),
 ]
+
 
 type AuthorizeAssignmentSubmissionView = Annotated[
     UserID,
@@ -105,8 +98,7 @@ async def create_assignment_submission(
 
     return await assignment_submission_service.create(
         cmd=AssignmentSubmissionCreate(
-            **assignment_submission.assignment_submission.model_dump(),
-            created_by=current_user,
+            assignment_id=assignment_submission.assignment_id, created_by=current_user
         ),
         attachment=assignment_submission.attachment,
     )
@@ -160,7 +152,7 @@ async def update_feedback(
 async def update_attachment_status(
     assignment_submission_id: AssignmentSubmissionID,
     assignment_submission_service: AssignmentSubmissionServiceDependency,
-    current_user: AuthorizeAssignmentSubmissionUpdate,
+    current_user: CurrentUser,
 ):
     await assignment_submission_service.mark_attachment_as_uploaded(
         cmd=AssignmentSubmissionAttachmentStatusUpdate(

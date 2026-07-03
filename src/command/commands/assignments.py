@@ -43,13 +43,16 @@ class AssignmentAttachmentMetadata(
         return self
 
 
-class AssignmentCreateCore(BaseCmd):
+class AssignmentCreateBase(BaseCmd):
     title: AssignmentTitle
     instructions: Optional[AssignmentInstruction] = None
-    course_id: CourseID
     due_date: Optional[datetime] = None
     max_score: MaxScore
     number_of_attempts: NumberOfAttempts = 1
+
+
+class AssignmentCreateCore(AssignmentCreateBase):
+    course_id: CourseID
 
 
 class AssignmentCreate(AssignmentCreateCore):
