@@ -1,9 +1,10 @@
 from src.command.commands.assignments import (
     AssignmentAttachmentMetadata,
+    AssignmentCreateBase,
     AssignmentCreateCore,
     AssignmentUpdateCore,
 )
-from src.command.commands.base import AssignmentID, BaseCmd
+from src.command.commands.base import AssignmentID, BaseCmd, CourseID
 
 
 class AssignmentOut(AssignmentCreateCore):
@@ -14,7 +15,8 @@ class AssignmentCreateSchema(AssignmentCreateCore): ...
 
 
 class AssignmentCreateWithAttachmentSchema(BaseCmd):
-    assignment: AssignmentCreateCore
+    course_id: CourseID
+    assignment: AssignmentCreateBase
     attachment: AssignmentAttachmentMetadata
 
 

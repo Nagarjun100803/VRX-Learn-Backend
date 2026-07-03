@@ -12,7 +12,6 @@ from src.api.docs.modules import (
     UPDATE_MODULE_POSITION,
 )
 from src.api.schemas.modules import (
-    CourseID,
     ModuleCreateSchema,
     ModuleOutSchema,
     ModuleUpdateSchema,
@@ -30,17 +29,12 @@ from src.command.commands.modules import (
 router = APIRouter(prefix="/modules", tags=["Modules"])
 
 
-def get_parent_id(module: ModuleCreateSchema) -> CourseID:
-    """Extract the parent ID from the module create schema."""
-    return module.course_id
-
-
 type AuthorizeModuleCreate = Annotated[
     UserID,
     Depends(
         Authorize(
             on=AuthorizeOn.MODULE_CREATE,
-            parent_id=Depends(get_parent_id),
+            parent_id_field="course_id",
             allowed_user_roles={"admin", "trainer"},
         )
     ),

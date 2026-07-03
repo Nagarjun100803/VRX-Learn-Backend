@@ -12,12 +12,7 @@ from src.api.docs.lessons import (
     UPDATE_LESSON_POSITION,
 )
 from src.api.schemas.lessons import LessonCreateSchema, LessonUpdateSchema
-from src.command.commands.base import (
-    AttachmentUploadContext,
-    LessonID,
-    ModuleID,
-    UserID,
-)
+from src.command.commands.base import AttachmentUploadContext, LessonID, UserID
 from src.command.commands.lessons import (
     LessonAttachmentStatusUpdate,
     LessonContext,
@@ -33,17 +28,12 @@ from src.command.commands.lessons import (
 router = APIRouter(prefix="/lessons", tags=["Lessons"])
 
 
-def get_parent_id(lesson: LessonCreateSchema) -> ModuleID:
-    """Extracts the parent ID from the lesson create schema."""
-    return lesson.lesson.module_id
-
-
 type AuthorizeLessonCreate = Annotated[
     UserID,
     Depends(
         Authorize(
             on=AuthorizeOn.LESSON_CREATE,
-            parent_id=Depends(get_parent_id),
+            parent_id_field="module_id",
             allowed_user_roles={"admin", "trainer"},
         )
     ),
@@ -100,7 +90,11 @@ async def create_lesson(
 ):
 
     return await lesson_service.create(
-        cmd=LessonCreate(**lesson.lesson.model_dump(), created_by=current_user),
+        cmd=LessonCreate(
+            module_id=lesson.module_id,
+            **lesson.lesson.model_dump(),
+            created_by=current_user,
+        ),
         attachment=lesson.attachment,
     )
 

@@ -4,7 +4,6 @@ from typing import Optional
 from src.command.commands.assignment_submissions import (
     AssignmentSubmissionAttachmentMetadata,
     AssignmentSubmissionBase,
-    AssignmentSubmissionCreateCore,
     AssignmentSubmissionFeedbackUpdateCore,
     AssignmentSubmissionStatus,
     AssignmentSubmissionVerifyCore,
@@ -24,7 +23,7 @@ class AssignmentSubmissionOut(AssignmentSubmissionBase):
 
 
 class AssignmentSubmissionCreateSchema(BaseCmd):
-    assignment_submission: AssignmentSubmissionCreateCore
+    assignment_id: AssignmentID
     attachment: AssignmentSubmissionAttachmentMetadata
 
 

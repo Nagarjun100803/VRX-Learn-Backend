@@ -1,9 +1,9 @@
 from enum import StrEnum
-from typing import Literal, Optional, Set
+from typing import Literal, Optional, Set, Union
 
 from fastapi import Depends
 from fastapi.requests import Request
-from pydantic import TypeAdapter
+from pydantic.alias_generators import to_camel
 
 from src.api.dependencies import get_current_user_context
 from src.auth import Action, Entity
@@ -49,12 +49,21 @@ class AuthorizeOn(StrEnum):
     ASSIGNMENT_SUBMISSION_VIEW = "assignment-submission:view"
 
 
+def get_int_part(s: Union[str, int]) -> int:
+    """
+    Extract the integer part of a string or return the integer as-is.
+    """
+    if isinstance(s, str):
+        return int(s.split("-")[-1])
+    return int(s)
+
+
 class Authorize:
     def __init__(
         self,
         on: AuthorizeOn,
         entity_id_field: Optional[str] = None,
-        parent_id: Optional[int] = None,
+        parent_id_field: Optional[str] = None,
         allowed_user_roles: Optional[
             Set[Literal["admin", "trainer", "trainee"]]
         ] = None,
@@ -63,11 +72,38 @@ class Authorize:
         `Authorize` object is used as a dependency in FastAPI route handlers.
         This will perform the authorization against the `User` and the `Entity`.
 
+        1.Entity Specific used for `GET`, `PATCH`, `PUT`, `DELETE`
         ```python
         @app.get("/{course_id}")
         async def get_item(
             course_id: int,
-            current_user: Annotated[UserID, Depends(Authorize(on=AuthorizeOn.COURSE_VIEW, entity_id_field="course_id"))],
+            current_user: Annotated[
+                UserID,
+                Depends(
+                    Authorize(
+                        on=AuthorizeOn.COURSE_VIEW,
+                        entity_id_field="course_id",
+                    )
+                )
+            ],
+        ):
+            ...
+        ```
+
+        2. Parent Specific used for `POST`
+        ```python
+        @app.post("/")
+        async def create_module(
+            course_id: int,
+            current_user: Annotated[
+                UserID,
+                Depends(
+                    Authorize(
+                        on=AuthorizeOn.COURSE_CREATE,
+                        parent_id_field="course_id",
+                    )
+                )
+            ],
         ):
             ...
         ```
@@ -79,22 +115,35 @@ class Authorize:
         self.entity = Entity(entity)
         self.action = Action(action)
         self.entity_id_field = entity_id_field
-        self.parent_id = parent_id
+        self.parent_id_field = parent_id_field
         self.allowed_user_roles = allowed_user_roles
 
-    async def _get_entity_id(self, request: Request) -> Optional[int]:
+        # Validate that either entity_id_field or parent_id_field is set
+        if self.entity_id_field is None and self.parent_id_field is None:
+            raise ValueError("entity_id_field and parent_id_field cannot both be None")
+        if self.parent_id_field:
+            self.parent_id_field = to_camel(self.parent_id_field)
+
+    async def _get_entity_id_and_parent_id(
+        self, request: Request
+    ) -> tuple[Optional[int], Optional[int]]:
         """
-        Extract the entity ID from the request's path parameter.
+        Extract the entity ID and parent ID from the request.
         """
-        if self.entity_id_field is None:
-            return None
 
-        entity_id: str = request.path_params[self.entity_id_field]
-        entity_id = entity_id.split("-")[-1]
-
-        adapter = TypeAdapter(int)
-
-        return adapter.validate_python(entity_id)
+        if self.entity_id_field:
+            entity_id_str: str = request.path_params[self.entity_id_field]
+            entity_id = get_int_part(entity_id_str)
+            print(f"entity_id={entity_id}, parent_id=None")
+            return (entity_id, None)
+        else:
+            entity_id = None
+            body = await request.json()
+            print(f"body={body}")
+            parent_id_str = body[self.parent_id_field]
+            parent_id = get_int_part(parent_id_str)
+            print(f"entity_id={entity_id}, parent_id={parent_id}")
+            return (entity_id, parent_id)
 
     def _validate_role(self, current_user: UserContext) -> None:
         """
@@ -114,12 +163,13 @@ class Authorize:
 
         self._validate_role(current_user)
 
-        entity_id = await self._get_entity_id(request=request)
+        entity_id, parent_id = await self._get_entity_id_and_parent_id(request=request)
+        print(f"Calling __call__ with entity_id={entity_id}, parent_id={parent_id}")
         await auth_service.authorize(
             entity=self.entity,
             action=self.action,
             entity_id=entity_id,
-            parent_id=self.parent_id,
+            parent_id=parent_id,
             user_id=current_user.user_id,
             user_role=current_user.role,
         )

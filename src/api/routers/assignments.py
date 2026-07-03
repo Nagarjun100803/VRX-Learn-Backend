@@ -1,4 +1,4 @@
-from typing import Annotated, Union
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
@@ -23,23 +23,9 @@ from src.command.commands.assignments import (
     AssignmentGetQuery,
     AssignmentUpdate,
 )
-from src.command.commands.base import (
-    AssignmentID,
-    AttachmentUploadContext,
-    CourseID,
-    UserID,
-)
+from src.command.commands.base import AssignmentID, AttachmentUploadContext, UserID
 
 router = APIRouter(prefix="/assignments", tags=["Assignments"])
-
-
-def get_parent_id(
-    assignment: Union[AssignmentCreateSchema, AssignmentCreateWithAttachmentSchema],
-) -> CourseID:
-    """Extracts the parent ID from the assignment create schema."""
-    if isinstance(assignment, AssignmentCreateWithAttachmentSchema):
-        return assignment.assignment.course_id
-    return assignment.course_id
 
 
 type AuthorizeAssignmentCreate = Annotated[
@@ -47,7 +33,7 @@ type AuthorizeAssignmentCreate = Annotated[
     Depends(
         Authorize(
             on=AuthorizeOn.ASSIGNMENT_CREATE,
-            parent_id=Depends(get_parent_id),
+            parent_id_field="course_id",
             allowed_user_roles={"admin", "trainer"},
         )
     ),
@@ -121,7 +107,9 @@ async def create_assignment_with_attachment(
 ):
     return await assignment_service.create_with_attachment(
         AssignmentCreate(
-            **assignment_payload.assignment.model_dump(), created_by=current_user
+            **assignment_payload.assignment.model_dump(),
+            course_id=assignment_payload.course_id,
+            created_by=current_user,
         ),
         assignment_payload.attachment,
     )
