@@ -5,6 +5,7 @@ from uuid import uuid4
 from src.auth import Entity
 from src.command.commands.base import AttachmentUploadContext, MediaContext
 from src.command.commands.lessons import (
+    AllowedLessonAttachmentContentTypes,
     Lesson,
     LessonAttachmentMetadata,
     LessonAttachmentStatusUpdate,
@@ -33,6 +34,7 @@ from src.exceptions import (
     EntityNotFoundError,
     LessonAlreadyExistsError,
     LessonNotFoundError,
+    ValidationError,
 )
 
 
@@ -65,7 +67,16 @@ class LessonService(BaseService[Lesson]):
         if duplicate_title_flag:
             raise LessonAlreadyExistsError(value=title, identifier="title")
 
-    async def _validate_lesson_create(self, cmd: LessonCreate) -> None:
+    async def _validate_lesson_create(
+        self, cmd: LessonCreate, attachment: LessonAttachmentMetadata
+    ) -> None:
+
+        if (
+            attachment.content_type != AllowedLessonAttachmentContentTypes.MP4
+            and cmd.is_preview
+        ):
+            raise ValidationError("Preview lessons must have an MP4 attachment.")
+
         module_exists, _ = await asyncio.gather(
             self.module_repo.exists_by(id=cmd.module_id),
             self._check_duplicate_lesson_title(
@@ -107,7 +118,7 @@ class LessonService(BaseService[Lesson]):
         self, cmd: LessonCreate, attachment: LessonAttachmentMetadata
     ) -> AttachmentUploadContext[LessonContext]:
 
-        await self._validate_lesson_create(cmd)
+        await self._validate_lesson_create(cmd, attachment)
 
         position_string = await self.positioning_service.generate_position(
             tablename=self.repo.tablename, scope="module_id", scope_id=cmd.module_id
