@@ -13,6 +13,7 @@ from src.command.commands.lessons import (
 class LessonDetail(BaseCmd):
     title: LessonTitle
     description: Optional[LessonDescription] = None
+    is_preview: bool = False
 
 
 class LessonCreateSchema(BaseCmd):
