@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from src.api.authorize import Authorize, AuthorizeOn
 from src.api.dependencies import (
+    CurrentUser,
     TraineeCourseOverviewQueryServiceDependency,
     TraineeCoursePreviewQueryServiceDependency,
     TrainerCourseOverviewQueryServiceDependency,
@@ -25,10 +26,7 @@ trainee_course_preview_router = APIRouter(
 async def get_course_preview_for_trainee(
     course_id: CourseID,
     query_service: TraineeCoursePreviewQueryServiceDependency,
-    current_user: Annotated[
-        UserID,
-        Depends(Authorize(on=AuthorizeOn.COURSE_VIEW, entity_id_field="course_id")),
-    ],
+    current_user: CurrentUser,
 ):
     return await query_service.get_preview(course_id=course_id)
 
