@@ -299,6 +299,10 @@ class AssignmentSubmissionNotGraded(ValidationError):
     _default = "Assignment submission is not verified/graded."
 
 
+class LessonIsNotAPreviewError(ValidationError):
+    _default = "Lesson is not a preview."
+
+
 class AssignmentSubmissionMediaNotFoundError(ValidationError):
     """Raised when submission has no associated media file."""
 

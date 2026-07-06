@@ -33,6 +33,7 @@ from src.exceptions import (
     CourseModuleNotFoundError,
     EntityNotFoundError,
     LessonAlreadyExistsError,
+    LessonIsNotAPreviewError,
     LessonNotFoundError,
     ValidationError,
 )
@@ -200,6 +201,24 @@ class LessonService(BaseService[Lesson]):
         await self.module_access_service.validate_access(
             user_id=query.viewer_id, module_id=lesson["module_id"]
         )
+        return await self.attachment_resolver.get_attachment_url(
+            mediable_id=query.id, mediable_type=MediableType.LESSON
+        )
+
+    async def get_lesson_attachment_preview_url(self, query: LessonGetQuery) -> str:
+        lesson = await self.repo.pick(
+            columns=["id", "is_preview"], fetch_all=False, id=query.id
+        )
+
+        if lesson is None:
+            raise LessonNotFoundError(value=query.id)
+
+        print(f"lesson={lesson}")
+        if not lesson["is_preview"]:
+            raise LessonIsNotAPreviewError(
+                message=f"Lesson {query.id} is not a preview."
+            )
+
         return await self.attachment_resolver.get_attachment_url(
             mediable_id=query.id, mediable_type=MediableType.LESSON
         )

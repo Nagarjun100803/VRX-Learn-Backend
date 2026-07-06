@@ -3,7 +3,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from src.api.authorize import Authorize, AuthorizeOn
-from src.api.dependencies import LessonServiceDependency
+from src.api.dependencies import CurrentUser, LessonServiceDependency
 from src.api.docs.lessons import (
     CREATE_LESSON,
     DELETE_LESSON,
@@ -167,5 +167,16 @@ async def get_view_url(
     current_user: AuthorizeLessonView,
 ):
     return await lesson_service.get_attachment_view_url(
+        LessonGetQuery(id=lesson_id, viewer_id=current_user)
+    )
+
+
+@router.get("/{lesson_id}/attachment/preview-url", response_model=str)
+async def get_preview_url(
+    lesson_id: LessonID,
+    lesson_service: LessonServiceDependency,
+    current_user: CurrentUser,
+):
+    return await lesson_service.get_lesson_attachment_preview_url(
         LessonGetQuery(id=lesson_id, viewer_id=current_user)
     )
