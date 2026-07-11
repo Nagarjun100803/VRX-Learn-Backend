@@ -12,6 +12,7 @@ from src.query.dto.course_overview import (
     TrainerCourseOverview,
 )
 from src.query.repositories.base import BaseQueryRepository, map_to_dto
+
 from src.query_builder import (
     JsonbAgg,
     JsonbBuildObject,
@@ -28,7 +29,7 @@ from src.query_builder import (
 
 class TraineeCoursePreviewQueryRepository(BaseQueryRepository):
     @map_to_dto(dto=CoursePreview, dto_mode="single")
-    async def preview(self, course_id: int) -> CoursePreview:
+    async def preview(self, course_id: int) -> Optional[CoursePreview]:
         lessons_subquery = (
             PostgreSQLQuery.from_(lesson_table)
             .join(media_asset_table)
@@ -126,7 +127,7 @@ class TraineeCoursePreviewQueryRepository(BaseQueryRepository):
         executable = ExecutableSQL(sql=course_preview_query, values=(course_id,))
 
         return cast(
-            CoursePreview, await self.db.execute(executable, fetch_returns="one")
+            Optional[CoursePreview], await self.db.execute(executable, fetch_returns="one")
         )
 
 
